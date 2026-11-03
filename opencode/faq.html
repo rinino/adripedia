@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ e problemi comuni — Adripedia</title>
+  <meta name="description" content="Risposte rapide ai problemi più comuni con OpenCode V2: cambio agente, modello, log, configurazione e pubblicazione.">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root=".." data-page="opencode/faq.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">FAQ e problemi comuni</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Aiuto</p>
+      <h1>FAQ e problemi comuni</h1>
+      <p class="lead">
+        Le domande che tornano pi&ugrave; spesso, con la risposta breve e il
+        rimando alla pagina che entra nel dettaglio.
+      </p>
+
+      <h2>Perch&eacute; non posso passare da Build a Plan?</h2>
+      <p>
+        Perch&eacute; nella V2 Build e Plan sono <strong>agenti</strong>, non
+        modalit&agrave; della TUI. La vecchia scorciatoia <kbd>Tab</kbd> non
+        esiste pi&ugrave;: usa <kbd>Shift</kbd>+<kbd>Tab</kbd>, oppure
+        <kbd>Ctrl</kbd>+<kbd>X</kbd> poi <kbd>A</kbd> per scegliere dalla lista.
+      </p>
+      <p><a href="agenti.html">Dettagli sugli agenti &rarr;</a></p>
+
+      <h2>Shift+Tab non fa nulla</h2>
+      <p>
+        Quasi sempre &egrave; il terminale che intercetta la combinazione. Rimappa
+        il comando <code>agent.cycle</code> in <code>cli.json</code>:
+      </p>
+      <pre><code>{
+  "keybinds": {
+    "agent.cycle": "alt+p"
+  }
+}</code></pre>
+      <p>
+        <kbd>Alt</kbd>+<kbd>P</kbd> &egrave; libero nei default della V2. In
+        alternativa prova <kbd>F3</kbd>.
+      </p>
+
+      <h2>Come cambio modello?</h2>
+      <ul>
+        <li><kbd>Ctrl</kbd>+<kbd>X</kbd>, poi <kbd>M</kbd>.</li>
+        <li><code>/models</code>.</li>
+        <li><kbd>F2</kbd> per ciclare i modelli usati di recente.</li>
+      </ul>
+      <p>Cambiare agente non cambia il modello: sono selezioni separate.</p>
+
+      <h2>Dove trovo i log?</h2>
+      <pre><code>~/.local/share/opencode/log/opencode.log</code></pre>
+      <p>
+        Filtra <code>role=cli</code> per l'avvio del client e
+        <code>role=server</code> per sessioni, provider, plugin, permessi e
+        strumenti. Per un singolo caso riproducibile, alza il livello:
+      </p>
+      <pre><code>OPENCODE_LOG_LEVEL=DEBUG opencode</code></pre>
+      <p>Su PowerShell:</p>
+      <pre><code>$env:OPENCODE_LOG_LEVEL="DEBUG"; opencode</code></pre>
+
+      <h2>Ho modificato la configurazione ma non cambia nulla</h2>
+      <p>
+        Controlla di aver usato il file giusto: tema e keybind vanno in
+        <code>cli.json</code>, tutto il resto in <code>opencode.json(c)</code>.
+        Le modifiche vengono ricaricate da sole; per forzarle:
+      </p>
+      <pre><code>opencode reload</code></pre>
+      <p>Oppure <code>/reload</code> nella TUI.</p>
+      <p><a href="configurazione.html">Dettagli sulla configurazione &rarr;</a></p>
+
+      <h2>Come scrivo un prompt su pi&ugrave; righe?</h2>
+      <p>
+        <kbd>Shift</kbd>+<kbd>Enter</kbd>, <kbd>Ctrl</kbd>+<kbd>Enter</kbd>,
+        <kbd>Alt</kbd>+<kbd>Enter</kbd> o <kbd>Ctrl</kbd>+<kbd>J</kbd>.
+      </p>
+
+      <h2>Come annullo l'ultimo messaggio?</h2>
+      <p>
+        <kbd>Ctrl</kbd>+<kbd>X</kbd>, poi <kbd>U</kbd>, oppure <code>/undo</code>.
+        Il prompt annullato torna nel campo, pronto da modificare. Per ripristinare:
+        <kbd>Ctrl</kbd>+<kbd>X</kbd>, poi <kbd>R</kbd>, oppure <code>/redo</code>.
+      </p>
+
+      <h2>Un server MCP chiede l'autenticazione</h2>
+      <p>
+        Apri <code>/mcps</code>, scegli il server e accedi. Non lanciare
+        <code>opencode mcp auth</code> da uno script: avvia un flusso interattivo
+        e il link di autorizzazione pu&ograve; finire nascosto nell'output.
+      </p>
+
+      <h2>Posso usare OpenCode in CI?</h2>
+      <p>
+        S&igrave;. Passa la chiave del provider come segreto e usa
+        <code>--standalone</code>:
+      </p>
+      <pre><code>opencode run --standalone --model anthropic/claude-sonnet-5-5 "Revisiona il repository"</code></pre>
+      <p>
+        Con <code>--format json</code> ottieni JSON a righe, comodo per gli script.
+      </p>
+
+      <h2>Come pubblico questo sito su GitHub Pages?</h2>
+      <ol>
+        <li>Crea un repository su GitHub.</li>
+        <li>Carica il contenuto della cartella nella radice del repository.</li>
+        <li>Vai in <strong>Settings &rarr; Pages</strong>.</li>
+        <li>In <strong>Source</strong> scegli <strong>Deploy from a branch</strong>.</li>
+        <li>Seleziona <code>main</code> e <code>/ (root)</code>, poi <strong>Save</strong>.</li>
+      </ol>
+      <p>
+        Il file <code>.nojekyll</code> gi&agrave; presente evita che GitHub Pages
+        ignori file o cartelle che iniziano con un underscore.
+      </p>
+
+      <h2>Come disinstallo senza perdere i dati?</h2>
+      <pre><code>opencode uninstall --dry-run
+opencode uninstall</code></pre>
+      <p>
+        La disinstallazione rimuove eseguibile e cache globale, ma conserva
+        sessioni, configurazione e stato.
+      </p>
+
+      <h2>Il servizio sembra bloccato</h2>
+      <pre><code>opencode service status
+opencode service restart
+opencode api get /api/info</code></pre>
+      <p>
+        Per capire se il problema &egrave; del servizio condiviso o del progetto,
+        prova <code>opencode --standalone</code>.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione OpenCode</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.2.5</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

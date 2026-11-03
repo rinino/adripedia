@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scorciatoie da tastiera — Adripedia</title>
+  <meta name="description" content="Tutte le scorciatoie della TUI di OpenCode V2, raggruppate per area.">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root=".." data-page="opencode/scorciatoie.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Scorciatoie da tastiera</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Riferimento</p>
+      <h1>Scorciatoie da tastiera</h1>
+      <p class="lead">
+        Tutte le combinazioni della TUI, raggruppate per area. Il leader
+        predefinito &egrave; <kbd>Ctrl</kbd>+<kbd>X</kbd>.
+      </p>
+
+      <div class="callout">
+        <p><strong>Come leggere le tabelle</strong></p>
+        <ul>
+          <li><code>&lt;leader&gt;</code> significa: premi <kbd>Ctrl</kbd>+<kbd>X</kbd>, poi il tasto indicato.</li>
+          <li><code>none</code> significa che il comando esiste ma non ha un tasto assegnato: puoi assegnarlo in <code>cli.json</code>.</li>
+          <li>Le virgole separano alternative equivalenti.</li>
+        </ul>
+      </div>
+
+      <h2>Applicazione</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>ctrl+x</code></td><td>Leader per le combinazioni</td></tr>
+            <tr><td><code>ctrl+c</code>, <code>ctrl+d</code>, <code>&lt;leader&gt;q</code></td><td>Esci</td></tr>
+            <tr><td><code>ctrl+p</code></td><td>Command palette: tutte le azioni disponibili</td></tr>
+            <tr><td><code>none</code></td><td>Pannello di debug</td></tr>
+            <tr><td><code>none</code></td><td>Console</td></tr>
+            <tr><td><code>none</code></td><td>Schermata scrap</td></tr>
+            <tr><td><code>none</code></td><td>Attiva/disattiva animazioni</td></tr>
+            <tr><td><code>none</code></td><td>Attiva/disattiva contesto file</td></tr>
+            <tr><td><code>none</code></td><td>Attiva/disattiva a capo nel diff</td></tr>
+            <tr><td><code>none</code></td><td>Attiva/disattiva riepilogo incolla</td></tr>
+            <tr><td><code>none</code></td><td>Apri la guida</td></tr>
+            <tr><td><code>none</code></td><td>Apri la documentazione</td></tr>
+            <tr><td><code>none</code></td><td>Apri le impostazioni</td></tr>
+            <tr><td><code>none</code></td><td>Accoppia un dispositivo</td></tr>
+            <tr><td><code>none</code></td><td>Riavvia il servizio</td></tr>
+            <tr><td><code>none</code></td><td>Ricarica la configurazione</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Mini</h2>
+      <p><code>app.clear</code> funziona solo in <code>opencode mini</code>.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>ctrl+l</code></td><td>Pulisci lo schermo (lo scrollback resta)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Agenti e modelli</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>shift+tab</code></td><td>Agente successivo (Build &harr; Plan)</td></tr>
+            <tr><td><code>none</code></td><td>Agente precedente</td></tr>
+            <tr><td><code>&lt;leader&gt;a</code></td><td>Lista agenti</td></tr>
+            <tr><td><code>&lt;leader&gt;m</code></td><td>Lista modelli</td></tr>
+            <tr><td><code>f2</code></td><td>Modello recente successivo</td></tr>
+            <tr><td><code>shift+f2</code></td><td>Modello recente precedente</td></tr>
+            <tr><td><code>none</code></td><td>Modello preferito successivo</td></tr>
+            <tr><td><code>none</code></td><td>Modello preferito precedente</td></tr>
+            <tr><td><code>ctrl+a</code></td><td>Lista provider (dal dialog modelli)</td></tr>
+            <tr><td><code>ctrl+f</code></td><td>Segna come preferito (dal dialog modelli)</td></tr>
+            <tr><td><code>ctrl+u</code></td><td>Limiti di utilizzo (dal dialog modelli)</td></tr>
+            <tr><td><code>ctrl+t</code></td><td>Cicla le varianti del modello</td></tr>
+            <tr><td><code>none</code></td><td>Lista varianti del modello</td></tr>
+            <tr><td><code>none</code></td><td>Lista server MCP</td></tr>
+            <tr><td><code>none</code></td><td>Limiti di utilizzo</td></tr>
+            <tr><td><code>none</code></td><td>Collega un'integrazione</td></tr>
+            <tr><td><code>ctrl+d</code></td><td>Elimina voce dallo stash</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Sessioni</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>&lt;leader&gt;n</code></td><td>Nuova sessione</td></tr>
+            <tr><td><code>&lt;leader&gt;l</code></td><td>Lista sessioni</td></tr>
+            <tr><td><code>ctrl+o</code></td><td>Sessioni e progetti recenti</td></tr>
+            <tr><td><code>ctrl+tab</code>, <code>alt+down</code></td><td>Tab successiva</td></tr>
+            <tr><td><code>ctrl+shift+tab</code>, <code>alt+up</code></td><td>Tab precedente</td></tr>
+            <tr><td><code>ctrl+i</code></td><td>Avanti nella cronologia delle tab</td></tr>
+            <tr><td><code>none</code></td><td>Indietro nella cronologia delle tab</td></tr>
+            <tr><td><code>alt+shift+down</code></td><td>Tab non letta successiva</td></tr>
+            <tr><td><code>alt+shift+up</code></td><td>Tab non letta precedente</td></tr>
+            <tr><td><code>&lt;leader&gt;w</code></td><td>Chiudi la tab corrente</td></tr>
+            <tr><td><code>ctrl+shift+t</code></td><td>Riapri l'ultima tab chiusa</td></tr>
+            <tr><td><code>&lt;leader&gt;g</code></td><td>Timeline della sessione</td></tr>
+            <tr><td><code>ctrl+r</code></td><td>Rinomina sessione</td></tr>
+            <tr><td><code>ctrl+d</code></td><td>Elimina sessione</td></tr>
+            <tr><td><code>escape</code></td><td>Interrompi la sessione</td></tr>
+            <tr><td><code>ctrl+b</code></td><td>Metti in background i tool bloccanti</td></tr>
+            <tr><td><code>&lt;leader&gt;c</code></td><td>Compatta la sessione</td></tr>
+            <tr><td><code>&lt;leader&gt;q</code></td><td>Gestisci i prompt in coda</td></tr>
+            <tr><td><code>ctrl+u</code></td><td>Annulla prompt in coda</td></tr>
+            <tr><td><code>ctrl+d</code></td><td>Elimina prompt in coda</td></tr>
+            <tr><td><code>&lt;leader&gt;x</code></td><td>Esporta la sessione nell'editor</td></tr>
+            <tr><td><code>&lt;leader&gt;y</code></td><td>Copia il messaggio</td></tr>
+            <tr><td><code>down</code></td><td>Selettore subagent</td></tr>
+            <tr><td><code>right</code> / <code>left</code></td><td>Sessione figlia successiva / precedente</td></tr>
+            <tr><td><code>up</code></td><td>Vai alla sessione padre</td></tr>
+            <tr><td><code>ctrl+f</code></td><td>Fissa o sgancia la sessione nella lista</td></tr>
+            <tr><td><code>&lt;leader&gt;1</code> &hellip; <code>&lt;leader&gt;9</code></td><td>Vai allo slot rapido 1&hellip;9</td></tr>
+            <tr><td><code>&lt;leader&gt;1</code>, <code>ctrl+1</code> &hellip; <code>&lt;leader&gt;0</code>, <code>ctrl+0</code></td><td>Vai alla tab 1&hellip;10</td></tr>
+            <tr><td><code>none</code></td><td>Fork della sessione da un messaggio</td></tr>
+            <tr><td><code>none</code></td><td>Copia la trascrizione</td></tr>
+            <tr><td><code>none</code></td><td>Copia l'ID sessione</td></tr>
+            <tr><td><code>none</code></td><td>Sposta sessione</td></tr>
+            <tr><td><code>none</code></td><td>Domanda laterale</td></tr>
+            <tr><td><code>none</code></td><td>Cambia directory di lavoro</td></tr>
+            <tr><td><code>none</code></td><td>Raggruppa le chiamate agli strumenti</td></tr>
+            <tr><td><code>none</code></td><td>Cicla la verbosit&agrave; della trascrizione</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Navigazione della sessione</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>pageup</code>, <code>ctrl+alt+b</code></td><td>Scorri su di una pagina</td></tr>
+            <tr><td><code>pagedown</code>, <code>ctrl+alt+f</code></td><td>Scorri gi&ugrave; di una pagina</td></tr>
+            <tr><td><code>ctrl+alt+y</code> / <code>ctrl+alt+e</code></td><td>Scorri su / gi&ugrave; di una riga</td></tr>
+            <tr><td><code>ctrl+alt+u</code> / <code>ctrl+alt+d</code></td><td>Scorri su / gi&ugrave; di mezza pagina</td></tr>
+            <tr><td><code>ctrl+g</code>, <code>home</code>, <code>alt+home</code></td><td>Vai al primo messaggio</td></tr>
+            <tr><td><code>ctrl+alt+g</code>, <code>end</code></td><td>Vai all'ultimo messaggio</td></tr>
+            <tr><td><code>alt+end</code></td><td>Vai all'ultimo messaggio utente</td></tr>
+            <tr><td><code>none</code></td><td>Messaggio successivo / precedente</td></tr>
+            <tr><td><code>none</code></td><td>Messaggio utente successivo / precedente</td></tr>
+            <tr><td><code>&lt;leader&gt;u</code></td><td>Annulla messaggio</td></tr>
+            <tr><td><code>&lt;leader&gt;r</code></td><td>Ripeti messaggio</td></tr>
+            <tr><td><code>none</code></td><td>Mostra/nascondi i blocchi di ragionamento</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Prompt e input</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>return</code></td><td>Invia</td></tr>
+            <tr><td><code>shift+return</code>, <code>ctrl+return</code>, <code>alt+return</code>, <code>ctrl+j</code></td><td>Nuova riga</td></tr>
+            <tr><td><code>&lt;leader&gt;return</code></td><td>Metti il prompt in coda</td></tr>
+            <tr><td><code>none</code></td><td>Invia prompt (comando alternativo)</td></tr>
+            <tr><td><code>ctrl+v</code></td><td>Incolla</td></tr>
+            <tr><td><code>ctrl+c</code></td><td>Svuota il campo</td></tr>
+            <tr><td><code>&lt;leader&gt;e</code></td><td>Apri l'editor esterno</td></tr>
+            <tr><td><code>&lt;leader&gt;i</code></td><td>Vedi le immagini allegate</td></tr>
+            <tr><td><code>none</code></td><td>Selettore skill</td></tr>
+            <tr><td><code>none</code></td><td>Metti da parte / riprendi / elenca prompt</td></tr>
+            <tr><td><code>ctrl+a</code> / <code>ctrl+e</code></td><td>Inizio / fine riga</td></tr>
+            <tr><td><code>ctrl+k</code> / <code>ctrl+u</code></td><td>Cancella fino a fine / inizio riga</td></tr>
+            <tr><td><code>ctrl+w</code>, <code>ctrl+backspace</code>, <code>alt+backspace</code></td><td>Cancella la parola precedente</td></tr>
+            <tr><td><code>alt+d</code>, <code>alt+delete</code>, <code>ctrl+delete</code></td><td>Cancella la parola successiva</td></tr>
+            <tr><td><code>ctrl+shift+d</code></td><td>Cancella la riga</td></tr>
+            <tr><td><code>ctrl+-</code>, <code>super+z</code></td><td>Annulla nell'input</td></tr>
+            <tr><td><code>ctrl+.</code>, <code>super+shift+z</code></td><td>Ripeti nell'input</td></tr>
+            <tr><td><code>up</code> / <code>down</code></td><td>Cronologia prompt precedente / successiva</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Pannelli e aspetto</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>&lt;leader&gt;b</code></td><td>Mostra/nascondi la sidebar</td></tr>
+            <tr><td><code>&lt;leader&gt;left</code> / <code>&lt;leader&gt;right</code></td><td>Focus pannello sinistro / destro</td></tr>
+            <tr><td><code>&lt;leader&gt;t</code></td><td>Mostra/nascondi il terminale</td></tr>
+            <tr><td><code>&lt;leader&gt;down</code></td><td>Seleziona terminale</td></tr>
+            <tr><td><code>&lt;leader&gt;up</code></td><td>Chiudi il terminale</td></tr>
+            <tr><td><code>&lt;leader&gt;s</code></td><td>Stato</td></tr>
+            <tr><td><code>none</code></td><td>Info di debug</td></tr>
+            <tr><td><code>none</code></td><td>Elenco temi</td></tr>
+            <tr><td><code>none</code></td><td>Passa tra tema chiaro e scuro</td></tr>
+            <tr><td><code>none</code></td><td>Blocca/sblocca la modalit&agrave; del tema</td></tr>
+            <tr><td><code>none</code></td><td>Mostra/nascondi la scrollbar</td></tr>
+            <tr><td><code>ctrl+z</code></td><td>Sospendi il terminale</td></tr>
+            <tr><td><code>none</code></td><td>Titolo del terminale</td></tr>
+            <tr><td><code>none</code></td><td>Apri il gestore plugin</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Diff viewer</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>d</code></td><td>Scegli lo scope (All, Committed, Uncommitted, Last turn, Base)</td></tr>
+            <tr><td><code>j</code> / <code>k</code></td><td>Gi&ugrave; / su</td></tr>
+            <tr><td><code>pagedown</code>, <code>ctrl+f</code> / <code>pageup</code>, <code>ctrl+b</code></td><td>Pagina gi&ugrave; / su</td></tr>
+            <tr><td><code>ctrl+d</code> / <code>ctrl+u</code></td><td>Mezza pagina gi&ugrave; / su</td></tr>
+            <tr><td><code>gg</code>, <code>home</code> / <code>shift+g</code>, <code>end</code></td><td>Inizio / fine</td></tr>
+            <tr><td><code>]</code> / <code>[</code></td><td>Hunk successivo / precedente</td></tr>
+            <tr><td><code>n</code>, <code>alt+down</code> / <code>p</code>, <code>alt+up</code></td><td>File successivo / precedente</td></tr>
+            <tr><td><code>b</code></td><td>Mostra/nascondi l'albero dei file</td></tr>
+            <tr><td><code>s</code></td><td>Vista singolo patch</td></tr>
+            <tr><td><code>v</code></td><td>Vista split o unified</td></tr>
+            <tr><td><code>f</code></td><td>Fullscreen</td></tr>
+            <tr><td><code>m</code></td><td>Segna il file come revisionato</td></tr>
+            <tr><td><code>?</code>, <code>shift+?</code>, <code>shift+/</code></td><td>Altri tasti del diff viewer</td></tr>
+            <tr><td><code>escape</code>, <code>q</code></td><td>Chiudi</td></tr>
+            <tr><td><code>none</code></td><td>Apri il diff viewer</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Dialoghi e autocomplete</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>up</code>, <code>ctrl+p</code> / <code>down</code>, <code>ctrl+n</code></td><td>Voce precedente / successiva</td></tr>
+            <tr><td><code>pageup</code> / <code>pagedown</code></td><td>Pagina su / gi&ugrave;</td></tr>
+            <tr><td><code>home</code> / <code>end</code></td><td>Prima / ultima voce</td></tr>
+            <tr><td><code>return</code></td><td>Seleziona o invia</td></tr>
+            <tr><td><code>tab</code></td><td>Completa autocomplete / genera nome worktree</td></tr>
+            <tr><td><code>escape</code></td><td>Nascondi autocomplete</td></tr>
+            <tr><td><code>ctrl+r</code></td><td>Rinomina account integrazione / aggiorna worktree / controlla plugin</td></tr>
+            <tr><td><code>ctrl+d</code></td><td>Elimina account integrazione / elimina worktree</td></tr>
+            <tr><td><code>ctrl+a</code></td><td>Nuovo worktree</td></tr>
+            <tr><td><code>ctrl+m</code></td><td>Sposta sessione nel worktree</td></tr>
+            <tr><td><code>ctrl+f</code></td><td>Prompt permessi a schermo intero</td></tr>
+            <tr><td><code>space</code></td><td>Attiva/disattiva server MCP / vedi errore plugin</td></tr>
+            <tr><td><code>ctrl+u</code></td><td>Aggiorna plugin dal dialog</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Which-key</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tasto</th><th>Azione</th></tr></thead>
+          <tbody>
+            <tr><td><code>ctrl+alt+k</code></td><td>Mostra/nascondi which-key</td></tr>
+            <tr><td><code>ctrl+alt+shift+k</code></td><td>Cambia layout</td></tr>
+            <tr><td><code>ctrl+alt+shift+p</code></td><td>Anteprima dei comandi in sospeso</td></tr>
+            <tr><td><code>ctrl+alt+left</code>, <code>ctrl+alt+[</code></td><td>Gruppo precedente</td></tr>
+            <tr><td><code>ctrl+alt+right</code>, <code>ctrl+alt+]</code></td><td>Gruppo successivo</td></tr>
+            <tr><td><code>ctrl+alt+up</code>, <code>ctrl+alt+p</code></td><td>Scorri su</td></tr>
+            <tr><td><code>ctrl+alt+down</code>, <code>ctrl+alt+n</code></td><td>Scorri gi&ugrave;</td></tr>
+            <tr><td><code>ctrl+alt+pageup</code> / <code>ctrl+alt+pagedown</code></td><td>Pagina su / gi&ugrave;</td></tr>
+            <tr><td><code>ctrl+alt+home</code> / <code>ctrl+alt+end</code></td><td>Primo / ultimo binding</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Rimappare un tasto</h2>
+      <p>
+        Aggiungi il comando in <code>cli.json</code>. Esempio: cambio agente su
+        <kbd>Alt</kbd>+<kbd>P</kbd>.
+      </p>
+      <pre><code>{
+  "keybinds": {
+    "agent.cycle": "alt+p"
+  }
+}</code></pre>
+      <p>
+        Trovi il resto nella pagina <a href="configurazione.html">Configurazione</a>.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione OpenCode</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.2.5</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

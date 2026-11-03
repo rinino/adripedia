@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configurazione — Adripedia</title>
+  <meta name="description" content="Differenza tra cli.json e opencode.json, percorsi su Windows, keybind, agenti, plugin e server MCP.">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root=".." data-page="opencode/configurazione.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Configurazione</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Guida</p>
+      <h1>Configurazione</h1>
+      <p class="lead">
+        OpenCode usa due configurazioni separate: una per il terminale e una per
+        server e progetto. Confonderle &egrave; l'errore pi&ugrave; comune.
+      </p>
+
+      <h2>Due file, due scopi</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>File</th><th>Cosa configura</th><th>Dove sta</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>cli.json</code></td>
+              <td>Solo il terminale: tema, keybind, input, tab, diff, avvisi, Mini, plugin TUI.</td>
+              <td><code>~/.config/opencode/cli.json</code></td>
+            </tr>
+            <tr>
+              <td><code>opencode.json</code><br><code>opencode.jsonc</code></td>
+              <td>Server e progetto: modello, agenti, comandi, plugin, provider, MCP, permessi, skill, istruzioni.</td>
+              <td><code>~/.config/opencode/</code> oppure <code>.opencode/</code> nel progetto</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Su Windows, <code>~</code> corrisponde alla cartella del profilo
+        (<code>%USERPROFILE%</code>), quindi i percorsi globali diventano:
+      </p>
+      <pre><code>%USERPROFILE%\.config\opencode\cli.json
+%USERPROFILE%\.config\opencode\opencode.json
+%USERPROFILE%\.config\opencode\opencode.jsonc</code></pre>
+      <div class="callout warn">
+        <strong>Attenzione:</strong> tema e keybind <em>non</em> vanno in
+        <code>opencode.json</code>. Se li metti l&igrave;, vengono ignorati.
+        <code>cli.json</code> non ha una variante di progetto: &egrave; sempre
+        globale.
+      </div>
+
+      <h2>cli.json</h2>
+      <p>Esempio con le impostazioni pi&ugrave; utili:</p>
+      <pre><code>{
+  "keybinds": {
+    "leader": "ctrl+x",
+    "agent.cycle": "alt+p",
+    "command.palette.show": "ctrl+p"
+  },
+  "leader": {
+    "timeout": 1500
+  }
+}</code></pre>
+
+      <h3>Keybind</h3>
+      <p>Un tasto singolo:</p>
+      <pre><code>{
+  "keybinds": {
+    "command.palette.show": "ctrl+k"
+  }
+}</code></pre>
+      <p>Pi&ugrave; alternative, separate da virgola:</p>
+      <pre><code>{
+  "keybinds": {
+    "app.exit": "ctrl+c,ctrl+d"
+  }
+}</code></pre>
+      <p>Disattivare un binding:</p>
+      <pre><code>{
+  "keybinds": {
+    "app.debug": "none",
+    "help.show": false
+  }
+}</code></pre>
+      <p>Forma a oggetto, quando serve controllare il comportamento dell'evento:</p>
+      <pre><code>{
+  "keybinds": {
+    "prompt.paste": {
+      "key": "ctrl+v",
+      "preventDefault": false
+    }
+  }
+}</code></pre>
+      <p>
+        Il leader predefinito &egrave; <kbd>Ctrl</kbd>+<kbd>X</kbd>. Dentro gli
+        altri binding, <code>&lt;leader&gt;</code> si riferisce a quel tasto:
+      </p>
+      <pre><code>{
+  "keybinds": {
+    "leader": "ctrl+space",
+    "model.list": "&lt;leader&gt;m"
+  },
+  "leader": {
+    "timeout": 2000
+  }
+}</code></pre>
+      <p>
+        Gli ID di comando sconosciuti vengono ignorati. L'elenco completo &egrave;
+        nella pagina <a href="scorciatoie.html">Scorciatoie da tastiera</a>.
+      </p>
+
+      <h3>Tema e altre preferenze</h3>
+      <p>
+        Tema, modalit&agrave; chiara/scura, comportamento dell'input, tab e diff
+        vivono tutti in <code>cli.json</code>. Puoi anche cambiarli dalla TUI con
+        <kbd>Ctrl</kbd>+<kbd>P</kbd> &rarr; <strong>Open settings</strong>.
+      </p>
+      <p>
+        In alternativa, puoi fondere JSON inline sopra la configurazione globale
+        con la variabile d'ambiente <code>OPENCODE_CLI_CONFIG_CONTENT</code>.
+      </p>
+
+      <h2>opencode.json</h2>
+      <p>
+        Includi sempre lo schema, cos&igrave; l'editor valida i campi e offre
+        l'autocompletamento:
+      </p>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json"
+}</code></pre>
+
+      <h3>Esempio completo</h3>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode/big-pickle",
+  "default_agent": "build",
+  "permissions": [
+    { "action": "shell", "resource": "git push *", "effect": "ask" }
+  ],
+  "agents": {
+    "plan": { "mode": "primary" },
+    "reviewer": {
+      "description": "Revisiona le modifiche",
+      "mode": "subagent",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" }
+      ]
+    }
+  },
+  "plugins": ["%USERPROFILE%\\.config\\opencode\\node_modules\\superpowers"],
+  "providers": {
+    "github-copilot": {
+      "models": {
+        "gpt-5.5": { "name": "GPT-5.5" }
+      }
+    }
+  },
+  "mcp": {
+    "servers": {}
+  }
+}</code></pre>
+
+      <h3>Dove viene cercato</h3>
+      <p>
+        La configurazione globale vale per ogni progetto. Quella di progetto pu&ograve;
+        stare in qualsiasi directory come <code>opencode.json(c)</code> o
+        <code>.opencode/opencode.json(c)</code>, anche in package annidati di un
+        monorepo.
+      </p>
+      <p>
+        Durante la scoperta normale, OpenCode cerca nella directory corrente e in
+        tutti i suoi antenati fino alla radice del filesystem. I file pi&ugrave;
+        vicini hanno la precedenza; i file dentro <code>.opencode/</code> hanno la
+        precedenza su quelli diretti.
+      </p>
+
+      <h2>Ricarica</h2>
+      <p>
+        Le modifiche vengono applicate senza riavviare: OpenCode osserva i file di
+        configurazione e ricarica agenti, comandi, skill, server MCP e plugin dopo
+        il salvataggio. La TUI fa lo stesso per <code>cli.json</code>.
+      </p>
+      <p>Per forzare una ricarica completa:</p>
+      <pre><code>opencode reload</code></pre>
+      <p>Oppure, dalla TUI, il comando <code>/reload</code>.</p>
+
+      <h2>Plugin</h2>
+      <pre><code>opencode plugin list
+opencode plugin add @esempio/opencode-tui
+opencode plugin check
+opencode plugin update
+opencode plugin remove @esempio/opencode-tui</code></pre>
+      <p>
+        In configurazione, il campo V2 &egrave; <code>plugins</code>. Il vecchio
+        <code>plugin</code> (singolare) &egrave; ancora accettato per
+        compatibilit&agrave;, ma &egrave; deprecato: usa <code>plugins</code> nei
+        file nuovi.
+      </p>
+
+      <h2>Server MCP</h2>
+      <pre><code>opencode mcp add context7 --url https://mcp.context7.com/mcp
+opencode mcp list
+opencode mcp auth sentry
+opencode mcp logout sentry</code></pre>
+      <p>
+        I server si configurano sotto <code>mcp.servers</code>. I server remoti
+        usano OAuth per impostazione predefinita: se <code>mcp list</code> segnala
+        che serve l'autenticazione, apri <code>/mcps</code> nella TUI, scegli il
+        server e accedi.
+      </p>
+
+      <h2>Permessi</h2>
+      <p>
+        I permessi sono regole ordinate. Vince l'ultima regola che corrisponde,
+        quindi metti le regole generiche prima delle eccezioni.
+      </p>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "ask" },
+    { "action": "shell", "resource": "git status", "effect": "allow" }
+  ]
+}</code></pre>
+      <p>
+        Azioni comuni: <code>shell</code>, <code>edit</code>,
+        <code>subagent</code>, <code>read</code>, <code>glob</code>,
+        <code>grep</code>, <code>webfetch</code>, <code>websearch</code>,
+        <code>skill</code>. Effetti: <code>allow</code>, <code>ask</code>,
+        <code>deny</code>.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione OpenCode</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.2.5</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

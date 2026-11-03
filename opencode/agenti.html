@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenti: Build e Plan — Adripedia</title>
+  <meta name="description" content="Build, Plan e gli altri agenti di OpenCode V2: come cambiarli e come configurarli.">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root=".." data-page="opencode/agenti.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Agenti: Build e Plan</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Guida</p>
+      <h1>Agenti: Build e Plan</h1>
+      <p class="lead">
+        In OpenCode V2 &laquo;Build&raquo; e &laquo;Plan&raquo; non sono modalit&agrave;
+        della TUI: sono due agenti. Questo cambia il modo in cui si passa
+        dall'uno all'altro.
+      </p>
+
+      <h2>Che cos'&egrave; un agente</h2>
+      <p>
+        Un agente combina un prompt di sistema, un modello preferito, permessi e
+        dettagli di visualizzazione. &Egrave; un profilo assistente con un nome:
+        sceglierlo cambia <em>come</em> lavora OpenCode, non solo l'etichetta
+        nell'interfaccia.
+      </p>
+
+      <h2>Gli agenti inclusi</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Agente</th><th>ID</th><th>Modalit&agrave;</th><th>A cosa serve</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Build</strong></td>
+              <td><code>build</code></td>
+              <td><code>primary</code></td>
+              <td>Agente di coding predefinito. Pu&ograve; modificare file e usare strumenti fuori dalla workspace; la lettura dei file <code>.env</code> chiede approvazione.</td>
+            </tr>
+            <tr>
+              <td><strong>Plan</strong></td>
+              <td><code>plan</code></td>
+              <td><code>primary</code></td>
+              <td>Esplora e pianifica senza modificare i file normali del progetto. Pu&ograve; scrivere i file di piano di OpenCode; i comandi shell restano soggetti ai permessi.</td>
+            </tr>
+            <tr>
+              <td><strong>General</strong></td>
+              <td><code>general</code></td>
+              <td><code>subagent</code></td>
+              <td>Ricerca e lavoro multi-step con accesso ampio agli strumenti, ma non pu&ograve; lanciare altri subagenti.</td>
+            </tr>
+            <tr>
+              <td><strong>Explore</strong></td>
+              <td><code>explore</code></td>
+              <td><code>subagent</code></td>
+              <td>Cerca e legge codice o fonti web senza modificare file.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Esistono anche tre agenti nascosti (<code>compaction</code>,
+        <code>title</code>, <code>summary</code>) che svolgono manutenzione e non
+        si possono selezionare.
+      </p>
+
+      <h2>Come cambiare agente</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Azione</th><th>Come</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Agente successivo</td><td><kbd>Shift</kbd>+<kbd>Tab</kbd></td></tr>
+            <tr><td>Lista agenti</td><td><kbd>Ctrl</kbd>+<kbd>X</kbd>, poi <kbd>A</kbd></td></tr>
+            <tr><td>Lista agenti (comando)</td><td><code>/agents</code></td></tr>
+            <tr><td>Scorciatoia personalizzata</td><td><code>agent.cycle</code> in <code>cli.json</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <strong>Perch&eacute; <kbd>Tab</kbd> non funziona pi&ugrave;?</strong>
+        Nella V1 <kbd>Tab</kbd> alternava Build e Plan. Nella V2 quella
+        scorciatoia non esiste: il passaggio tra agenti &egrave;
+        <kbd>Shift</kbd>+<kbd>Tab</kbd> (voce <code>agent.cycle</code>). Se
+        <kbd>Shift</kbd>+<kbd>Tab</kbd> non fa nulla, quasi sempre &egrave; il
+        terminale che la intercetta: rimappa il comando su un altro tasto.
+      </div>
+
+      <h3>Esempio: rimappare il cambio agente</h3>
+      <p>
+        Crea o modifica <code>~/.config/opencode/cli.json</code> (su Windows
+        <code>%USERPROFILE%\.config\opencode\cli.json</code>):
+      </p>
+      <pre><code>{
+  "keybinds": {
+    "agent.cycle": "alt+p"
+  }
+}</code></pre>
+      <p>
+        <kbd>Alt</kbd>+<kbd>P</kbd> &egrave; libero nelle impostazioni
+        predefinite della V2 e non collide con le scorciatoie di which-key
+        (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+&hellip;). Le modifiche a
+        <code>cli.json</code> vengono ricaricate senza riavviare.
+      </p>
+
+      <h2>Configurare un agente</h2>
+      <p>
+        Puoi definire agenti in Markdown oppure in JSON. I file Markdown stanno in:
+      </p>
+      <pre><code>~/.config/opencode/agents/&lt;nome&gt;.md
+.opencode/agents/&lt;nome&gt;.md</code></pre>
+      <p>
+        Su Windows la prima cartella &egrave;
+        <code>%USERPROFILE%\.config\opencode\agents\</code>.
+      </p>
+
+      <h3>Markdown</h3>
+      <pre><code>---
+description: Revisiona le modifiche senza toccare i file
+mode: subagent
+model: anthropic/claude-sonnet-5-5#high
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+---
+
+Revisiona le modifiche correnti. Elenca i problemi in ordine di gravit&agrave;,
+con file e riga.</code></pre>
+
+      <h3>JSON</h3>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "agents": {
+    "reviewer": {
+      "description": "Revisiona le modifiche correnti",
+      "mode": "subagent",
+      "system": "Riporta i problemi in ordine di gravit&agrave;.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" }
+      ]
+    }
+  }
+}</code></pre>
+
+      <h2>Campi principali</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Campo</th><th>Significato</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>mode</code></td><td><code>primary</code> (agente principale), <code>subagent</code> (solo sessione figlia) o <code>all</code>. Default per un nuovo agente: <code>primary</code>.</td></tr>
+            <tr><td><code>model</code></td><td><code>provider/modello</code>, con variante opzionale <code>#high</code>.</td></tr>
+            <tr><td><code>system</code></td><td>Prompt di sistema. In Markdown &egrave; il corpo del file.</td></tr>
+            <tr><td><code>description</code></td><td>Spiega lo scopo, soprattutto per i subagenti.</td></tr>
+            <tr><td><code>permissions</code></td><td>Regole ordinate: <code>action</code>, <code>resource</code>, <code>effect</code> (<code>allow</code>, <code>ask</code>, <code>deny</code>). Vince l'ultima regola che corrisponde.</td></tr>
+            <tr><td><code>steps</code></td><td>Numero massimo di passi del modello.</td></tr>
+            <tr><td><code>hidden</code></td><td>Nasconde l'agente dagli elenchi. Non &egrave; una misura di sicurezza.</td></tr>
+            <tr><td><code>disabled</code></td><td>Rimuove un agente (anche incluso) in quel punto della configurazione.</td></tr>
+            <tr><td><code>color</code></td><td>Colore dell'agente, esadecimale a sei cifre.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Agente predefinito</h2>
+      <p>
+        Per scegliere l'agente usato quando una sessione non ne ha gi&agrave; uno:
+      </p>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "plan",
+  "agents": {
+    "plan": { "mode": "primary" }
+  }
+}</code></pre>
+      <p>
+        L'agente predefinito deve esistere, essere visibile e supportare l'uso
+        come primario. Altrimenti OpenCode usa <code>build</code>, poi il primo
+        agente primario visibile.
+      </p>
+      <div class="callout">
+        <strong>Nota:</strong> cambiare agente non cambia il modello della
+        sessione. Modello e agente sono selezioni separate.
+      </div>
+
+      <h2>Disattivare un agente incluso</h2>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "agents": {
+    "plan": { "disabled": true }
+  }
+}</code></pre>
+      <p>
+        Utile se vuoi che <kbd>Shift</kbd>+<kbd>Tab</kbd> non passi pi&ugrave;
+        da Plan.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione OpenCode</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.2.5</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

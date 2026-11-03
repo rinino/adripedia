@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comandi slash — Adripedia</title>
+  <meta name="description" content="I comandi slash di OpenCode V2 e come crearne di personalizzati in Markdown o JSON.">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root=".." data-page="opencode/comandi-slash.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Comandi slash</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Riferimento</p>
+      <h1>Comandi slash</h1>
+      <p class="lead">
+        I comandi che iniziano con <code>/</code> trasformano una scorciatoia in
+        un prompt. Alcuni sono inclusi, altri li definisci tu.
+      </p>
+
+      <h2>Come si usano</h2>
+      <p>
+        Scrivi <code>/</code> nel prompt: appare la lista. Continua a scrivere per
+        filtrare, poi premi <kbd>Enter</kbd> sul comando scelto.
+      </p>
+      <pre><code>/models</code></pre>
+
+      <h2>Comandi inclusi o disponibili</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+          <tbody>
+            <tr><td><code>/new</code></td><td>Nuova sessione.</td></tr>
+            <tr><td><code>/sessions</code></td><td>Elenca e riapre le sessioni.</td></tr>
+            <tr><td><code>/models</code></td><td>Scegli il modello.</td></tr>
+            <tr><td><code>/agents</code></td><td>Scegli l'agente (Build, Plan, &hellip;).</td></tr>
+            <tr><td><code>/undo</code></td><td>Annulla l'ultimo messaggio utente e il lavoro successivo.</td></tr>
+            <tr><td><code>/redo</code></td><td>Ripristina il lavoro annullato.</td></tr>
+            <tr><td><code>/editor</code></td><td>Modifica il prompt nell'editor esterno.</td></tr>
+            <tr><td><code>/btw &lt;domanda&gt;</code></td><td>Domanda laterale: usa il contesto ma non entra nella conversazione.</td></tr>
+            <tr><td><code>/highlights</code></td><td>Rivedi le novit&agrave; dell'ultima release.</td></tr>
+            <tr><td><code>/reload</code></td><td>Ricarica la configurazione.</td></tr>
+            <tr><td><code>/mcps</code></td><td>Gestisci i server MCP e l'autenticazione OAuth.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <strong>Suggerimento:</strong> la lista vera &egrave; quella che vedi
+        digitando <code>/</code> nella tua installazione. Per <em>tutte</em> le
+        azioni, anche quelle senza comando slash, usa <kbd>Ctrl</kbd>+<kbd>P</kbd>
+        (command palette).
+      </div>
+
+      <h2>Comandi presenti in questa installazione</h2>
+      <p>
+        Oltre ai comandi inclusi, in questa installazione risultano definiti:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Descrizione</th></tr></thead>
+          <tbody>
+            <tr><td><code>/init</code></td><td>Setup guidato di <code>AGENTS.md</code>.</td></tr>
+            <tr><td><code>/review</code></td><td>Revisiona le modifiche <code>[commit|branch|pr]</code>; default: non committate.</td></tr>
+            <tr><td><code>/goal</code></td><td>Continua finch&eacute; un obiettivo &egrave; raggiunto <code>[pause|resume|clear]</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Sono forniti dal plugin <code>superpowers</code> configurato in
+        <code>opencode.jsonc</code>. Se rimuovi il plugin, spariscono.
+      </p>
+
+      <h2>Creare un comando</h2>
+      <p>Crea un file Markdown in una di queste cartelle:</p>
+      <pre><code>~/.config/opencode/commands/review.md
+.opencode/commands/review.md</code></pre>
+      <p>
+        Su Windows la prima &egrave;
+        <code>%USERPROFILE%\.config\opencode\commands\</code>. Vengono scoperti
+        solo i file <code>.md</code>. I percorsi annidati diventano parte del nome:
+        <code>team/review.md</code> si invoca come <code>/team/review</code>.
+      </p>
+
+      <h3>Esempio minimo</h3>
+      <pre><code>Revisiona $ARGUMENTS per bug e test mancanti.</code></pre>
+      <p>
+        <code>/review src/auth.ts</code> invia:
+        <code>Revisiona src/auth.ts per bug e test mancanti.</code>
+      </p>
+
+      <h3>Con frontmatter</h3>
+      <pre><code>---
+description: Revisiona il codice
+agent: plan
+model: anthropic/claude-sonnet-5-5#high
+---
+
+Revisiona $ARGUMENTS. Riporta prima i bug.</code></pre>
+
+      <h3>In JSON</h3>
+      <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "commands": {
+    "review": {
+      "description": "Revisiona il codice",
+      "template": "Revisiona $ARGUMENTS. Riporta prima i bug."
+    }
+  }
+}</code></pre>
+
+      <h2>Campi</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Campo</th><th>Comportamento</th></tr></thead>
+          <tbody>
+            <tr><td><code>template</code></td><td>Solo JSON: il testo del prompt. In Markdown &egrave; il corpo del file.</td></tr>
+            <tr><td><code>description</code></td><td>Testo mostrato nelle liste e nella scoperta.</td></tr>
+            <tr><td><code>agent</code></td><td>Agente selezionato quando il comando parte.</td></tr>
+            <tr><td><code>model</code></td><td>Modello, con variante opzionale.</td></tr>
+            <tr><td><code>subagent</code></td><td><code>true</code> esegue in una sessione figlia in background; <code>false</code> forza la sessione corrente.</td></tr>
+            <tr><td><code>subtask</code></td><td>Alias deprecato di <code>subagent</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Argomenti</h2>
+      <p><code>$ARGUMENTS</code> contiene tutta la stringa inserita:</p>
+      <pre><code>Crea un componente React tipizzato chiamato $ARGUMENTS.</code></pre>
+      <p>
+        Con <code>/component Account Settings</code>, il segnaposto diventa
+        <code>Account Settings</code>.
+      </p>
+      <p>
+        <code>$1</code>, <code>$2</code>, ecc. estraggono argomenti posizionali;
+        le virgolette raggruppano le parole e vengono rimosse:
+      </p>
+      <pre><code>Controlla $1. Concentrati su $2.</code></pre>
+      <p>
+        Con <code>/check src/auth.ts "gestione errori"</code>, <code>$1</code>
+        diventa <code>src/auth.ts</code> e <code>$2</code> diventa
+        <code>gestione errori</code>. Il segnaposto con il numero pi&ugrave; alto
+        consuma anche tutto ci&ograve; che segue.
+      </p>
+      <p>
+        Se il template non contiene n&eacute; <code>$ARGUMENTS</code> n&eacute;
+        segnaposto posizionali, gli argomenti non vuoti vengono aggiunti dopo una
+        riga vuota.
+      </p>
+
+      <h2>Blocchi shell</h2>
+      <p>
+        Racchiudi un comando tra <code>!</code> e i backtick per inserire il suo
+        output prima dell'invio:
+      </p>
+      <pre><code>Revisiona questo diff:
+
+!`git diff --stat &amp;&amp; git diff`</code></pre>
+      <div class="callout warn">
+        I blocchi shell vengono eseguiti quando OpenCode valuta il comando, fuori
+        dal flusso dei permessi degli strumenti. Usali solo con sorgenti fidate e
+        non inserire argomenti non fidati dentro i blocchi.
+      </div>
+
+      <h2>Esecuzione in background</h2>
+      <pre><code>---
+description: Revisiona le modifiche
+agent: general
+subagent: true
+---
+
+Revisiona $ARGUMENTS per bug e test mancanti.</code></pre>
+      <p>
+        Il padre resta disponibile e conserva agente e modello. Quando il figlio
+        finisce, OpenCode riporta il risultato o l'errore al padre.
+      </p>
+
+      <h2>Precedenza</h2>
+      <p>
+        Comandi Markdown e JSON condividono un unico registro. Le fonti successive
+        sostituiscono i comandi con lo stesso nome: il progetto vince sul globale,
+        e la cartella pi&ugrave; vicina vince su quella antenata. Un comando
+        personalizzato pu&ograve; anche sostituire un comando incluso.
+      </p>
+      <p>
+        Le modifiche ai file dei comandi vengono ricaricate automaticamente:
+        salvi il file e <code>/review</code> &egrave; gi&agrave; aggiornato.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione OpenCode</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.2.5</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

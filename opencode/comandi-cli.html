@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comandi CLI — Adripedia</title>
+  <meta name="description" content="Tutti i sottocomandi e i flag della CLI di OpenCode V2, con esempi.">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root=".." data-page="opencode/comandi-cli.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Comandi CLI</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Riferimento</p>
+      <h1>Comandi CLI</h1>
+      <p class="lead">
+        Tutto ci&ograve; che puoi lanciare da terminale con <code>opencode</code>.
+        Ogni comando accetta <code>--help</code> per l'elenco completo dei flag.
+      </p>
+
+      <h2>Sintassi</h2>
+      <pre><code>opencode &lt;sottocomando&gt; [flag] [directory]</code></pre>
+
+      <h2>Flag principali</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Significato</th></tr></thead>
+          <tbody>
+            <tr><td><code>--standalone</code></td><td>Usa un server privato invece del servizio condiviso.</td></tr>
+            <tr><td><code>--server &lt;url&gt;</code></td><td>Collegati a un server specifico.</td></tr>
+            <tr><td><code>--auto</code></td><td>Approva automaticamente i permessi non esplicitamente negati.</td></tr>
+            <tr><td><code>--continue</code>, <code>-c</code></td><td>Continua l'ultima sessione.</td></tr>
+            <tr><td><code>--session</code>, <code>-s &lt;id&gt;</code></td><td>Continua una sessione specifica, o creala se non esiste.</td></tr>
+            <tr><td><code>--prompt &lt;testo&gt;</code></td><td>Prompt iniziale.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Flag globali</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Significato</th></tr></thead>
+          <tbody>
+            <tr><td><code>--help</code>, <code>-h</code></td><td>Mostra l'aiuto.</td></tr>
+            <tr><td><code>--version</code>, <code>-v</code></td><td>Mostra la versione.</td></tr>
+            <tr><td><code>--wizard</code></td><td>Avvia la modalit&agrave; guidata per un comando.</td></tr>
+            <tr><td><code>--completions &lt;shell&gt;</code></td><td>Stampa lo script di completamento: <code>bash</code>, <code>zsh</code>, <code>fish</code>, <code>powershell</code>, <code>sh</code>, <code>pwsh</code>.</td></tr>
+            <tr><td><code>--log-level &lt;livello&gt;</code></td><td><code>all</code>, <code>trace</code>, <code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code>, <code>fatal</code>, <code>none</code>.</td></tr>
+            <tr><td><code>--print-logs</code></td><td>Stampa i log su stderr (i log del server richiedono <code>--standalone</code>).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Sottocomandi</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+          <tbody>
+            <tr><td><code>opencode</code></td><td>Apre la TUI nella cartella corrente (o in quella indicata).</td></tr>
+            <tr><td><code>run</code></td><td>Esegue un prompt e stampa la risposta, senza TUI.</td></tr>
+            <tr><td><code>mini</code></td><td>Interfaccia interattiva minimale.</td></tr>
+            <tr><td><code>serve</code></td><td>Avvia il server API e web V2.</td></tr>
+            <tr><td><code>pair</code></td><td>Stampa link monouso per collegare browser o app.</td></tr>
+            <tr><td><code>session</code></td><td>Gestisce le sessioni.</td></tr>
+            <tr><td><code>auth</code></td><td>Gestisce integrazioni e credenziali.</td></tr>
+            <tr><td><code>models</code></td><td>Elenca i modelli disponibili.</td></tr>
+            <tr><td><code>mcp</code></td><td>Gestisce i server MCP.</td></tr>
+            <tr><td><code>plugin</code></td><td>Gestisce i plugin.</td></tr>
+            <tr><td><code>stats</code></td><td>Statistiche d'uso condivisibili.</td></tr>
+            <tr><td><code>service</code></td><td>Gestisce il server in background.</td></tr>
+            <tr><td><code>reload</code></td><td>Ricarica la configurazione.</td></tr>
+            <tr><td><code>api</code></td><td>Chiama l'API del server in esecuzione.</td></tr>
+            <tr><td><code>acp</code></td><td>Avvia un server Agent Client Protocol.</td></tr>
+            <tr><td><code>debug</code></td><td>Strumenti di diagnostica.</td></tr>
+            <tr><td><code>upgrade</code>, <code>update</code></td><td>Aggiorna OpenCode.</td></tr>
+            <tr><td><code>uninstall</code></td><td>Disinstalla OpenCode, conservando dati e configurazione.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>run</h2>
+      <p>Invia un messaggio e stampa la risposta. Pensato per script e CI.</p>
+      <pre><code>opencode run "Spiega questo repository"
+
+opencode run --model anthropic/claude-sonnet-5-5 "Rifattorizza parseToken"
+
+opencode run --continue "Ora gestisci il caso scaduto"
+
+opencode run --agent build "Correggi il test che fallisce"
+
+opencode run --format json "Elenca i commenti TODO"
+
+opencode run --file src/server.ts --file src/client.ts "Cerca bug"</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>Significato</th></tr></thead>
+          <tbody>
+            <tr><td><code>--continue</code>, <code>-c</code></td><td>Continua l'ultima sessione.</td></tr>
+            <tr><td><code>--session</code>, <code>-s</code></td><td>Continua una sessione specifica.</td></tr>
+            <tr><td><code>--fork</code></td><td>Esegue un fork della sessione prima di continuare.</td></tr>
+            <tr><td><code>--model</code>, <code>-m</code></td><td>Modello nel formato <code>provider/modello#variante</code>.</td></tr>
+            <tr><td><code>--agent</code></td><td>Agente da usare.</td></tr>
+            <tr><td><code>--format</code></td><td><code>default</code> o <code>json</code>.</td></tr>
+            <tr><td><code>--file</code>, <code>-f</code></td><td>Allega un file al messaggio.</td></tr>
+            <tr><td><code>--title</code></td><td>Titolo della sessione.</td></tr>
+            <tr><td><code>--thinking</code></td><td>Mostra i blocchi di ragionamento.</td></tr>
+            <tr><td><code>--auto</code></td><td>Approva i permessi non esplicitamente negati.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>mini</h2>
+      <pre><code>opencode mini
+opencode mini --continue
+opencode mini --model anthropic/claude-sonnet-5-5 --prompt "Riassumi il repository"
+opencode mini --session ses_4f2a1c</code></pre>
+      <p>
+        Flag: <code>--continue</code>, <code>--session</code>, <code>--fork</code>,
+        <code>--replay</code>, <code>--replay-limit</code>, <code>--model</code>,
+        <code>--agent</code>, <code>--prompt</code>.
+      </p>
+
+      <h2>session</h2>
+      <pre><code>opencode session list
+opencode session list --max-count 20 --format json
+opencode session delete ses_9c1b08
+opencode session export ses_4f2a1c
+opencode session export ses_4f2a1c --sanitize
+opencode session import session.json
+opencode session import session.json --directory ~/code/progetto</code></pre>
+
+      <h2>auth</h2>
+      <pre><code>opencode auth list
+opencode auth list --format json
+opencode auth login anthropic
+opencode auth login anthropic --method key
+opencode auth logout anthropic work
+opencode auth switch anthropic work
+opencode auth export anthropic &gt; credentials.json
+opencode auth import credentials.json</code></pre>
+      <div class="callout warn">
+        <code>auth export</code> include i segreti. Tratta il file come una
+        password.
+      </div>
+
+      <h2>models</h2>
+      <pre><code>opencode models</code></pre>
+
+      <h2>mcp</h2>
+      <pre><code>opencode mcp list
+opencode mcp add context7 --url https://mcp.context7.com/mcp
+opencode mcp add everything --global -- npx -y @modelcontextprotocol/server-everything
+opencode mcp add everything --env LOG_LEVEL=debug -- npx -y @modelcontextprotocol/server-everything
+opencode mcp add context7 --url https://mcp.context7.com/mcp --header CONTEXT7_API_KEY=secret
+opencode mcp auth sentry
+opencode mcp logout sentry</code></pre>
+
+      <h2>plugin</h2>
+      <pre><code>opencode plugin list
+opencode plugin list --builtin
+opencode plugin add @esempio/opencode-tui
+opencode plugin check
+opencode plugin update
+opencode plugin remove @esempio/opencode-tui</code></pre>
+
+      <h2>stats</h2>
+      <pre><code>opencode stats
+opencode stats --days 7
+opencode stats --models
+opencode stats --cost
+opencode stats --json
+opencode stats --project .</code></pre>
+      <p>
+        Altri flag: <code>--year</code>, <code>--all</code>, <code>--tools</code>,
+        <code>--full</code>, <code>--limit</code>.
+      </p>
+
+      <h2>serve</h2>
+      <pre><code>opencode serve
+opencode serve --hostname 0.0.0.0 --port 4096
+opencode serve --cors https://app.example.com</code></pre>
+
+      <h2>pair</h2>
+      <pre><code>opencode pair
+opencode pair --url https://dev.example.com
+opencode pair --remote
+opencode pair --remote --yes</code></pre>
+      <div class="callout warn">
+        <code>--remote</code> espone il server a Internet tramite OpenTunnel. La
+        prima volta chiede conferma.
+      </div>
+
+      <h2>service</h2>
+      <pre><code>opencode service start
+opencode service restart
+opencode service status
+opencode service stop
+opencode service get hostname
+opencode service set hostname 0.0.0.0
+opencode service set cors https://app.example.com
+opencode service set env OPENCODE_LOG_LEVEL DEBUG
+opencode service unset hostname</code></pre>
+
+      <h2>reload</h2>
+      <pre><code>opencode reload</code></pre>
+      <p>
+        Ricarica la configurazione senza riavviare il server. Le sessioni in
+        corso continuano con i nuovi servizi al confine del passo successivo.
+      </p>
+
+      <h2>api</h2>
+      <pre><code>opencode api GET /api/session
+opencode api session.list --param limit=10
+opencode api session.create --data '{"title": "Nuova sessione"}'
+opencode api GET /api/session -H "accept: application/json"</code></pre>
+      <p>
+        Flag: <code>--data</code>/<code>-d</code>, <code>--header</code>/<code>-H</code>,
+        <code>--param key=value</code>. Accetta anche <code>--standalone</code> e
+        <code>--server</code>.
+      </p>
+
+      <h2>acp</h2>
+      <pre><code>opencode acp
+opencode acp --login</code></pre>
+
+      <h2>debug</h2>
+      <pre><code>opencode debug agents
+opencode debug config
+opencode debug heap-dump
+opencode debug heap-dump --directory ./snapshots
+opencode debug paths
+opencode debug paths db</code></pre>
+
+      <h2>upgrade</h2>
+      <pre><code>opencode upgrade
+opencode upgrade 2.0.21
+opencode upgrade 2.0.21 --method bun</code></pre>
+      <p>
+        Metodi: <code>curl</code>, <code>npm</code>, <code>pnpm</code>,
+        <code>bun</code>, <code>yarn</code>, <code>vp</code>, <code>brew</code>,
+        <code>winget</code>.
+      </p>
+
+      <h2>uninstall</h2>
+      <pre><code>opencode uninstall --dry-run
+opencode uninstall
+opencode uninstall --force</code></pre>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione OpenCode</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.2.5</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>
