@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Git — Adripedia</title>
+  <meta name="description" content="Guida pratica a Git: che cos'è, installazione su Windows e Linux, concetti base e comandi utili con esempi.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/git/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Git</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Git</h1>
+      <p class="lead">
+        Guida pratica a Git: che cos'&egrave;, come installarlo su Windows e
+        Linux e i comandi che servono davvero, con esempi pronti da copiare.
+        Contenuti verificati sulla versione <code>2.56.0</code>.
+      </p>
+
+      <div class="callout">
+        <strong>Versione documentata:</strong> Git <code>2.56.0</code> e Git for
+        Windows <code>2.56.0.windows.4</code> (ottobre 2026). Git &egrave;
+        distribuito con licenza GPLv2.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei quattro tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida Git">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-windows" type="button" role="tab"
+                  aria-selected="false" aria-controls="windows" tabindex="-1">
+            Installazione Windows
+          </button>
+          <button class="tab" id="tab-linux" type="button" role="tab"
+                  aria-selected="false" aria-controls="linux" tabindex="-1">
+            Installazione Linux
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <h2>Che cos'&egrave; Git</h2>
+          <p>
+            Git &egrave; un <strong>sistema di controllo di versione
+            distribuito</strong> (DVCS): registra la storia di un progetto,
+            permette di tornare indietro, lavorare su pi&ugrave; rami e
+            collaborare senza dipendere da un server centrale. &Egrave; stato
+            creato da Linus Torvalds nel 2005 per gestire il kernel Linux ed
+            &egrave; oggi lo standard di fatto per il codice sorgente.
+          </p>
+          <p>
+            In un DVCS ogni copia del repository contiene <strong>tutta la
+            storia</strong>: puoi fare commit, consultare il log e creare branch
+            anche offline. Il server remoto serve per condividere e
+            sincronizzare, non per lavorare.
+          </p>
+
+          <h2>Git non &egrave; GitHub</h2>
+          <p>
+            Git &egrave; lo strumento che installi sul computer. GitHub, GitLab,
+            Bitbucket e Codeberg sono <strong>servizi di hosting</strong> che
+            ospitano repository Git e aggiungono funzioni come pull request,
+            issue e CI. Puoi usare Git benissimo senza alcun servizio esterno.
+          </p>
+
+          <h2>I concetti chiave</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Termine</th><th>Significato</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Repository</strong></td>
+                  <td>Il progetto con tutta la sua storia. La cartella <code>.git</code> contiene i dati; i file che vedi sono il <em>working tree</em>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Working tree</strong></td>
+                  <td>I file su cui stai lavorando, nella cartella del progetto.</td>
+                </tr>
+                <tr>
+                  <td><strong>Staging area</strong></td>
+                  <td>L'area di preparazione (<em>index</em>): ci&ograve; che hai scelto di includere nel prossimo commit con <code>git add</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Commit</strong></td>
+                  <td>Un'istantanea immutabile dello stato del progetto, con autore, data, messaggio e un identificatore SHA.</td>
+                </tr>
+                <tr>
+                  <td><strong>Branch</strong></td>
+                  <td>Un puntatore mobile a un commit. Il branch predefinito oggi si chiama di solito <code>main</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>HEAD</strong></td>
+                  <td>Indica il commit o il branch su cui sei posizionato in questo momento.</td>
+                </tr>
+                <tr>
+                  <td><strong>Remote</strong></td>
+                  <td>Un repository remoto collegato, di solito chiamato <code>origin</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Upstream</strong></td>
+                  <td>Il branch remoto che il tuo branch locale segue (per esempio <code>origin/main</code>).</td>
+                </tr>
+                <tr>
+                  <td><strong>Tag</strong></td>
+                  <td>Un'etichetta fissa su un commit, usata soprattutto per le versioni (<code>v2.56.0</code>).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>I tre stati di un file</h2>
+          <p>Git vede i file in tre passaggi:</p>
+          <ol>
+            <li><strong>Modificato</strong> &mdash; il file &egrave; cambiato nel working tree ma non &egrave; ancora in staging.</li>
+            <li><strong>In staging</strong> &mdash; la modifica &egrave; stata aggiunta con <code>git add</code> e far&agrave; parte del prossimo commit.</li>
+            <li><strong>Registrato</strong> &mdash; la modifica &egrave; stata salvata nella storia con <code>git commit</code>.</li>
+          </ol>
+
+          <h2>Il flusso di lavoro tipico</h2>
+          <pre><code>git clone https://example.com/progetto.git
+cd progetto
+
+# modifica i file...
+
+git status
+git add file.txt
+git commit -m "Descrizione della modifica"
+git push</code></pre>
+          <p>
+            Da quel momento il ciclo &egrave; sempre lo stesso: modifichi,
+            controlli con <code>git status</code> e <code>git diff</code>,
+            prepari con <code>git add</code>, registri con
+            <code>git commit</code> e condividi con <code>git push</code>.
+          </p>
+
+          <h2>Primi passi</h2>
+          <p>Dopo l'installazione, configura la tua identit&agrave; una volta sola:</p>
+          <pre><code>git config --global user.name "Nome Cognome"
+git config --global user.email "nome@example.com"
+git config --global init.defaultBranch main</code></pre>
+          <p>Poi scegli se creare un repository o clonarne uno esistente:</p>
+          <pre><code># nuovo repository nella cartella corrente
+git init
+
+# copia locale di un repository esistente
+git clone https://example.com/progetto.git</code></pre>
+          <div class="callout">
+            <strong>Da dove continuare:</strong> i comandi di installazione sono
+            nei tab <a href="#windows">Installazione Windows</a> e
+            <a href="#linux">Installazione Linux</a>; il riferimento completo
+            &egrave; nel tab <a href="#comandi">Comandi</a>.
+          </div>
+
+          <h2>Versioni e compatibilit&agrave;</h2>
+          <p>
+            Questa guida &egrave; verificata sulla versione <code>2.56.0</code>.
+            I comandi di uso quotidiano sono stabili; <code>git switch</code> e
+            <code>git restore</code> esistono dalla 2.23, quindi su
+            distribuzioni molto vecchie puoi trovare solo <code>git checkout</code>.
+          </p>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://git-scm.com/doc" target="_blank" rel="noopener">Documentazione ufficiale</a></li>
+            <li><a href="https://git-scm.com/book/it/v2" target="_blank" rel="noopener">Pro Git, il libro gratuito (in italiano)</a></li>
+            <li><a href="https://git-scm.com/cheat-sheet" target="_blank" rel="noopener">Cheat sheet ufficiale</a></li>
+            <li><a href="https://git-scm.com/install/" target="_blank" rel="noopener">Pagina di installazione</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Installazione Windows
+             ================================================================ -->
+        <section class="tabpanel" id="windows" role="tabpanel" aria-labelledby="tab-windows" hidden>
+          <h2>Installazione su Windows</h2>
+          <p>
+            Il pacchetto di riferimento &egrave; <strong>Git for Windows</strong>:
+            include Git, Git Bash, una GUI e Git Credential Manager. La versione
+            documentata &egrave; <code>2.56.0(4)</code>.
+          </p>
+
+          <h2>Requisiti</h2>
+          <ul>
+            <li>Windows 10 o 11 (x64); esiste anche la build ARM64.</li>
+            <li>PowerShell o Prompt dei comandi per usare <code>winget</code>.</li>
+            <li>Permessi di amministratore per un'installazione valida per tutti gli utenti.</li>
+          </ul>
+
+          <h2>Metodo 1 &mdash; Installer ufficiale</h2>
+          <ol>
+            <li>Apri <a href="https://git-scm.com/install/windows" target="_blank" rel="noopener">git-scm.com/install/windows</a>.</li>
+            <li>Scarica <strong>Git for Windows/x64 Setup</strong> (oppure la versione ARM64).</li>
+            <li>Avvia l'installer e segui la procedura guidata.</li>
+          </ol>
+          <p>Scelte consigliate durante l'installazione:</p>
+          <ul>
+            <li><strong>Editor predefinito:</strong> quello che usi davvero (VS Code, Notepad++, Vim).</li>
+            <li><strong>PATH:</strong> &laquo;Git from the command line and also from 3rd-party software&raquo;, cos&igrave; <code>git</code> funziona da PowerShell e da altri strumenti.</li>
+            <li><strong>HTTPS transport:</strong> OpenSSL o la libreria di Windows; entrambe funzionano.</li>
+            <li><strong>Line endings:</strong> &laquo;Checkout Windows-style, commit Unix-style&raquo; (<code>core.autocrlf=true</code>).</li>
+            <li><strong>Terminale:</strong> MinTTY (Git Bash) &egrave; la scelta predefinita e va bene.</li>
+            <li><strong>Credential Manager:</strong> lascialo attivo, evita di digitare la password ogni volta.</li>
+          </ul>
+          <pre><code># verifica
+git --version
+# git version 2.56.0.windows.4</code></pre>
+
+          <h2>Metodo 2 &mdash; winget</h2>
+          <p>Da PowerShell:</p>
+          <pre><code>winget install --id Git.Git -e --source winget</code></pre>
+          <p>Per aggiornare:</p>
+          <pre><code>winget upgrade --id Git.Git -e</code></pre>
+          <div class="callout warn">
+            Il pacchetto <code>Git.Git</code> di winget non &egrave; mantenuto dal
+            progetto Git for Windows e pu&ograve; restare indietro rispetto
+            all'ultima versione. Dopo un aggiornamento di sicurezza controlla
+            sempre <code>git --version</code>.
+          </div>
+
+          <h2>Metodo 3 &mdash; Chocolatey</h2>
+          <pre><code>choco install git
+choco upgrade git</code></pre>
+          <p>Vale la stessa avvertenza di winget: il pacchetto &egrave; di terze parti.</p>
+
+          <h2>Versione portable</h2>
+          <p>
+            Se non puoi installare nulla, scarica <strong>PortableGit</strong>
+            (archivio autoestraente), estrailo in una cartella e usa
+            <code>git-bash.exe</code>. Per avere <code>git</code> nel PATH,
+            aggiungi la sottocartella <code>cmd</code> alle variabili d'ambiente.
+          </p>
+
+          <h2>Configurazione iniziale</h2>
+          <pre><code>git config --global user.name "Nome Cognome"
+git config --global user.email "nome@example.com"
+git config --global init.defaultBranch main
+git config --global core.autocrlf true
+git config --global core.editor "code --wait"
+git config --global credential.helper manager
+git config --global --list</code></pre>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Impostazione</th><th>Perch&eacute;</th></tr></thead>
+              <tbody>
+                <tr><td><code>user.name</code>, <code>user.email</code></td><td>Firmano ogni commit; l'email &egrave; quella che vedranno gli altri.</td></tr>
+                <tr><td><code>init.defaultBranch</code></td><td>Nome del branch iniziale: <code>main</code> &egrave; lo standard attuale.</td></tr>
+                <tr><td><code>core.autocrlf</code></td><td>Converte i fine riga: CRLF in checkout, LF nel repository.</td></tr>
+                <tr><td><code>core.editor</code></td><td>Editor usato per i messaggi di commit e il rebase interattivo.</td></tr>
+                <tr><td><code>credential.helper</code></td><td><code>manager</code> usa Git Credential Manager, incluso in Git for Windows.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Per controllare da dove arriva un'impostazione:
+            <code>git config --global --show-origin --list</code>.
+          </p>
+
+          <h2>Git Bash, PowerShell o WSL</h2>
+          <ul>
+            <li><strong>Git Bash</strong> offre un terminale POSIX con i comandi Unix pi&ugrave; comuni.</li>
+            <li><strong>PowerShell</strong> funziona bene per Git; attenzione alle virgolette e ai percorsi con spazi.</li>
+            <li><strong>WSL</strong> &egrave; un'installazione separata: Git dentro WSL ha la sua configurazione e i suoi file. Se usi entrambi, tieni aggiornati tutti e due.</li>
+          </ul>
+
+          <h2>Aggiornare e disinstallare</h2>
+          <pre><code># aggiornamento da Git Bash
+git update-git-for-windows
+
+# alternativa con winget
+winget upgrade --id Git.Git -e
+
+# disinstallazione
+winget uninstall --id Git.Git</code></pre>
+          <p>Dopo l'aggiornamento chiudi e riapri i terminali aperti.</p>
+
+          <h2>Problemi comuni</h2>
+          <ul>
+            <li><code>git</code> non riconosciuto: il PATH non &egrave; aggiornato; riapri il terminale o reinstalla scegliendo l'opzione PATH corretta.</li>
+            <li>File che risultano tutti modificati: controlla <code>core.autocrlf</code> e la configurazione dell'editor.</li>
+            <li>Credenziali richieste ogni volta: verifica <code>git config --global credential.helper</code>.</li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Installazione Linux
+             ================================================================ -->
+        <section class="tabpanel" id="linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
+          <h2>Installazione su Linux</h2>
+          <p>
+            Su Linux Git si installa quasi sempre dal repository della
+            distribuzione. La versione disponibile dipende dalla distro: se ti
+            serve l'ultima, usa il PPA su Ubuntu o compila dai sorgenti.
+          </p>
+
+          <h2>Debian e Ubuntu</h2>
+          <pre><code>sudo apt update
+sudo apt install git</code></pre>
+          <p>Per l'ultima versione stabile su Ubuntu:</p>
+          <pre><code>sudo add-apt-repository ppa:git-core/ppa
+sudo apt update
+sudo apt install git</code></pre>
+
+          <h2>Fedora</h2>
+          <pre><code>sudo dnf install git</code></pre>
+          <p>Su Fedora 21 e precedenti il comando era <code>yum install git</code>.</p>
+
+          <h2>Arch Linux</h2>
+          <pre><code>sudo pacman -S git</code></pre>
+
+          <h2>openSUSE</h2>
+          <pre><code>sudo zypper install git</code></pre>
+
+          <h2>Alpine Linux</h2>
+          <pre><code>sudo apk add git</code></pre>
+
+          <h2>Gentoo</h2>
+          <pre><code>sudo emerge --ask --verbose dev-vcs/git</code></pre>
+
+          <h2>Nix e NixOS</h2>
+          <pre><code># profilo utente
+nix profile install nixpkgs#git
+
+# metodo classico
+nix-env -i git</code></pre>
+          <p>Su NixOS aggiungi <code>pkgs.git</code> a <code>environment.systemPackages</code>.</p>
+
+          <h2>RHEL, CentOS, Rocky Linux e AlmaLinux</h2>
+          <pre><code>sudo dnf install git</code></pre>
+          <p>
+            Queste distribuzioni tendono a fornire versioni pi&ugrave; vecchie. Se
+            ti serve una versione recente, valuta un repository di terze parti
+            oppure la compilazione dai sorgenti.
+          </p>
+
+          <h2>Compilare dai sorgenti</h2>
+          <p>
+            Serve per avere l'ultima versione su distribuzioni che non la
+            forniscono. Le dipendenze cambiano da distro a distro; su
+            Debian/Ubuntu:
+          </p>
+          <pre><code>sudo apt install build-essential libssl-dev libcurl4-openssl-dev \
+  libexpat1-dev gettext zlib1g-dev
+
+wget https://www.kernel.org/pub/software/scm/git/git-2.56.0.tar.gz
+tar -xzf git-2.56.0.tar.gz
+cd git-2.56.0
+
+make prefix=/usr/local all
+sudo make prefix=/usr/local install</code></pre>
+          <div class="callout">
+            Se installi in <code>/usr/local</code>, assicurati che sia nel
+            <code>PATH</code> prima di <code>/usr/bin</code>. Controlla con
+            <code>which git</code>.
+          </div>
+
+          <h2>Verifica</h2>
+          <pre><code>git --version
+which git</code></pre>
+
+          <h2>Configurazione iniziale</h2>
+          <pre><code>git config --global user.name "Nome Cognome"
+git config --global user.email "nome@example.com"
+git config --global init.defaultBranch main
+git config --global core.autocrlf input
+git config --global core.editor "code --wait"
+git config --global pull.rebase false
+git config --global --list</code></pre>
+          <p>
+            Su Linux <code>core.autocrlf input</code> converte i CRLF in LF nel
+            repository senza modificarli nel working tree.
+          </p>
+          <p>Per non digitare la password a ogni push, scegli un credential helper:</p>
+          <pre><code># salvataggio in chiaro in ~/.git-credentials (comodo, poco sicuro)
+git config --global credential.helper store
+
+# cache in memoria per un'ora
+git config --global credential.helper "cache --timeout=3600"
+
+# integrazione con il portachiavi di sistema (GNOME/KDE)
+git config --global credential.helper libsecret</code></pre>
+          <p>
+            Per <code>libsecret</code> serve il pacchetto <code>libsecret</code>
+            e, su alcune distro, <code>git-credential-libsecret</code>.
+          </p>
+
+          <h2>Chiavi SSH</h2>
+          <p>
+            Se usi GitHub, GitLab o un server Git via SSH, crea una chiave e
+            aggiungila al servizio:
+          </p>
+          <pre><code>ssh-keygen -t ed25519 -C "nome@example.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub</code></pre>
+          <p>
+            Copia il contenuto di <code>id_ed25519.pub</code> nelle impostazioni
+            SSH del servizio. Verifica con <code>ssh -T git@github.com</code>.
+          </p>
+
+          <h2>Aggiornare e disinstallare</h2>
+          <pre><code># Debian/Ubuntu
+sudo apt update &amp;&amp; sudo apt upgrade git
+
+# Fedora
+sudo dnf upgrade git
+
+# Arch
+sudo pacman -Syu git
+
+# disinstallazione (esempio Debian/Ubuntu)
+sudo apt remove git</code></pre>
+          <div class="callout warn">
+            La versione della distro pu&ograve; essere pi&ugrave; vecchia della
+            2.56.0. Controlla sempre con <code>git --version</code>: alcune
+            funzioni recenti potrebbero non esserci.
+          </div>
+        </section>
+
+        <!-- ================================================================
+             Comandi
+             ================================================================ -->
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: stash, rebase, push&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare la cheat sheet e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <h2>Cheat sheet</h2>
+          <p>I comandi che userai il 90% delle volte.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+              <tbody>
+                <tr><td><code>git clone &lt;url&gt;</code></td><td>Copia in locale un repository esistente.</td></tr>
+                <tr><td><code>git init</code></td><td>Crea un nuovo repository nella cartella corrente.</td></tr>
+                <tr><td><code>git status</code></td><td>Mostra lo stato di file e staging.</td></tr>
+                <tr><td><code>git add &lt;file&gt;</code></td><td>Aggiunge un file al prossimo commit.</td></tr>
+                <tr><td><code>git add -p</code></td><td>Sceglie interattivamente quali modifiche includere.</td></tr>
+                <tr><td><code>git commit -m "..."</code></td><td>Registra le modifiche in staging.</td></tr>
+                <tr><td><code>git commit --amend</code></td><td>Corregge l'ultimo commit.</td></tr>
+                <tr><td><code>git log --oneline --graph --all</code></td><td>Mostra la cronologia in modo compatto.</td></tr>
+                <tr><td><code>git diff</code></td><td>Mostra le modifiche non ancora in staging.</td></tr>
+                <tr><td><code>git diff --staged</code></td><td>Mostra le modifiche gi&agrave; in staging.</td></tr>
+                <tr><td><code>git switch &lt;branch&gt;</code></td><td>Passa a un branch.</td></tr>
+                <tr><td><code>git switch -c &lt;branch&gt;</code></td><td>Crea un branch e ci passa subito.</td></tr>
+                <tr><td><code>git branch -a</code></td><td>Elenca i branch locali e remoti.</td></tr>
+                <tr><td><code>git merge &lt;branch&gt;</code></td><td>Unisce un branch in quello corrente.</td></tr>
+                <tr><td><code>git pull --ff-only</code></td><td>Aggiorna senza creare merge inattesi.</td></tr>
+                <tr><td><code>git push</code></td><td>Pubblica i commit sul remoto.</td></tr>
+                <tr><td><code>git push -u origin &lt;branch&gt;</code></td><td>Pubblica e imposta l'upstream.</td></tr>
+                <tr><td><code>git fetch --all --prune</code></td><td>Scarica i riferimenti remoti senza fondere.</td></tr>
+                <tr><td><code>git remote -v</code></td><td>Elenca i repository remoti.</td></tr>
+                <tr><td><code>git restore &lt;file&gt;</code></td><td>Annulla le modifiche non salvate.</td></tr>
+                <tr><td><code>git restore --staged &lt;file&gt;</code></td><td>Toglie un file dallo staging.</td></tr>
+                <tr><td><code>git reset --soft HEAD~1</code></td><td>Annulla l'ultimo commit mantenendo le modifiche.</td></tr>
+                <tr><td><code>git revert &lt;commit&gt;</code></td><td>Annulla un commit con un nuovo commit.</td></tr>
+                <tr><td><code>git stash</code></td><td>Mette da parte le modifiche in corso.</td></tr>
+                <tr><td><code>git stash pop</code></td><td>Ripristina le modifiche messe da parte.</td></tr>
+                <tr><td><code>git tag -a &lt;tag&gt; -m "..."</code></td><td>Crea un tag annotato.</td></tr>
+                <tr><td><code>git show &lt;commit&gt;</code></td><td>Mostra dettagli e modifiche di un commit.</td></tr>
+                <tr><td><code>git blame &lt;file&gt;</code></td><td>Mostra chi ha modificato ogni riga.</td></tr>
+                <tr><td><code>git reflog</code></td><td>Recupera i movimenti di HEAD.</td></tr>
+                <tr><td><code>git clean -n</code></td><td>Anteprima dei file non tracciati da eliminare.</td></tr>
+                <tr><td><code>git help &lt;comando&gt;</code></td><td>Apre l'aiuto di un comando.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>&lt;...&gt;</code> indica un valore da sostituire; le parentesi
+            quadre sono opzionali.
+          </p>
+
+          <h2>Configurazione</h2>
+          <pre><code># identità (globale)
+git config --global user.name "Nome Cognome"
+git config --global user.email "nome@example.com"
+
+# branch iniziale e fine riga
+git config --global init.defaultBranch main
+git config --global core.autocrlf true   # Windows
+git config --global core.autocrlf input  # Linux/macOS
+
+# editor e credenziali
+git config --global core.editor "code --wait"
+git config --global credential.helper manager
+
+# leggere e modificare
+git config --global --list
+git config --global --show-origin --list
+git config --global --edit
+git config --global --unset user.email
+
+# alias
+git config --global alias.st status
+git config --global alias.lg "log --oneline --graph --decorate --all"
+
+# solo per il repository corrente
+git config --local user.email "nome@azienda.example"</code></pre>
+
+          <h2>Creare e clonare</h2>
+          <pre><code>git init
+git init -b main
+git clone https://example.com/progetto.git
+git clone https://example.com/progetto.git cartella
+git clone --depth 1 https://example.com/progetto.git
+git clone --branch v2.56.0 https://example.com/progetto.git
+git clone --recurse-submodules https://example.com/progetto.git
+git clone --bare https://example.com/progetto.git</code></pre>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Opzione</th><th>Effetto</th></tr></thead>
+              <tbody>
+                <tr><td><code>--depth 1</code></td><td>Clona solo l'ultimo commit: pi&ugrave; veloce, ma senza storia completa.</td></tr>
+                <tr><td><code>--branch &lt;nome&gt;</code></td><td>Clona un branch o un tag specifico.</td></tr>
+                <tr><td><code>--recurse-submodules</code></td><td>Inizializza anche i submodule.</td></tr>
+                <tr><td><code>--bare</code></td><td>Crea un repository senza working tree, utile come remoto.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Stato e differenze</h2>
+          <pre><code>git status
+git status -sb
+git diff
+git diff --staged
+git diff --stat
+git diff --name-only
+git diff main..feature
+git diff &lt;commit1&gt; &lt;commit2&gt; -- file.txt
+git diff --check</code></pre>
+
+          <h2>Salvare le modifiche</h2>
+          <pre><code>git add file.txt
+git add .
+git add -A
+git add -p
+git commit -m "Messaggio chiaro e breve"
+git commit -am "Solo file già tracciati"
+git commit --amend --no-edit
+git commit --amend -m "Nuovo messaggio"
+git commit --allow-empty -m "Commit vuoto"
+git commit --no-verify</code></pre>
+          <div class="callout">
+            <strong>Buon messaggio di commit:</strong> spiega il <em>perch&eacute;</em>,
+            non solo il <em>cosa</em>. Esempio:
+            <code>Corregge il timeout del login</code> &egrave; meglio di
+            <code>fix</code>.
+          </div>
+
+          <h2>Ispezionare la cronologia</h2>
+          <pre><code>git log
+git log --oneline --graph --decorate --all
+git log -n 5
+git log --author="Nome" --since="2 weeks ago"
+git log -p -- file.txt
+git log --follow -- file.txt
+git show &lt;commit&gt;
+git show &lt;commit&gt;:file.txt
+git shortlog -sn
+git blame file.txt
+git grep "testo"
+git grep -n "testo" -- "*.js"
+git reflog
+git describe --tags
+git rev-parse HEAD</code></pre>
+
+          <h2>Branch</h2>
+          <pre><code>git branch
+git branch -a
+git branch -vv
+git branch --show-current
+git branch nuovo-branch
+git switch nuovo-branch
+git switch -c nuovo-branch
+git switch -c nuovo-branch origin/nuovo-branch
+git switch -
+git branch -m nuovo-nome
+git branch -d branch-merged
+git branch -D branch-da-forzare
+git branch --merged
+git branch --no-merged
+git push origin --delete vecchio-branch</code></pre>
+
+          <h2>Merge, rebase e conflitti</h2>
+          <pre><code>git merge feature
+git merge --no-ff feature
+git merge --squash feature
+git merge --abort
+git rebase main
+git rebase -i HEAD~3
+git rebase --continue
+git rebase --skip
+git rebase --abort
+git cherry-pick &lt;commit&gt;
+git cherry-pick --continue
+git cherry-pick --abort
+git revert &lt;commit&gt;
+git revert --no-commit &lt;commit&gt;</code></pre>
+
+          <h3>Risolvere un conflitto</h3>
+          <ol>
+            <li><code>git status</code> elenca i file in conflitto.</li>
+            <li>Apri ogni file, scegli o combina le modifiche e rimuovi i marcatori <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>.</li>
+            <li><code>git add file</code> per segnare il conflitto come risolto.</li>
+            <li>Per un merge: <code>git commit</code>. Per un rebase: <code>git rebase --continue</code>.</li>
+          </ol>
+          <div class="callout warn">
+            <strong>Rebase:</strong> riscrive la storia. Usalo sui branch locali
+            o non ancora condivisi; su un branch gi&agrave; pubblicato preferisci
+            <code>merge</code>.
+          </div>
+
+          <h2>Remote</h2>
+          <pre><code>git remote -v
+git remote add origin https://example.com/progetto.git
+git remote set-url origin git@example.com:utente/progetto.git
+git remote rename origin upstream
+git remote remove origin
+git remote show origin
+git remote prune origin
+git fetch
+git fetch --all --prune
+git pull
+git pull --rebase
+git pull --ff-only
+git push
+git push -u origin main
+git push origin feature
+git push --tags
+git push origin v2.56.0
+git push --force-with-lease
+git push origin --delete vecchio-branch</code></pre>
+          <div class="callout warn">
+            Evita <code>git push --force</code>. Se devi riscrivere un branch
+            remoto, usa <code>--force-with-lease</code>: rifiuta il push se
+            qualcun altro ha aggiornato il branch nel frattempo.
+          </div>
+
+          <h2>Annullare e recuperare</h2>
+          <pre><code># annulla le modifiche non salvate di un file
+git restore file.txt
+
+# annulla tutte le modifiche non salvate
+git restore .
+
+# togli un file dallo staging, senza perdere le modifiche
+git restore --staged file.txt
+
+# riporta un file alla versione di un commit precedente
+git restore --source=HEAD~1 file.txt
+
+# annulla l'ultimo commit mantenendo le modifiche in staging
+git reset --soft HEAD~1
+
+# annulla l'ultimo commit mantenendo le modifiche nel working tree
+git reset HEAD~1
+
+# annulla l'ultimo commit e butta via le modifiche (pericoloso)
+git reset --hard HEAD~1
+
+# riporta il branch alla versione remota (pericoloso)
+git reset --hard origin/main
+
+# annulla un commit già pubblicato con un nuovo commit
+git revert &lt;commit&gt;
+
+# anteprima dei file non tracciati che verrebbero eliminati
+git clean -n
+
+# elimina file e cartelle non tracciati
+git clean -fd
+
+# elimina anche i file ignorati
+git clean -fdx</code></pre>
+          <div class="callout warn">
+            <strong>Comandi distruttivi:</strong> <code>reset --hard</code> e
+            <code>clean -fdx</code> cancellano modifiche non recuperabili con un
+            semplice <em>undo</em>. Controlla sempre con <code>git status</code> e
+            <code>git clean -n</code> prima di eseguirli.
+          </div>
+          <h3>Recuperare un commit &laquo;perso&raquo;</h3>
+          <pre><code>git reflog
+git reset --hard HEAD@{1}</code></pre>
+          <p>
+            <code>reflog</code> tiene traccia dei movimenti di HEAD per circa 90
+            giorni: &egrave; la rete di sicurezza dopo un reset sbagliato.
+          </p>
+
+          <h2>Stash</h2>
+          <pre><code>git stash
+git stash push -m "Lavoro in corso"
+git stash push -u
+git stash list
+git stash show -p
+git stash pop
+git stash apply
+git stash drop
+git stash clear
+git stash branch lavoro-in-corso</code></pre>
+
+          <h2>Tag</h2>
+          <pre><code>git tag
+git tag -l "v2.*"
+git tag v2.56.0
+git tag -a v2.56.0 -m "Versione 2.56.0"
+git show v2.56.0
+git push origin v2.56.0
+git push --tags
+git tag -d v2.56.0
+git push origin --delete v2.56.0</code></pre>
+
+          <h2>File, .gitignore e attributi</h2>
+          <pre><code>git rm file.txt
+git rm --cached file.txt
+git rm -r cartella/
+git mv vecchio.txt nuovo.txt
+git check-ignore -v file.log
+git ls-files
+git ls-files --others --exclude-standard</code></pre>
+          <p>Esempio di <code>.gitignore</code>:</p>
+          <pre><code># file temporanei
+*.log
+*.tmp
+
+# cartelle di build
+build/
+dist/
+node_modules/
+
+# eccezione: tieni questo file
+!importante.log
+
+# solo nella radice del repository
+/config.local
+
+# qualsiasi cartella cache, a ogni livello
+**/cache/</code></pre>
+          <p>Per un ignore globale valido per tutti i repository:</p>
+          <pre><code>git config --global core.excludesfile ~/.gitignore_global</code></pre>
+
+          <h2>Submodule e worktree</h2>
+          <pre><code>git submodule add https://example.com/libreria.git libreria
+git submodule update --init --recursive
+git submodule status
+git submodule foreach git pull origin main
+git worktree add ../progetto-hotfix hotfix
+git worktree list
+git worktree remove ../progetto-hotfix</code></pre>
+
+          <h2>Manutenzione e diagnostica</h2>
+          <pre><code>git gc
+git gc --aggressive --prune=now
+git fsck
+git prune
+git count-objects -vH
+git archive --format=zip --output=progetto.zip HEAD
+git bundle create repo.bundle --all
+git bundle verify repo.bundle</code></pre>
+
+          <h2>Aiuto</h2>
+          <pre><code>git help
+git help -a
+git help -g
+git help commit
+git commit --help</code></pre>
+
+          <h2>Workflow quotidiano</h2>
+          <pre><code>git switch main
+git pull --ff-only
+git switch -c feature/nuova-funzione
+
+# lavora e salva a piccoli passi
+git add -p
+git commit -m "Aggiunge la nuova funzione"
+
+git push -u origin feature/nuova-funzione
+
+# dopo la review, integra su main
+git switch main
+git pull --ff-only
+git merge --no-ff feature/nuova-funzione
+git push
+git branch -d feature/nuova-funzione</code></pre>
+
+          <h2>Se qualcosa va storto</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Situazione</th><th>Cosa fare</th></tr></thead>
+              <tbody>
+                <tr><td>Push rifiutato</td><td><code>git pull --rebase</code>, risolvi i conflitti, poi <code>git push</code>.</td></tr>
+                <tr><td>Commit sbagliato ma non pubblicato</td><td><code>git commit --amend</code> oppure <code>git reset --soft HEAD~1</code>.</td></tr>
+                <tr><td>Commit sbagliato gi&agrave; pubblicato</td><td><code>git revert &lt;commit&gt;</code>: non riscrive la storia.</td></tr>
+                <tr><td>Branch cancellato per errore</td><td><code>git reflog</code>, trova il commit e ricrea il branch con <code>git switch -c nome &lt;commit&gt;</code>.</td></tr>
+                <tr><td>HEAD staccata (detached)</td><td>Crea un branch con <code>git switch -c nuovo-branch</code> oppure torna a <code>git switch main</code>.</td></tr>
+                <tr><td>File ignorato per sbaglio</td><td><code>git check-ignore -v file</code> per capire quale regola lo esclude.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Git</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>2.56.0</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

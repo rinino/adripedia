@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docker — Adripedia</title>
+  <meta name="description" content="Guida pratica a Docker: che cos'è, installazione su Windows e Linux, immagini, container, Docker Compose e comandi utili con esempi.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/docker/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Docker</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Docker</h1>
+      <p class="lead">
+        Guida pratica a Docker: che cos'&egrave;, come installarlo su Windows e
+        Linux e i comandi che servono davvero per immagini, container, volumi e
+        Docker Compose. Contenuti verificati su Docker Engine
+        <code>29.9.3</code> e Docker Desktop <code>4.98.0</code>.
+      </p>
+
+      <div class="callout">
+        <strong>Versioni documentate:</strong> Docker Engine <code>29.9.3</code>
+        e Docker Desktop <code>4.98.0</code> (3 novembre 2026), Docker Compose
+        <code>5.7.0</code> (2 novembre 2026) e Buildx <code>0.38.1</code>.
+        Docker Engine &egrave; distribuito con licenza Apache 2.0; Docker Desktop
+        ha termini d'uso propri.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei quattro tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida Docker">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-windows" type="button" role="tab"
+                  aria-selected="false" aria-controls="windows" tabindex="-1">
+            Installazione Windows
+          </button>
+          <button class="tab" id="tab-linux" type="button" role="tab"
+                  aria-selected="false" aria-controls="linux" tabindex="-1">
+            Installazione Linux
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <figure class="figure figure-logo">
+            <img src="../../assets/img/docker/docker-logo.svg" width="1250" height="268"
+                 alt="Logo Docker: la balena con i container e la scritta Docker">
+            <figcaption>
+              Logo Docker &mdash; fonte: <a href="https://www.docker.com/company/newsroom/media-resources/" target="_blank" rel="noopener">Docker Brand Guidelines</a>.
+              Docker e il logo della balena sono marchi di Docker, Inc.; uso
+              secondo le linee guida del marchio.
+            </figcaption>
+          </figure>
+
+          <h2>Che cos'&egrave; Docker</h2>
+          <p>
+            Docker &egrave; una piattaforma per <strong>sviluppare,
+            distribuire ed eseguire applicazioni in container</strong>. Un
+            container &egrave; un processo isolato che contiene tutto ci&ograve;
+            che serve per funzionare: codice, runtime, librerie e
+            configurazione. Non dipende da ci&ograve; che &egrave; installato
+            sulla macchina host, quindi lo stesso container si comporta allo
+            stesso modo sul portatile dello sviluppatore, nel server di test e
+            in produzione.
+          </p>
+          <p>
+            L'idea centrale &egrave; separare l'applicazione
+            dall'infrastruttura: si costruisce una <strong>immagine</strong>
+            una volta sola e la si esegue ovunque. I container sono leggeri,
+            si avviano in pochi secondi e se ne possono eseguire molti sullo
+            stesso host.
+          </p>
+
+          <h2>Container o macchina virtuale</h2>
+          <p>
+            Un container non &egrave; una macchina virtuale. La differenza sta
+            nel livello di isolamento:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Aspetto</th><th>Container</th><th>Macchina virtuale</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Kernel</strong></td>
+                  <td>Condivide il kernel dell'host.</td>
+                  <td>Ha un sistema operativo guest completo, con il suo kernel.</td>
+                </tr>
+                <tr>
+                  <td><strong>Avvio</strong></td>
+                  <td>Secondi o meno.</td>
+                  <td>Decine di secondi o minuti.</td>
+                </tr>
+                <tr>
+                  <td><strong>Peso</strong></td>
+                  <td>Megabyte: solo applicazione e dipendenze.</td>
+                  <td>Gigabyte: include il sistema operativo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Isolamento</strong></td>
+                  <td>A livello di processo, tramite namespace e cgroup.</td>
+                  <td>A livello hardware, tramite hypervisor.</td>
+                </tr>
+                <tr>
+                  <td><strong>Caso d'uso</strong></td>
+                  <td>Applicazioni, microservizi, ambienti di sviluppo e CI.</td>
+                  <td>Sistemi operativi diversi, isolamento pi&ugrave; forte, carichi che richiedono un kernel proprio.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            I due mondi non sono in concorrenza: spesso Docker Desktop esegue
+            i container Linux dentro una macchina virtuale leggera, perch&eacute;
+            Windows e macOS non hanno un kernel Linux nativo.
+          </p>
+
+          <h2>I concetti chiave</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Termine</th><th>Significato</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Immagine</strong></td>
+                  <td>Pacchetto immutabile con file, binari, librerie e configurazione. &Egrave; il modello da cui nasce un container.</td>
+                </tr>
+                <tr>
+                  <td><strong>Container</strong></td>
+                  <td>Un'istanza in esecuzione di un'immagine, isolata dalle altre e dall'host.</td>
+                </tr>
+                <tr>
+                  <td><strong>Dockerfile</strong></td>
+                  <td>File di istruzioni che descrive come costruire un'immagine, strato dopo strato.</td>
+                </tr>
+                <tr>
+                  <td><strong>Layer</strong></td>
+                  <td>Uno strato immutabile dell'immagine. I layer condivisi vengono riusati e messi in cache.</td>
+                </tr>
+                <tr>
+                  <td><strong>Registry</strong></td>
+                  <td>Archivio di immagini. Docker Hub &egrave; quello pubblico predefinito; esistono registry privati.</td>
+                </tr>
+                <tr>
+                  <td><strong>Tag</strong></td>
+                  <td>Etichetta di una versione dell'immagine, per esempio <code>nginx:alpine</code> o <code>postgres:17</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Volume</strong></td>
+                  <td>Archivio persistente gestito da Docker, indipendente dal ciclo di vita del container.</td>
+                </tr>
+                <tr>
+                  <td><strong>Bind mount</strong></td>
+                  <td>Cartella dell'host montata dentro il container, utile in sviluppo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Rete</strong></td>
+                  <td>Rete virtuale che collega i container tra loro e con l'host.</td>
+                </tr>
+                <tr>
+                  <td><strong>Compose</strong></td>
+                  <td>Strumento che descrive e avvia pi&ugrave; container in un file YAML.</td>
+                </tr>
+                <tr>
+                  <td><strong>Docker Engine</strong></td>
+                  <td>Il motore: daemon, API REST e client a riga di comando.</td>
+                </tr>
+                <tr>
+                  <td><strong>Docker Desktop</strong></td>
+                  <td>Applicazione per Windows e macOS (e Linux) che include Engine, Compose, Buildx e interfaccia grafica.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Come funziona: client, daemon e registry</h2>
+          <p>
+            Il comando <code>docker</code> &egrave; un <strong>client</strong>:
+            traduce ci&ograve; che scrivi in chiamate all'API REST del
+            <strong>daemon</strong> (<code>dockerd</code>). Il daemon gestisce
+            immagini, container, reti e volumi; per eseguire i processi si
+            appoggia a <code>containerd</code> e <code>runc</code>. Le immagini
+            arrivano da un <strong>registry</strong>, di solito Docker Hub.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/docker/docker-architecture.webp" width="1233" height="651"
+                 alt="Diagramma dell'architettura Docker: il client invia comandi al daemon, che gestisce container e immagini e comunica con un registry">
+            <figcaption>
+              Architettura Docker: client, daemon e registry. Fonte:
+              <a href="https://docs.docker.com/get-started/docker-overview/" target="_blank" rel="noopener">Docker Docs</a>,
+              licenza Apache 2.0. &middot;
+              <a href="../../assets/img/docker/docker-architecture.webp" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Immagini, layer e Dockerfile</h2>
+          <p>
+            Un'immagine &egrave; <strong>immutabile</strong>: non si modifica,
+            si crea una nuova immagine a partire da quella esistente. &Egrave;
+            composta da <strong>layer</strong>: ogni istruzione del Dockerfile
+            aggiunge uno strato. Se due immagini condividono gli stessi layer,
+            Docker li scarica e li conserva una volta sola.
+          </p>
+          <pre><code>FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 3000
+USER node
+CMD ["node", "server.js"]</code></pre>
+          <p>
+            Il comando <code>docker build</code> esegue il Dockerfile e produce
+            un'immagine; <code>docker run</code> la trasforma in un container.
+            I layer sono anche il motivo per cui conviene mettere le istruzioni
+            che cambiano raramente (dipendenze) prima di quelle che cambiano
+            spesso (codice).
+          </p>
+
+          <h2>Docker Desktop</h2>
+          <p>
+            Su Windows e macOS il modo pi&ugrave; semplice per iniziare &egrave;
+            Docker Desktop: installa Engine, client, Compose, Buildx e una
+            piccola interfaccia grafica per vedere container e immagini,
+            aprire un terminale, controllare log e risorse.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/docker/docker-desktop-containers.webp" width="1999" height="711"
+                 alt="Screenshot di Docker Desktop con l'elenco dei container, lo stato di esecuzione e le azioni disponibili">
+            <figcaption>
+              Docker Desktop: l'elenco dei container con stato e azioni rapide.
+              Fonte: <a href="https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/" target="_blank" rel="noopener">Docker Docs</a>,
+              licenza Apache 2.0. &middot;
+              <a href="../../assets/img/docker/docker-desktop-containers.webp" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Il flusso di lavoro tipico</h2>
+          <pre><code># scarica un'immagine e avvia un container in background
+docker pull nginx:alpine
+docker run -d --name sito -p 8080:80 nginx:alpine
+
+# controlla che sia in esecuzione
+docker ps
+
+# apri http://localhost:8080 nel browser, poi ferma e rimuovi
+docker stop sito
+docker rm sito</code></pre>
+          <p>
+            Con pi&ugrave; servizi conviene descrivere tutto in un file
+            <code>compose.yaml</code> e usare <code>docker compose up -d</code>.
+            Il ciclo resta lo stesso: costruisci l'immagine, avvia il
+            container, guardi i log, modifichi e ricostruisci.
+          </p>
+
+          <h2>Quale strumento serve</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Strumento</th><th>A cosa serve</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Docker Engine</strong></td>
+                  <td>Il motore e la CLI su Linux e server. &Egrave; la base di tutto.</td>
+                </tr>
+                <tr>
+                  <td><strong>Docker Desktop</strong></td>
+                  <td>Esperienza completa su Windows e macOS: GUI, WSL 2, Compose, Buildx, aggiornamenti.</td>
+                </tr>
+                <tr>
+                  <td><strong>Docker Compose</strong></td>
+                  <td>Pi&ugrave; container descritti in YAML: applicazione, database, cache, rete e volumi.</td>
+                </tr>
+                <tr>
+                  <td><strong>Buildx</strong></td>
+                  <td>Build avanzate con BuildKit, cache remota e immagini multi-piattaforma.</td>
+                </tr>
+                <tr>
+                  <td><strong>Docker Hub</strong></td>
+                  <td>Registry pubblico per cercare, scaricare e pubblicare immagini.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Versioni e compatibilit&agrave;</h2>
+          <p>
+            Questa guida &egrave; verificata sulle versioni indicate in cima.
+            I comandi di base sono stabili da anni; le differenze principali
+            riguardano <code>docker compose</code> (plugin integrato, al posto
+            del vecchio <code>docker-compose</code>), Buildx e le opzioni di
+            Docker Desktop. Su distribuzioni Linux molto vecchie pu&ograve;
+            servire un repository di terze parti o la compilazione dai
+            sorgenti.
+          </p>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://docs.docker.com/" target="_blank" rel="noopener">Documentazione ufficiale Docker</a></li>
+            <li><a href="https://docs.docker.com/get-started/docker-overview/" target="_blank" rel="noopener">Panoramica della piattaforma</a></li>
+            <li><a href="https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/" target="_blank" rel="noopener">Docker concepts: container e immagini</a></li>
+            <li><a href="https://docs.docker.com/reference/cli/docker/" target="_blank" rel="noopener">Riferimento della CLI</a></li>
+            <li><a href="https://hub.docker.com/" target="_blank" rel="noopener">Docker Hub</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Installazione Windows
+             ================================================================ -->
+        <section class="tabpanel" id="windows" role="tabpanel" aria-labelledby="tab-windows" hidden>
+          <h2>Installazione su Windows</h2>
+          <p>
+            Su Windows si usa <strong>Docker Desktop</strong>: include Docker
+            Engine, la CLI, Docker Compose, Buildx e un'interfaccia grafica. La
+            versione documentata &egrave; <code>4.98.0</code>. L'installazione
+            predefinita &egrave; <strong>per utente</strong> e non richiede
+            privilegi di amministratore.
+          </p>
+
+          <div class="callout warn">
+            <strong>Licenza Docker Desktop:</strong> l'uso &egrave; gratuito per
+            uso personale, istruzione, progetti open source non commerciali e
+            piccole imprese (meno di 250 dipendenti <em>e</em> meno di 10
+            milioni di USD di fatturato annuo). Gli altri usi professionali e
+            gli enti pubblici richiedono un abbonamento a pagamento. Docker
+            Engine su Linux, invece, &egrave; open source con licenza Apache 2.0.
+          </div>
+
+          <h2>Requisiti</h2>
+          <ul>
+            <li><strong>Windows 10</strong> 64-bit Enterprise, Pro o Education 22H2 (build 19045), oppure <strong>Windows 11</strong> 64-bit Enterprise, Pro o Education 23H2 (build 22631) o successivo.</li>
+            <li>Processore 64-bit con SLAT, almeno <strong>8 GB di RAM</strong> e virtualizzazione abilitata nel BIOS/UEFI.</li>
+            <li><strong>WSL 2</strong> versione 2.1.5 o successiva per il backend predefinito; WSL 2.6 o successiva se si usa Enhanced Container Isolation.</li>
+            <li>Servizio Windows <em>LanmanServer</em> attivo con avvio automatico.</li>
+            <li>Windows Server non &egrave; supportato. Windows Home ed Education possono eseguire solo container Linux.</li>
+          </ul>
+
+          <h2>Per utente o per tutti gli utenti</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Aspetto</th><th>Per utente (consigliata)</th><th>Per tutti gli utenti</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Cartella</strong></td><td><code>%LOCALAPPDATA%\Programs\DockerDesktop</code></td><td><code>C:\Program Files\Docker\Docker</code></td></tr>
+                <tr><td><strong>Permessi</strong></td><td>Nessun amministratore per installare o aggiornare.</td><td>Amministratore per installare e aggiornare.</td></tr>
+                <tr><td><strong>Backend</strong></td><td>WSL 2 o Docker VMM (beta).</td><td>WSL 2, Hyper-V o Docker VMM.</td></tr>
+                <tr><td><strong>Container Windows</strong></td><td>Non supportati.</td><td>Supportati.</td></tr>
+                <tr><td><strong>Sicurezza</strong></td><td>Superficie d'attacco ridotta, nessun servizio privilegiato.</td><td>Richiede un servizio privilegiato con accesso pi&ugrave; ampio all'host.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La modalit&agrave; scelta al momento dell'installazione non si
+            cambia dall'interfaccia: per passare da una all'altra bisogna
+            disinstallare e reinstallare.
+          </p>
+
+          <h2>Metodo 1 &mdash; Installer ufficiale</h2>
+          <ol>
+            <li>Scarica <a href="https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe" target="_blank" rel="noopener">Docker Desktop Installer.exe</a> (x86_64) dalla pagina ufficiale o dalle note di rilascio.</li>
+            <li>Avvia <code>Docker Desktop Installer.exe</code>.</li>
+            <li>Scegli la modalit&agrave;: <strong>per utente</strong> (predefinita, senza admin) oppure <strong>per tutti gli utenti</strong> (richiede elevazione).</li>
+            <li>Nella pagina <strong>Configuration</strong> seleziona <strong>Use WSL 2 instead of Hyper-V</strong>, salvo esigenze diverse.</li>
+            <li>Autorizza l'installer e attendi la fine; seleziona <strong>Close</strong>.</li>
+            <li>Avvia Docker Desktop dal menu Start e accetta il contratto di servizio.</li>
+          </ol>
+          <p>
+            L'installazione per tutti gli utenti pu&ograve; aggiungere l'utente
+            al gruppo <code>docker-users</code>, necessario per i container
+            Windows e per la gestione della VM Hyper-V:
+          </p>
+          <pre><code>net localgroup docker-users &lt;utente&gt; /add</code></pre>
+          <div class="callout warn">
+            L'appartenenza a <code>docker-users</code> d&agrave; accesso al
+            socket del daemon Docker, che equivale a privilegi di
+            amministratore sull'host. Aggiungi solo chi ne ha davvero bisogno:
+            per i container Linux con WSL 2 il gruppo non serve.
+          </div>
+
+          <h2>Metodo 2 &mdash; Riga di comando</h2>
+          <p>Dopo aver scaricato l'installer, da PowerShell:</p>
+          <pre><code># installazione per utente, senza privilegi di amministratore
+Start-Process 'Docker Desktop Installer.exe' -Wait -ArgumentList 'install', '--user'
+
+# installazione per tutti gli utenti (PowerShell da amministratore)
+Start-Process 'Docker Desktop Installer.exe' -Wait -ArgumentList 'install'</code></pre>
+          <p>Opzioni utili dell'installer:</p>
+          <pre><code># accetta il contratto e scegli il backend
+"Docker Desktop Installer.exe" install --user --accept-license --backend=wsl-2
+
+# installazione silenziosa
+"Docker Desktop Installer.exe" install --user --quiet</code></pre>
+          <p>
+            Altri flag frequenti sono <code>--installation-dir=&lt;percorso&gt;</code>,
+            <code>--proxy-http-mode=manual</code> e
+            <code>--override-proxy-http=&lt;url&gt;</code>. L'elenco completo
+            &egrave; nella documentazione ufficiale.
+          </p>
+
+          <h2>Metodo 3 &mdash; winget</h2>
+          <pre><code>winget install --id Docker.DockerDesktop -e
+winget upgrade --id Docker.DockerDesktop -e</code></pre>
+          <p>
+            Il pacchetto &egrave; mantenuto da Docker e la versione disponibile
+            su winget pu&ograve; arrivare con qualche giorno di ritardo rispetto
+            al sito ufficiale. In alternativa c'&egrave; la versione sul
+            Microsoft Store.
+          </p>
+
+          <h2>Preparare WSL 2</h2>
+          <p>
+            Docker Desktop usa WSL 2 come backend predefinito. Controlla la
+            versione e aggiorna se necessario, da PowerShell:
+          </p>
+          <pre><code>wsl --version
+wsl --update
+wsl --set-default-version 2</code></pre>
+          <p>
+            Se WSL non &egrave; installato, <code>wsl --install</code> lo
+            aggiunge e potrebbe richiedere un riavvio. In ambienti con
+            Microsoft Store bloccato si pu&ograve; usare il pacchetto MSI dalle
+            release ufficiali di WSL su GitHub.
+          </p>
+
+          <h2>Primo avvio</h2>
+          <ol>
+            <li>Cerca <strong>Docker Desktop</strong> nel menu Start e avvialo.</li>
+            <li>Accetta il contratto di servizio: senza accettazione Docker Desktop non parte.</li>
+            <li>Completa o salta l'onboarding; l'accesso a Docker Hub &egrave; facoltativo per l'uso locale.</li>
+            <li>Apri <strong>Settings &rsaquo; Resources &rsaquo; WSL Integration</strong> e abilita le distribuzioni che devono usare Docker.</li>
+            <li>Verifica da un terminale che il motore risponda.</li>
+          </ol>
+
+          <h2>Verifica</h2>
+          <pre><code>docker --version
+docker compose version
+docker buildx version
+docker run hello-world
+docker info</code></pre>
+          <p>
+            <code>docker run hello-world</code> scarica una piccola immagine,
+            avvia un container e stampa un messaggio di conferma. Se lo vedi,
+            il motore funziona.
+          </p>
+
+          <h2>Configurazione consigliata</h2>
+          <ul>
+            <li><strong>Settings &rsaquo; General:</strong> avvio automatico con il sistema, se lo vuoi; <em>Resource Saver</em> per ridurre i consumi quando Docker &egrave; inattivo.</li>
+            <li><strong>Settings &rsaquo; Resources:</strong> CPU, memoria e disco assegnati alla VM; aumentali se i build sono lenti o i container finiscono in <em>OOM</em>.</li>
+            <li><strong>Settings &rsaquo; Resources &rsaquo; File sharing:</strong> aggiungi solo le cartelle che devono essere montate nell'host.</li>
+            <li><strong>Settings &rsaquo; Docker Engine:</strong> configurazione JSON del daemon, per esempio registry mirror o log driver.</li>
+            <li><strong>Settings &rsaquo; Proxies:</strong> proxy aziendale, se la rete lo richiede.</li>
+          </ul>
+
+          <h2>Aggiornare e disinstallare</h2>
+          <pre><code># aggiornamento da winget
+winget upgrade --id Docker.DockerDesktop -e
+
+# disinstallazione da winget
+winget uninstall --id Docker.DockerDesktop -e</code></pre>
+          <p>
+            In alternativa usa <strong>Settings &rsaquo; Software updates</strong>
+            dentro Docker Desktop e <strong>Impostazioni &rsaquo; App</strong> di
+            Windows per la disinstallazione. Le immagini e i volumi non vengono
+            cancellati automaticamente: se vuoi ripartire da zero, rimuovili
+            prima.
+          </p>
+
+          <h2>Problemi comuni</h2>
+          <ul>
+            <li><strong>&laquo;Docker Desktop non parte&raquo;:</strong> verifica che la virtualizzazione sia attiva nel BIOS/UEFI e che WSL 2 sia aggiornato.</li>
+            <li><strong>&laquo;Cannot connect to the Docker daemon&raquo;:</strong> Docker Desktop non &egrave; avviato o il motore &egrave; ancora in fase di startup.</li>
+            <li><strong><code>docker</code> non riconosciuto:</strong> riapri il terminale dopo l'installazione, cos&igrave; il PATH viene aggiornato.</li>
+            <li><strong>WSL lento o bloccato:</strong> esegui <code>wsl --update</code> e riavvia Docker Desktop.</li>
+            <li><strong>Porta gi&agrave; occupata:</strong> cambia la porta host nel mapping, per esempio <code>-p 8081:80</code>.</li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Installazione Linux
+             ================================================================ -->
+        <section class="tabpanel" id="linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
+          <h2>Installazione su Linux</h2>
+          <p>
+            Su Linux si installa <strong>Docker Engine</strong> dal repository
+            ufficiale della distribuzione. La versione documentata &egrave;
+            <code>29.9.3</code>. In alternativa si pu&ograve; usare Docker
+            Desktop for Linux, che aggiunge l'interfaccia grafica e
+            l'integrazione con il desktop.
+          </p>
+
+          <h2>Requisiti (Ubuntu)</h2>
+          <ul>
+            <li>Ubuntu 64-bit 22.04 LTS, 24.04 LTS, 26.04 LTS o 26.10.</li>
+            <li>Architetture supportate: x86_64 (amd64), arm64, armhf, s390x e ppc64le.</li>
+            <li>Accesso <code>sudo</code> per installare e avviare il servizio.</li>
+            <li>Le derivate come Linux Mint non sono supportate ufficialmente, anche se spesso funzionano.</li>
+          </ul>
+          <div class="callout warn">
+            <strong>Firewall:</strong> le porte pubblicate dai container
+            aggirano le regole di <code>ufw</code> e <code>firewalld</code>.
+            Docker supporta solo <code>iptables-nft</code> e
+            <code>iptables-legacy</code>: le regole create con <code>nft</code>
+            non funzionano. Metti le eccezioni nella catena
+            <code>DOCKER-USER</code>.
+          </div>
+
+          <h2>Rimuovere i pacchetti in conflitto</h2>
+          <p>
+            Prima di installare la versione ufficiale, elimina i pacchetti
+            forniti dalla distribuzione, che possono entrare in conflitto:
+          </p>
+          <pre><code>sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc docker-buildx podman-docker containerd runc | cut -f1)</code></pre>
+          <p>
+            <code>apt</code> pu&ograve; rispondere che alcuni pacchetti non sono
+            installati: &egrave; normale. Immagini, container, volumi e reti in
+            <code>/var/lib/docker/</code> non vengono rimossi automaticamente.
+          </p>
+
+          <h2>Metodo 1 &mdash; Repository apt ufficiale</h2>
+          <p>Configura la chiave GPG e il repository:</p>
+          <pre><code>sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+sudo tee /etc/apt/sources.list.d/docker.sources &lt;&lt;EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release &amp;&amp; echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update</code></pre>
+          <p>Poi installa Engine, CLI, containerd, Buildx e Compose:</p>
+          <pre><code>sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></pre>
+          <p>
+            Per installare una versione specifica, elenca quelle disponibili e
+            installa il pacchetto con la versione scelta. L'esempio seguente
+            usa Ubuntu 24.04 (noble): sostituisci la stringa con quella della
+            tua release. Non &egrave; un blocco permanente: per impedire gli
+            aggiornamenti usa <code>sudo apt-mark hold docker-ce</code>.
+          </p>
+          <pre><code>apt list --all-versions docker-ce
+VERSION_STRING=5:29.9.3-1~ubuntu.24.04~noble
+sudo apt install docker-ce=$VERSION_STRING docker-ce-cli=$VERSION_STRING containerd.io docker-buildx-plugin docker-compose-plugin</code></pre>
+
+          <h2>Metodo 2 &mdash; Script di comodo</h2>
+          <p>
+            Lo script ufficiale installa l'ultima versione stabile in modo non
+            interattivo. &Egrave; pensato per ambienti di sviluppo e test, non
+            per la produzione.
+          </p>
+          <pre><code>curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh ./get-docker.sh --dry-run
+sudo sh get-docker.sh</code></pre>
+          <div class="callout">
+            Guarda sempre cosa fa uno script prima di eseguirlo:
+            <code>--dry-run</code> mostra i passaggi senza modificare il
+            sistema. Lo script non &egrave; pensato per aggiornare
+            un'installazione esistente.
+          </div>
+
+          <h2>Avviare e verificare</h2>
+          <pre><code>sudo systemctl status docker
+sudo systemctl enable --now docker
+sudo docker run hello-world</code></pre>
+          <p>
+            Se <code>hello-world</code> stampa il messaggio di conferma,
+            l'installazione &egrave; riuscita. Controlla anche le versioni:
+          </p>
+          <pre><code>docker --version
+docker compose version
+docker buildx version
+docker info</code></pre>
+
+          <h2>Usare Docker senza sudo</h2>
+          <p>
+            Per impostazione predefinita solo <code>root</code> pu&ograve;
+            usare il socket di Docker. Aggiungi il tuo utente al gruppo
+            <code>docker</code> e riapri la sessione:
+          </p>
+          <pre><code>sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker run hello-world</code></pre>
+          <div class="callout warn">
+            Il gruppo <code>docker</code> d&agrave; di fatto privilegi di root:
+            chi pu&ograve; usare il socket pu&ograve; montare l'intero
+            filesystem dell'host. Per un isolamento maggiore valuta la
+            modalit&agrave; <strong>rootless</strong>, che esegue il daemon con
+            i permessi dell'utente.
+          </div>
+
+          <h2>Altre distribuzioni</h2>
+          <p>
+            I passaggi cambiano con il gestore di pacchetti. Queste le
+            procedure ufficiali; su Debian, Fedora e RHEL il repository Docker
+            va aggiunto prima, come descritto nella guida della distribuzione.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Distribuzione</th><th>Comando di installazione</th><th>Guida</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Debian</td>
+                  <td><code>sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></td>
+                  <td><a href="https://docs.docker.com/engine/install/debian/" target="_blank" rel="noopener">Debian</a></td>
+                </tr>
+                <tr>
+                  <td>Fedora</td>
+                  <td><code>sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></td>
+                  <td><a href="https://docs.docker.com/engine/install/fedora/" target="_blank" rel="noopener">Fedora</a></td>
+                </tr>
+                <tr>
+                  <td>RHEL, Rocky, AlmaLinux</td>
+                  <td><code>sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></td>
+                  <td><a href="https://docs.docker.com/engine/install/rhel/" target="_blank" rel="noopener">RHEL</a></td>
+                </tr>
+                <tr>
+                  <td>CentOS</td>
+                  <td><code>sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></td>
+                  <td><a href="https://docs.docker.com/engine/install/centos/" target="_blank" rel="noopener">CentOS</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Arch Linux, openSUSE e Alpine forniscono pacchetti nei propri
+            repository (rispettivamente <code>pacman</code>,
+            <code>zypper</code> e <code>apk</code>). Sono mantenuti dalla
+            distribuzione, non da Docker, e possono essere pi&ugrave; vecchi:
+            per questi sistemi segui la documentazione della distro. Su
+            qualsiasi distribuzione si possono anche installare i
+            <a href="https://docs.docker.com/engine/install/binaries/" target="_blank" rel="noopener">binari statici ufficiali</a>.
+          </p>
+
+          <h2>Aggiornare e disinstallare</h2>
+          <pre><code># aggiornamento
+sudo apt update
+sudo apt install --only-upgrade docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# disinstallazione
+sudo apt purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
+
+# pulizia del repository e della chiave (facoltativa)
+sudo rm /etc/apt/sources.list.d/docker.sources
+sudo rm /etc/apt/keyrings/docker.asc
+
+# rimozione dei dati (irreversibile)
+sudo rm -rf /var/lib/docker
+sudo rm -rf /var/lib/containerd</code></pre>
+          <p>
+            Dopo l'aggiornamento riavvia il servizio con
+            <code>sudo systemctl restart docker</code>.
+          </p>
+
+          <h2>Problemi comuni</h2>
+          <ul>
+            <li><strong>&laquo;permission denied&raquo; su <code>/var/run/docker.sock</code>:</strong> aggiungi l'utente al gruppo <code>docker</code> e riapri la sessione.</li>
+            <li><strong>&laquo;Cannot connect to the Docker daemon&raquo;:</strong> il servizio non &egrave; attivo; usa <code>sudo systemctl start docker</code>.</li>
+            <li><strong>&laquo;port is already allocated&raquo;:</strong> un'altra applicazione usa la porta; cambia la porta host nel mapping.</li>
+            <li><strong>Spazio esaurito:</strong> controlla con <code>docker system df</code> e libera con <code>docker system prune</code>.</li>
+            <li><strong>Build lente:</strong> aggiungi un <code>.dockerignore</code> e sfrutta la cache dei layer.</li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Comandi
+             ================================================================ -->
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: run, compose, ps, prune&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare la cheat sheet e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <h2>Cheat sheet</h2>
+          <p>I comandi che userai il 90% delle volte.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+              <tbody>
+                <tr><td><code>docker --version</code></td><td>Mostra la versione del client.</td></tr>
+                <tr><td><code>docker info</code></td><td>Mostra lo stato del motore e le risorse disponibili.</td></tr>
+                <tr><td><code>docker pull &lt;immagine&gt;</code></td><td>Scarica un'immagine da un registry.</td></tr>
+                <tr><td><code>docker images</code></td><td>Elenca le immagini locali.</td></tr>
+                <tr><td><code>docker run &lt;immagine&gt;</code></td><td>Crea e avvia un container da un'immagine.</td></tr>
+                <tr><td><code>docker run -d --name web -p 8080:80 nginx:alpine</code></td><td>Avvia in background un container con nome e porta pubblicata.</td></tr>
+                <tr><td><code>docker ps</code></td><td>Elenca i container in esecuzione.</td></tr>
+                <tr><td><code>docker ps -a</code></td><td>Elenca anche i container fermati.</td></tr>
+                <tr><td><code>docker stop &lt;container&gt;</code></td><td>Ferma un container in modo ordinato.</td></tr>
+                <tr><td><code>docker start &lt;container&gt;</code></td><td>Avvia un container fermo.</td></tr>
+                <tr><td><code>docker rm &lt;container&gt;</code></td><td>Rimuove un container fermo.</td></tr>
+                <tr><td><code>docker rmi &lt;immagine&gt;</code></td><td>Rimuove un'immagine locale.</td></tr>
+                <tr><td><code>docker logs -f &lt;container&gt;</code></td><td>Segue l'output di un container in tempo reale.</td></tr>
+                <tr><td><code>docker exec -it &lt;container&gt; sh</code></td><td>Apre una shell dentro un container in esecuzione.</td></tr>
+                <tr><td><code>docker inspect &lt;container&gt;</code></td><td>Mostra la configurazione completa in JSON.</td></tr>
+                <tr><td><code>docker build -t nome:tag .</code></td><td>Costruisce un'immagine dal Dockerfile nella cartella corrente.</td></tr>
+                <tr><td><code>docker push utente/immagine:tag</code></td><td>Pubblica un'immagine su un registry.</td></tr>
+                <tr><td><code>docker compose up -d</code></td><td>Avvia in background i servizi definiti in <code>compose.yaml</code>.</td></tr>
+                <tr><td><code>docker compose down</code></td><td>Ferma e rimuove i container e la rete del progetto.</td></tr>
+                <tr><td><code>docker compose logs -f</code></td><td>Segue i log di tutti i servizi.</td></tr>
+                <tr><td><code>docker volume ls</code></td><td>Elenca i volumi.</td></tr>
+                <tr><td><code>docker network ls</code></td><td>Elenca le reti.</td></tr>
+                <tr><td><code>docker system df</code></td><td>Mostra lo spazio usato da immagini, container e volumi.</td></tr>
+                <tr><td><code>docker system prune</code></td><td>Rimuove le risorse inutilizzate.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>&lt;...&gt;</code> indica un valore da sostituire; le parentesi
+            quadre sono opzionali. I nomi dei container si possono abbreviare
+            con il prefisso dell'ID, purch&eacute; sia univoco.
+          </p>
+
+          <h2>Primi passi</h2>
+          <pre><code>docker --version
+docker version
+docker info
+docker run hello-world
+docker run -it --rm alpine sh</code></pre>
+
+          <h2>Immagini</h2>
+          <pre><code>docker pull nginx:alpine
+docker pull postgres:17
+docker images
+docker image ls
+docker image inspect nginx:alpine
+docker tag nginx:alpine utente/nginx:alpine
+docker push utente/nginx:alpine
+docker rmi nginx:alpine
+docker image prune
+docker image prune -a
+docker save -o nginx.tar nginx:alpine
+docker load -i nginx.tar</code></pre>
+          <div class="callout">
+            <strong>Tag:</strong> se non ne indichi uno, Docker usa
+            <code>latest</code>. Nei progetti &egrave; meglio essere espliciti,
+            per esempio <code>postgres:17</code>, cos&igrave; un aggiornamento
+            non cambia il comportamento senza preavviso.
+          </div>
+
+          <h2>Container</h2>
+          <pre><code>docker run nginx:alpine
+docker run -d --name web -p 8080:80 nginx:alpine
+docker run -it --rm alpine sh
+docker run --rm -v "$PWD":/app -w /app node:22-alpine npm test
+docker ps
+docker ps -a
+docker start web
+docker stop web
+docker restart web
+docker pause web
+docker unpause web
+docker rm web
+docker rm -f web
+docker rename web sito</code></pre>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Opzione</th><th>Effetto</th></tr></thead>
+              <tbody>
+                <tr><td><code>-d</code></td><td>Esegue il container in background (<em>detached</em>).</td></tr>
+                <tr><td><code>-it</code></td><td>Modalit&agrave; interattiva con un terminale TTY.</td></tr>
+                <tr><td><code>--rm</code></td><td>Rimuove il container quando termina.</td></tr>
+                <tr><td><code>--name</code></td><td>Assegna un nome leggibile.</td></tr>
+                <tr><td><code>-p host:container</code></td><td>Pubblica una porta del container sull'host.</td></tr>
+                <tr><td><code>-v origine:destinazione</code></td><td>Monta un volume o una cartella dell'host.</td></tr>
+                <tr><td><code>--env</code></td><td>Passa una variabile d'ambiente.</td></tr>
+                <tr><td><code>--network</code></td><td>Collega il container a una rete.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Log e ispezione</h2>
+          <pre><code>docker logs web
+docker logs -f --tail 100 web
+docker exec -it web sh
+docker exec -it web env
+docker inspect web
+docker inspect --format '{{.State.Status}}' web
+docker stats
+docker top web
+docker port web
+docker diff web</code></pre>
+
+          <h2>Copiare file</h2>
+          <pre><code>docker cp file.txt web:/app/file.txt
+docker cp web:/app/report.txt ./report.txt
+docker cp web:/app/logs ./logs</code></pre>
+
+          <h2>Volumi e bind mount</h2>
+          <pre><code>docker volume create dati
+docker volume ls
+docker volume inspect dati
+docker run -d --name db -v dati:/var/lib/postgresql/data postgres:17
+docker run --rm -v dati:/dati alpine ls -la /dati
+docker volume rm dati
+docker volume prune
+
+# bind mount in sola lettura per lo sviluppo
+docker run --rm -v "$PWD/sito":/usr/share/nginx/html:ro -p 8080:80 nginx:alpine</code></pre>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tipo</th><th>Quando usarlo</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Volume</strong></td><td>Dati persistenti gestiti da Docker: database, upload, cache condivisa.</td></tr>
+                <tr><td><strong>Bind mount</strong></td><td>Cartella dell'host montata nel container: sviluppo, configurazioni, codice live.</td></tr>
+                <tr><td><strong>tmpfs</strong></td><td>Dati solo in memoria, cancellati allo stop: segreti temporanei e cache.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Reti</h2>
+          <pre><code>docker network ls
+docker network create app-net
+docker network inspect app-net
+docker run -d --name db --network app-net -e POSTGRES_PASSWORD=esempio postgres:17
+docker run -d --name api --network app-net -p 3000:3000 mia-api
+docker network connect app-net web
+docker network disconnect app-net web
+docker network rm app-net
+docker network prune</code></pre>
+          <p>
+            Sulla stessa rete i container si raggiungono con il
+            <strong>nome</strong>: <code>api</code> pu&ograve; contattare
+            <code>db</code> sulla porta <code>5432</code> senza conoscere
+            l'indirizzo IP.
+          </p>
+
+          <h2>Docker Compose</h2>
+          <pre><code>docker compose version
+docker compose up
+docker compose up -d
+docker compose up --build
+docker compose ps
+docker compose logs -f
+docker compose logs -f api
+docker compose exec api sh
+docker compose stop
+docker compose restart
+docker compose down
+docker compose down -v
+docker compose pull
+docker compose build
+docker compose config</code></pre>
+          <p>Esempio di <code>compose.yaml</code> con un sito e un database:</p>
+          <pre><code>services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: esempio
+    volumes:
+      - dati:/var/lib/postgresql/data
+
+volumes:
+  dati:</code></pre>
+          <div class="callout warn">
+            <code>docker compose down -v</code> elimina anche i volumi del
+            progetto, quindi i dati del database. Usalo solo quando vuoi
+            ripartire da zero.
+          </div>
+
+          <h2>Dockerfile</h2>
+          <pre><code>FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 3000
+USER node
+CMD ["node", "server.js"]</code></pre>
+          <p>Esempio di <code>.dockerignore</code> per non copiare file inutili:</p>
+          <pre><code>node_modules
+.git
+.env
+dist
+*.log</code></pre>
+
+          <h2>Build e Buildx</h2>
+          <pre><code>docker build -t mia-app:1.0 .
+docker build -t mia-app:1.0 -f Dockerfile.prod .
+docker build --build-arg NODE_ENV=production -t mia-app:1.0 .
+docker buildx ls
+docker buildx create --name multi --use
+docker buildx inspect --bootstrap
+docker buildx build --platform linux/amd64,linux/arm64 -t utente/mia-app:1.0 --push .</code></pre>
+          <div class="callout">
+            Per le immagini multi-piattaforma serve un builder Buildx con
+            supporto agli emulatori (QEMU). Il risultato va pubblicato
+            direttamente con <code>--push</code> o salvato con
+            <code>--output</code>: un'immagine multi-arch non si carica nel
+            demone locale con il semplice <code>--load</code>.
+          </div>
+
+          <h2>Pulizia e spazio</h2>
+          <pre><code>docker system df
+docker system df -v
+docker system prune
+docker system prune -a
+docker system prune -a --volumes
+docker container prune
+docker image prune -a
+docker volume prune
+docker network prune
+docker builder prune</code></pre>
+          <div class="callout warn">
+            <strong>Comandi distruttivi:</strong>
+            <code>docker system prune -a --volumes</code> rimuove tutte le
+            immagini non usate, i container fermi, le reti e i volumi non
+            collegati. Controlla prima con <code>docker system df</code> e
+            assicurati di non avere dati importanti solo nei volumi.
+          </div>
+
+          <h2>Risorse e sicurezza</h2>
+          <p>
+            Gli esempi usano <code>alpine</code> per mostrare i flag senza
+            dipendere da una particolare applicazione:
+          </p>
+          <pre><code>docker run --rm --memory=512m --cpus=1.5 alpine sh -c "echo ok"
+docker run --rm --read-only --tmpfs /tmp alpine sh -c "echo ok > /tmp/prova"
+docker run --rm --user 1000:1000 alpine id
+docker run --rm --cap-drop ALL alpine sh -c "echo ok"
+docker run --rm --security-opt no-new-privileges alpine sh -c "echo ok"</code></pre>
+          <div class="callout">
+            Con un'immagine reale alcuni flag richiedono altre modifiche: per
+            esempio un server web in sola lettura ha bisogno di directory
+            temporanee scrivibili, e un processo non privilegiato non pu&ograve;
+            usare porte sotto la 1024. Verifica sempre il singolo caso invece
+            di copiare i flag alla cieca.
+          </div>
+          <ul>
+            <li>Esegui i processi con un utente non privilegiato (<code>USER</code> nel Dockerfile).</li>
+            <li>Riduci le capability e monta il filesystem in sola lettura quando possibile.</li>
+            <li>Non inserire segreti nell'immagine: usa variabili d'ambiente, file montati o un secret manager.</li>
+            <li>Aggiorna regolarmente le immagini di base e analizza le vulnerabilit&agrave; con Docker Scout.</li>
+            <li>Pubblica solo le porte necessarie e limita l'accesso al socket del daemon.</li>
+          </ul>
+          <pre><code># solo con Docker Desktop o con il plugin Scout installato
+docker scout quickview nginx:alpine
+docker scout cves nginx:alpine</code></pre>
+          <div class="callout">
+            <strong>Docker Scout:</strong> &egrave; incluso in Docker Desktop, ma
+            non nei pacchetti di Docker Engine per Linux. Su un server va
+            installato separatamente come plugin della CLI; vedi la
+            <a href="https://docs.docker.com/scout/" target="_blank" rel="noopener">documentazione di Docker Scout</a>.
+          </div>
+
+          <h2>Workflow quotidiano</h2>
+          <pre><code># 1. scrivi Dockerfile e compose.yaml
+docker build -t mia-app:dev .
+
+# 2. prova il container in locale
+docker run --rm -p 3000:3000 mia-app:dev
+
+# 3. passa a Compose per l'ambiente completo
+docker compose up -d --build
+docker compose logs -f
+docker compose down</code></pre>
+
+          <h2>Se qualcosa va storto</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Situazione</th><th>Cosa fare</th></tr></thead>
+              <tbody>
+                <tr><td>&laquo;Cannot connect to the Docker daemon&raquo;</td><td>Avvia Docker Desktop oppure <code>sudo systemctl start docker</code>.</td></tr>
+                <tr><td>&laquo;permission denied&raquo; su <code>docker.sock</code></td><td>Aggiungi l'utente al gruppo <code>docker</code>, poi riapri la sessione.</td></tr>
+                <tr><td>&laquo;port is already allocated&raquo;</td><td>Cambia la porta host con <code>-p</code> o ferma il processo che la occupa.</td></tr>
+                <tr><td>Il container esce subito</td><td>Guarda <code>docker logs &lt;container&gt;</code> e controlla <code>CMD</code> ed <code>ENTRYPOINT</code>.</td></tr>
+                <tr><td>Lo spazio su disco &egrave; finito</td><td><code>docker system df</code>, poi <code>docker system prune</code> con cautela.</td></tr>
+                <tr><td>Impossibile scaricare un'immagine</td><td>Verifica nome e tag, il registry e <code>docker login</code> se &egrave; privato.</td></tr>
+                <tr><td>Build lentissima</td><td>Aggiungi <code>.dockerignore</code>, ordina bene i layer e usa la cache di BuildKit.</td></tr>
+                <tr><td>WSL 2 non funziona su Windows</td><td><code>wsl --update</code>, verifica la virtualizzazione e riavvia Docker Desktop.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Docker</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>29.9.3</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>
