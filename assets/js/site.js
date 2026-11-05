@@ -71,6 +71,14 @@
                 { text: "Installazione Linux", href: "informatica/docker/index.html#linux" },
                 { text: "Comandi", href: "informatica/docker/index.html#comandi" }
               ]
+            },
+            {
+              text: "WSL",
+              children: [
+                { text: "Panoramica", href: "informatica/wsl/index.html#panoramica" },
+                { text: "Installazione Windows", href: "informatica/wsl/index.html#windows" },
+                { text: "Comandi", href: "informatica/wsl/index.html#comandi" }
+              ]
             }
           ]
         },

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WSL — Adripedia</title>
+  <meta name="description" content="Guida pratica a WSL su Windows: che cos'è, differenze tra WSL 1 e WSL 2, installazione con wsl --install, distribuzioni Linux, configurazione e comandi utili.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/wsl/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">WSL</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Windows Subsystem for Linux</h1>
+      <p class="lead">
+        WSL esegue un ambiente Linux dentro Windows, senza doppio avvio e senza
+        gestire una macchina virtuale tradizionale. Qui trovi l'installazione
+        su Windows, la scelta della distribuzione e i comandi per usarla ogni
+        giorno. Contenuti verificati su WSL <code>3.0.3</code>.
+      </p>
+
+      <div class="callout">
+        <strong>Versioni documentate:</strong> WSL <code>3.0.3</code>
+        (9 ottobre 2026), con kernel Linux <code>6.18.54.1</code>. Il comando
+        di installazione rapida richiede Windows 10 versione 2004 (build
+        19041) o successiva, oppure Windows 11. WSL &egrave; un progetto open
+        source; la documentazione di riferimento &egrave; quella di Microsoft.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei tre tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida WSL">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-windows" type="button" role="tab"
+                  aria-selected="false" aria-controls="windows" tabindex="-1">
+            Installazione Windows
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <figure class="figure">
+            <img src="../../assets/img/wsl/wsl-architecture.svg" width="1200" height="620"
+                 alt="Diagramma: Windows esegue WSL 2 in una macchina virtuale leggera con un kernel Linux condiviso; le distribuzioni Linux hanno file system e processi isolati">
+            <figcaption>
+              WSL 2: Windows, la VM leggera gestita da WSL e le distribuzioni
+              Linux. Illustrazione Adripedia.
+            </figcaption>
+          </figure>
+
+          <h2>Che cos'&egrave; WSL</h2>
+          <p>
+            <strong>Windows Subsystem for Linux</strong> (WSL) &egrave; una
+            funzionalit&agrave; di Windows che permette di eseguire un ambiente
+            Linux completo accanto a Windows. Si usa da Windows Terminal,
+            PowerShell o dal prompt dei comandi: non serve creare una partizione,
+            avviare un secondo sistema operativo o configurare a mano una
+            macchina virtuale.
+          </p>
+          <p>
+            Dentro WSL trovi una shell Bash, i comandi GNU, un gestore di
+            pacchetti e qualsiasi strumento disponibile per la distribuzione
+            scelta: compilatori, runtime, database, server web e applicazioni
+            grafiche. I file Windows restano raggiungibili da Linux, e da
+            Windows puoi lanciare comandi Linux con <code>wsl</code>.
+          </p>
+
+          <h2>WSL 1 e WSL 2</h2>
+          <p>
+            WSL esiste in due architetture. <strong>WSL 2</strong> &egrave; la
+            versione predefinita e quella consigliata; <strong>WSL 1</strong>
+            resta utile in casi specifici. La differenza principale &egrave; che
+            WSL 2 esegue un vero kernel Linux dentro una macchina virtuale
+            leggera, mentre WSL 1 traduce le chiamate di sistema.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Aspetto</th><th>WSL 1</th><th>WSL 2</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Kernel</strong></td>
+                  <td>Nessun kernel Linux: layer di traduzione.</td>
+                  <td>Kernel Linux reale, in una VM leggera gestita da WSL.</td>
+                </tr>
+                <tr>
+                  <td><strong>Chiamate di sistema</strong></td>
+                  <td>Supporto parziale.</td>
+                  <td>Compatibilit&agrave; completa.</td>
+                </tr>
+                <tr>
+                  <td><strong>File su Windows</strong></td>
+                  <td>Pi&ugrave; veloce quando i progetti stanno su <code>/mnt/c</code>.</td>
+                  <td>Pi&ugrave; lento attraverso i due file system.</td>
+                </tr>
+                <tr>
+                  <td><strong>File su Linux</strong></td>
+                  <td>Buono, ma non &egrave; il punto forte.</td>
+                  <td>Molto pi&ugrave; veloce: &egrave; la scelta consigliata per i progetti.</td>
+                </tr>
+                <tr>
+                  <td><strong>systemd</strong></td>
+                  <td>Non supportato.</td>
+                  <td>Supportato, se abilitato in <code>/etc/wsl.conf</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Virtualizzazione</strong></td>
+                  <td>Non richiede la VM Linux.</td>
+                  <td>Richiede virtualizzazione e <em>Virtual Machine Platform</em>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Docker</strong></td>
+                  <td>Non &egrave; il backend usato da Docker Desktop.</td>
+                  <td>Backend predefinito di Docker Desktop su Windows.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            In pratica: installa WSL 2, tieni i progetti nel file system Linux e
+            usa WSL 1 solo se devi lavorare per forza su file Windows o se hai
+            un hardware molto vecchio senza virtualizzazione.
+          </p>
+
+          <h2>Come funziona WSL 2</h2>
+          <p>
+            WSL 2 avvia una <strong>macchina virtuale di utilit&agrave;</strong>
+            leggera, gestita automaticamente da Windows. Dentro la VM gira un
+            solo kernel Linux, condiviso dalle distribuzioni installate. Ogni
+            distribuzione ha per&ograve; il proprio file system, i propri
+            processi e le proprie impostazioni: puoi avere Ubuntu, Debian e Kali
+            affiancate senza che si pestino i piedi.
+          </p>
+          <p>
+            La VM non compare come una macchina virtuale da amministrare: non devi
+            allocare dischi, configurare la rete o avviarla a mano. WSL la
+            accende quando serve e la spegne quando non la usi. Il kernel viene
+            aggiornato insieme a WSL, non con <code>apt</code>.
+          </p>
+
+          <h2>Cosa puoi fare</h2>
+          <ul>
+            <li>Eseguire distribuzioni Linux come Ubuntu, Debian, Kali, Fedora, openSUSE e Alpine.</li>
+            <li>Usare Bash, <code>grep</code>, <code>sed</code>, <code>awk</code>, <code>git</code>, <code>ssh</code> e gli altri strumenti da riga di comando.</li>
+            <li>Sviluppare in Python, Node.js, Go, Rust, C/C++, Java e molti altri linguaggi.</li>
+            <li>Eseguire database e servizi come PostgreSQL, MySQL, Redis e Apache.</li>
+            <li>Aprire applicazioni Linux con interfaccia grafica sul desktop Windows tramite WSLg.</li>
+            <li>Usare la GPU per carichi di machine learning.</li>
+            <li>Abilitare <code>systemd</code> e gestire i servizi come su una distribuzione normale.</li>
+            <li>Usare Docker Desktop, che su Windows si appoggia a WSL 2.</li>
+          </ul>
+
+          <h2>Dove tenere i file</h2>
+          <p>
+            La regola pratica &egrave; semplice: <strong>tieni i progetti nel
+            file system Linux</strong> se ci lavori da Linux. Ogni passaggio tra
+            Windows e Linux ha un costo, e su molti file piccoli la differenza
+            si sente. Il file system Linux di una distribuzione &egrave; visibile
+            da Windows tramite <code>\\wsl.localhost</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Dove sei</th><th>Percorso</th><th>Note</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Linux</strong></td>
+                  <td><code>/home/&lt;utente&gt;/progetti</code></td>
+                  <td>Posizione consigliata per codice, repository e dipendenze.</td>
+                </tr>
+                <tr>
+                  <td><strong>Windows</strong></td>
+                  <td><code>C:\Users\&lt;utente&gt;\progetti</code></td>
+                  <td>Comodo per i file condivisi con applicazioni Windows.</td>
+                </tr>
+                <tr>
+                  <td><strong>Da Linux verso Windows</strong></td>
+                  <td><code>/mnt/c/Users/&lt;utente&gt;/progetti</code></td>
+                  <td>I dischi Windows sono montati sotto <code>/mnt/</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Da Windows verso Linux</strong></td>
+                  <td><code>\\wsl.localhost\Ubuntu-24.04\home\&lt;utente&gt;\progetti</code></td>
+                  <td>In Esplora file; su alcuni sistemi funziona anche <code>\\wsl$</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Da Linux puoi aprire la cartella corrente in Esplora file con
+            <code>explorer.exe .</code>. Da Windows puoi eseguire un comando
+            Linux senza aprire una shell con <code>wsl ls -la</code>.
+          </p>
+
+          <h2>WSL, Docker e gli strumenti di sviluppo</h2>
+          <p>
+            Su Windows, Docker Desktop usa WSL 2 come backend predefinito: avere
+            WSL aggiornato &egrave; un requisito anche per i container. La
+            sezione <a href="../docker/index.html">Docker</a> spiega
+            l'installazione e i comandi; qui basti sapere che i due strumenti
+            collaborano e che <code>wsl --update</code> risolve molti problemi
+            di avvio di Docker Desktop.
+          </p>
+          <p>
+            Con <strong>Windows Terminal</strong> puoi tenere PowerShell, Ubuntu e
+            Debian in tab separate. Con l'estensione <strong>WSL</strong> di
+            Visual Studio Code puoi aprire un progetto che vive nel file system
+            Linux e usare il terminale integrato della distribuzione, senza
+            copiare file da una parte all'altra.
+          </p>
+
+          <h2>Quando WSL non &egrave; la scelta giusta</h2>
+          <p>
+            WSL 2 non &egrave; un sostituto universale di un server Linux. Se devi
+            compilare o modificare il kernel, accedere a hardware molto
+            specifico, usare una distribuzione con un kernel personalizzato o
+            riprodurre esattamente un ambiente di produzione, una macchina
+            virtuale tradizionale o un server Linux vero restano pi&ugrave;
+            adatti. WSL eccelle nello sviluppo quotidiano su Windows, non nel
+            ruolo di hypervisor generalista.
+          </p>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/about" target="_blank" rel="noopener">Microsoft Learn &mdash; Che cos'&egrave; WSL</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/compare-versions" target="_blank" rel="noopener">Confronto tra WSL 1 e WSL 2</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/install" target="_blank" rel="noopener">Installazione di WSL</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/filesystems" target="_blank" rel="noopener">Lavorare tra i file system Windows e Linux</a></li>
+            <li><a href="https://github.com/microsoft/WSL/releases" target="_blank" rel="noopener">Release ufficiali di WSL su GitHub</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Installazione Windows
+             ================================================================ -->
+        <section class="tabpanel" id="windows" role="tabpanel" aria-labelledby="tab-windows" hidden>
+          <h2>Installazione su Windows</h2>
+          <p>
+            Su Windows l'installazione richiede pochi minuti: un comando abilita
+            le funzionalit&agrave; necessarie, scarica WSL e installa Ubuntu.
+            La versione documentata &egrave; <code>3.0.3</code>. La procedura
+            seguente vale <strong>solo per Windows</strong>: WSL non si installa
+            su Linux o macOS.
+          </p>
+
+          <div class="callout">
+            <strong>Non serve una partizione Linux.</strong> WSL convive con
+            Windows e usa una macchina virtuale leggera gestita dal sistema. I
+            file delle distribuzioni stanno in un disco virtuale, non in una
+            partizione separata.
+          </div>
+
+          <h2>Requisiti</h2>
+          <ul>
+            <li><strong>Windows 10</strong> versione 2004 (build 19041) o successiva, oppure <strong>Windows 11</strong>. Per il comando rapido <code>wsl --install</code> serve questa base; le build precedenti richiedono l'installazione manuale.</li>
+            <li>Processore a 64 bit con virtualizzazione abilitata nel BIOS/UEFI. WSL 2 richiede anche <strong>SLAT</strong> (Second Level Address Translation).</li>
+            <li>Privilegi di amministratore per abilitare le funzionalit&agrave; di Windows.</li>
+            <li>Connessione a Internet per scaricare WSL, il kernel e la distribuzione.</li>
+            <li>Spazio su disco per WSL e per le distribuzioni; il disco virtuale predefinito pu&ograve; crescere fino a 1 TB, ma occupa solo lo spazio effettivamente usato.</li>
+            <li>Windows aggiornato tramite Windows Update, con un riavvio disponibile se richiesto.</li>
+          </ul>
+          <p>
+            Per controllare la versione di Windows apri <strong>Impostazioni
+            &rsaquo; Sistema &rsaquo; Informazioni</strong>, oppure premi
+            <kbd>Win</kbd> + <kbd>R</kbd> e digita <code>winver</code>.
+          </p>
+
+          <h2>Metodo 1 &mdash; Un comando</h2>
+          <ol>
+            <li>Apri <strong>PowerShell</strong> come amministratore: cerca PowerShell nel menu Start, fai clic destro e scegli <strong>Esegui come amministratore</strong>.</li>
+            <li>Esegui il comando di installazione.</li>
+            <li>Attendi il download e l'abilitazione delle funzionalit&agrave;. Se viene richiesto, riavvia il computer.</li>
+            <li>Al primo avvio della distribuzione crea un nome utente e una password Linux.</li>
+          </ol>
+          <pre><code>wsl --install</code></pre>
+          <p>
+            Il comando abilita <em>Windows Subsystem for Linux</em> e <em>Virtual
+            Machine Platform</em>, scarica WSL dal Microsoft Store e installa la
+            distribuzione predefinita, cio&egrave; Ubuntu. Al termine potrebbe
+            servire un riavvio.
+          </p>
+
+          <div class="callout warn">
+            <strong>Se compare l'help di WSL</strong> invece dell'installazione,
+            WSL &egrave; gi&agrave; presente. In quel caso elenca le
+            distribuzioni e installane una con <code>-d</code>:
+            <code>wsl --list --online</code>, poi
+            <code>wsl --install -d Ubuntu-24.04</code>.
+          </div>
+
+          <h2>Opzioni utili di wsl --install</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Opzione</th><th>Effetto</th></tr></thead>
+              <tbody>
+                <tr><td><code>--distribution &lt;nome&gt;</code></td><td>Sceglie la distribuzione da installare. Si pu&ograve; abbreviare con <code>-d</code>.</td></tr>
+                <tr><td><code>--no-launch</code></td><td>Installa la distribuzione senza avviarla subito.</td></tr>
+                <tr><td><code>--web-download</code></td><td>Scarica da Internet invece di usare il Microsoft Store; utile se lo Store &egrave; bloccato.</td></tr>
+                <tr><td><code>--location &lt;percorso&gt;</code></td><td>Indica la cartella in cui installare la distribuzione.</td></tr>
+                <tr><td><code>--no-distribution</code></td><td>Installa solo WSL, senza distribuzioni.</td></tr>
+                <tr><td><code>--inbox</code></td><td>Installa la versione inclusa in Windows invece di quella del Microsoft Store. Gli aggiornamenti arrivano con Windows Update.</td></tr>
+                <tr><td><code>--enable-wsl1</code></td><td>Abilita anche WSL 1 durante l'installazione della versione Store.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code># elenca le distribuzioni disponibili
+wsl --list --online
+
+# installa Debian senza avviarla
+wsl --install -d Debian --no-launch
+
+# usa il download diretto se il Microsoft Store non funziona
+wsl --install -d Ubuntu-24.04 --web-download
+
+# installa solo WSL, senza alcuna distribuzione
+wsl --install --no-distribution</code></pre>
+
+          <h2>Primo avvio</h2>
+          <ol>
+            <li>Apri la distribuzione dal menu Start, oppure esegui <code>wsl</code> da PowerShell o Windows Terminal.</li>
+            <li>Attendi la decompressione dei file: il primo avvio pu&ograve; richiedere qualche minuto, i successivi sono quasi istantanei.</li>
+            <li>Crea un <strong>nome utente Linux</strong> e una password. Non sono le credenziali di Windows e la password non viene mostrata mentre la digiti.</li>
+            <li>Aggiorna i pacchetti della distribuzione.</li>
+          </ol>
+          <pre><code># comandi da eseguire dentro Ubuntu o Debian
+sudo apt update
+sudo apt upgrade -y</code></pre>
+          <div class="callout">
+            <strong>Password dimenticata?</strong> Da PowerShell puoi cambiarla
+            entrando come root nella distribuzione:
+            <code>wsl -d Ubuntu-24.04 -u root passwd &lt;utente&gt;</code>.
+            Sostituisci il nome della distribuzione e quello dell'utente con i
+            tuoi.
+          </div>
+
+          <h2>Verifica</h2>
+          <pre><code># da PowerShell
+wsl --version
+wsl --status
+wsl --list --verbose
+
+# dentro la distribuzione
+uname -a
+cat /etc/os-release
+whoami</code></pre>
+          <p>
+            <code>wsl --version</code> mostra la versione di WSL e dei suoi
+            componenti; <code>wsl --list --verbose</code> indica quali
+            distribuzioni sono installate, se sono in esecuzione e se usano WSL
+            1 o WSL 2. Se il comando <code>wsl --version</code> non esiste, hai
+            una versione molto vecchia: aggiorna con <code>wsl --update</code>.
+          </p>
+
+          <h2>Metodo 2 &mdash; Microsoft Store</h2>
+          <p>
+            In alternativa puoi installare <strong>Windows Subsystem for
+            Linux</strong> dal Microsoft Store e poi aggiungere una o pi&ugrave;
+            distribuzioni dalla raccolta Linux. &Egrave; lo stesso prodotto, ma
+            la gestione degli aggiornamenti passa dallo Store. Dopo
+            l'installazione apri la distribuzione almeno una volta per
+            completare la configurazione.
+          </p>
+          <p>
+            Sulle versioni recenti trovi anche <strong>WSL Settings</strong> nel
+            menu Start: &egrave; l'interfaccia grafica per memoria, processori,
+            rete e altre impostazioni globali. Le stesse opzioni si possono
+            gestire con i file <code>.wslconfig</code> e <code>wsl.conf</code>.
+          </p>
+
+          <h2>Metodo 3 &mdash; Installazione manuale</h2>
+          <p>
+            Serve solo su build precedenti, in ambienti gestiti o quando
+            <code>wsl --install</code> non &egrave; disponibile. Da PowerShell
+            come amministratore abilita le due funzionalit&agrave;:
+          </p>
+          <pre><code>dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart</code></pre>
+          <p>
+            Riavvia il computer. Poi installa il pacchetto WSL dalle
+            <a href="https://github.com/microsoft/WSL/releases" target="_blank" rel="noopener">release ufficiali su GitHub</a>
+            &mdash; scegli il file <code>.msi</code> per <code>x64</code> o
+            <code>ARM64</code> &mdash; oppure usa il Microsoft Store. Nelle build
+            pi&ugrave; vecchie pu&ograve; servire anche il pacchetto di
+            aggiornamento del kernel da
+            <a href="https://aka.ms/wsl2kernel" target="_blank" rel="noopener">aka.ms/wsl2kernel</a>.
+            Infine imposta WSL 2 come versione predefinita:
+          </p>
+          <pre><code>wsl --set-default-version 2</code></pre>
+          <p>
+            Se il comando segnala che la virtualizzazione non &egrave; attiva,
+            abilitala nel BIOS/UEFI e riavvia. Su un computer virtuale bisogna
+            abilitare la virtualizzazione annidata sull'host.
+          </p>
+
+          <h2>Aggiornare WSL</h2>
+          <pre><code># aggiornamento normale, dal Microsoft Store
+wsl --update
+
+# download diretto, se lo Store non &egrave; raggiungibile
+wsl --update --web-download
+
+# anteprime: solo se sai cosa stai facendo
+wsl --update --pre-release
+
+# controllo della versione
+wsl --version</code></pre>
+          <p>
+            L'aggiornamento di WSL &egrave; separato da quello della
+            distribuzione. I pacchetti Linux si aggiornano con
+            <code>sudo apt update &amp;&amp; sudo apt upgrade</code> (o con il
+            gestore della tua distro).
+          </p>
+
+          <h2>Gestire le distribuzioni</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Operazione</th><th>Comando</th></tr></thead>
+              <tbody>
+                <tr><td>Elencare quelle disponibili</td><td><code>wsl --list --online</code></td></tr>
+                <tr><td>Installarne una</td><td><code>wsl --install -d &lt;distro&gt;</code></td></tr>
+                <tr><td>Vedere quelle installate</td><td><code>wsl --list --verbose</code></td></tr>
+                <tr><td>Impostare quella predefinita</td><td><code>wsl --set-default &lt;distro&gt;</code></td></tr>
+                <tr><td>Passare una distro a WSL 2</td><td><code>wsl --set-version &lt;distro&gt; 2</code></td></tr>
+                <tr><td>Terminare una distro</td><td><code>wsl --terminate &lt;distro&gt;</code></td></tr>
+                <tr><td>Spegnere tutto WSL</td><td><code>wsl --shutdown</code></td></tr>
+                <tr><td>Rimuovere una distro</td><td><code>wsl --unregister &lt;distro&gt;</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn">
+            <strong>Attenzione:</strong> <code>wsl --unregister</code> elimina
+            definitivamente la distribuzione, i suoi file, i pacchetti
+            installati e le impostazioni. Esporta un backup prima, se ci sono
+            dati che vuoi conservare.
+          </div>
+
+          <h2>Configurazione consigliata</h2>
+          <p>
+            Due file coprono quasi tutte le esigenze:
+            <code>.wslconfig</code> per le impostazioni globali della VM e
+            <code>/etc/wsl.conf</code> per la singola distribuzione. Dopo una
+            modifica esegui <code>wsl --shutdown</code> e riapri la distro.
+          </p>
+          <p>
+            <strong>Memoria e CPU</strong> &mdash; crea
+            <code>%UserProfile%\.wslconfig</code>:
+          </p>
+          <pre><code>[wsl2]
+memory=8GB
+processors=4
+swap=2GB</code></pre>
+          <p>
+            Per default WSL 2 pu&ograve; usare fino al 50% della memoria e tutti
+            i processori logici. I limiti sono utili se Docker, database e IDE
+            insieme mettono sotto pressione Windows.
+          </p>
+          <p>
+            <strong>systemd e utente predefinito</strong> &mdash; dentro la
+            distribuzione modifica <code>/etc/wsl.conf</code>:
+          </p>
+          <pre><code>[boot]
+systemd=true
+
+[user]
+default=adriano
+
+[interop]
+appendWindowsPath=false</code></pre>
+          <p>
+            <code>systemd=true</code> abilita la gestione dei servizi come su
+            Linux. <code>default</code> imposta l'utente che viene usato
+            all'avvio. <code>appendWindowsPath=false</code> toglie i percorsi
+            Windows dal <code>PATH</code> Linux: &egrave; utile per evitare
+            conflitti, ma poi i programmi Windows vanno chiamati con
+            l'estensione <code>.exe</code> e il percorso completo.
+          </p>
+
+          <h2>Disinstallare</h2>
+          <ol>
+            <li>Esporta ci&ograve; che ti serve e rimuovi le distribuzioni con <code>wsl --unregister &lt;distro&gt;</code>.</li>
+            <li>Disinstalla le app delle distribuzioni da <strong>Impostazioni &rsaquo; App &rsaquo; App installate</strong>.</li>
+            <li>Se non ti serve pi&ugrave; WSL, disinstalla <strong>Windows Subsystem for Linux</strong> dalla stessa schermata.</li>
+          </ol>
+          <pre><code># rimuove una distribuzione e tutti i suoi dati
+wsl --unregister Ubuntu-24.04
+
+# disabilita le funzionalit&agrave; di Windows (solo se non servono pi&ugrave;)
+Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+Disable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart</code></pre>
+          <p>
+            La rimozione della sola app WSL non cancella automaticamente i dischi
+            virtuali delle distribuzioni. Controlla lo spazio e rimuovi i dati
+            solo dopo averli esportati.
+          </p>
+
+          <h2>Problemi comuni</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Situazione</th><th>Cosa fare</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>wsl --install</code> mostra l'help</td>
+                  <td>WSL &egrave; gi&agrave; installato. Usa <code>wsl --list --online</code> e <code>wsl --install -d &lt;distro&gt;</code>.</td>
+                </tr>
+                <tr>
+                  <td>Errore <code>0x80370102</code></td>
+                  <td>Virtualizzazione disattivata o <em>Virtual Machine Platform</em> mancante. Abilita la virtualizzazione nel BIOS/UEFI, installa la funzionalit&agrave; e riavvia.</td>
+                </tr>
+                <tr>
+                  <td>Errore <code>0x8007019e</code></td>
+                  <td>La funzionalit&agrave; Windows Subsystem for Linux non &egrave; attiva. Esegui i comandi DISM della sezione manuale e riavvia.</td>
+                </tr>
+                <tr>
+                  <td>Errore <code>0x1bc</code></td>
+                  <td>Il kernel di WSL 2 &egrave; vecchio o mancante. Esegui <code>wsl --update</code> e riprova.</td>
+                </tr>
+                <tr>
+                  <td>Installazione ferma a <code>0.0%</code></td>
+                  <td>Prova il download diretto: <code>wsl --install --web-download -d &lt;distro&gt;</code>. Controlla Store, proxy e connessione.</td>
+                </tr>
+                <tr>
+                  <td><code>wsl</code> non riconosciuto</td>
+                  <td>Riapri il terminale dopo l'installazione. Verifica la build di Windows e, su ARM64, usa PowerShell Core o il prompt dei comandi.</td>
+                </tr>
+                <tr>
+                  <td>La distro non compare</td>
+                  <td>Avviala almeno una volta. Controlla di non stare usando l'account Administrator integrato o un altro account Windows.</td>
+                </tr>
+                <tr>
+                  <td>Nessuna rete o VPN</td>
+                  <td>Aggiorna WSL, esegui <code>wsl --shutdown</code> e riprova. In ambienti aziendali possono servire regole firewall o DNS tunneling.</td>
+                </tr>
+                <tr>
+                  <td>WSL consuma troppa memoria</td>
+                  <td>Limita <code>memory</code> in <code>.wslconfig</code>, poi <code>wsl --shutdown</code>. Controlla i processi con <code>wsl --list --running</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/install" target="_blank" rel="noopener">Microsoft Learn &mdash; Install WSL</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/install-manual" target="_blank" rel="noopener">Installazione manuale per versioni precedenti</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/basic-commands" target="_blank" rel="noopener">Comandi di base di WSL</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/troubleshooting" target="_blank" rel="noopener">Risoluzione dei problemi di WSL</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/wsl-config" target="_blank" rel="noopener">Configurazione avanzata: wsl.conf e .wslconfig</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Comandi
+             ================================================================ -->
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: install, update, list, export&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare la cheat sheet e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <h2>Cheat sheet</h2>
+          <p>I comandi che servono pi&ugrave; spesso, da PowerShell o dal prompt dei comandi.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Comando</th><th>Cosa fa</th></tr></thead>
+              <tbody>
+                <tr><td><code>wsl --install</code></td><td>Installa WSL e la distribuzione predefinita (Ubuntu).</td></tr>
+                <tr><td><code>wsl --install -d &lt;distro&gt;</code></td><td>Installa una distribuzione specifica.</td></tr>
+                <tr><td><code>wsl --list --online</code></td><td>Elenca le distribuzioni disponibili.</td></tr>
+                <tr><td><code>wsl --list --verbose</code></td><td>Elenca le distribuzioni installate, stato e versione WSL.</td></tr>
+                <tr><td><code>wsl</code></td><td>Apre la distribuzione predefinita.</td></tr>
+                <tr><td><code>wsl -d &lt;distro&gt;</code></td><td>Apre una distribuzione specifica.</td></tr>
+                <tr><td><code>wsl --set-default &lt;distro&gt;</code></td><td>Imposta la distribuzione predefinita.</td></tr>
+                <tr><td><code>wsl --set-default-version 2</code></td><td>Imposta WSL 2 per le nuove distribuzioni.</td></tr>
+                <tr><td><code>wsl --set-version &lt;distro&gt; 2</code></td><td>Converte una distribuzione a WSL 2.</td></tr>
+                <tr><td><code>wsl --update</code></td><td>Aggiorna WSL all'ultima versione.</td></tr>
+                <tr><td><code>wsl --version</code></td><td>Mostra versione di WSL e componenti.</td></tr>
+                <tr><td><code>wsl --status</code></td><td>Mostra configurazione, distro predefinita e kernel.</td></tr>
+                <tr><td><code>wsl --shutdown</code></td><td>Spegne tutte le distribuzioni e la VM di WSL 2.</td></tr>
+                <tr><td><code>wsl --terminate &lt;distro&gt;</code></td><td>Ferma una singola distribuzione.</td></tr>
+                <tr><td><code>wsl --export &lt;distro&gt; &lt;file.tar&gt;</code></td><td>Esporta un backup della distribuzione.</td></tr>
+                <tr><td><code>wsl --import &lt;distro&gt; &lt;cartella&gt; &lt;file.tar&gt;</code></td><td>Importa una distribuzione da un backup.</td></tr>
+                <tr><td><code>wsl --unregister &lt;distro&gt;</code></td><td>Rimuove una distribuzione e tutti i suoi dati.</td></tr>
+                <tr><td><code>wsl --mount &lt;disco&gt;</code></td><td>Monta un disco fisico in WSL 2.</td></tr>
+                <tr><td><code>wsl --unmount &lt;disco&gt;</code></td><td>Smonta un disco montato.</td></tr>
+                <tr><td><code>wsl --help</code></td><td>Mostra tutte le opzioni disponibili.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>&lt;...&gt;</code> indica un valore da sostituire; le parentesi
+            quadre sono opzionali. I comandi <code>wsl</code> si eseguono da
+            Windows; quelli con <code>sudo</code> si eseguono dentro la
+            distribuzione Linux.
+          </p>
+
+          <h2>Primi passi</h2>
+          <pre><code>wsl --version
+wsl --status
+wsl --list --verbose
+wsl
+wsl --help</code></pre>
+
+          <h2>Distribuzioni</h2>
+          <pre><code>wsl --list --online
+wsl --install -d Debian
+wsl --install -d Ubuntu-24.04 --no-launch
+wsl --install -d Ubuntu-24.04 --web-download
+wsl --list
+wsl --list --verbose
+wsl --list --running
+wsl --set-default Ubuntu-24.04
+wsl --set-default-version 2
+wsl --set-version Ubuntu-24.04 2
+wsl --terminate Ubuntu-24.04
+wsl --shutdown</code></pre>
+          <div class="callout">
+            <strong>WSL 1 o WSL 2?</strong> Per lo sviluppo usa WSL 2. La
+            conversione con <code>wsl --set-version</code> pu&ograve; richiedere
+            tempo e, su distribuzioni grandi, conviene fare un backup prima.
+          </div>
+
+          <h2>Eseguire comandi</h2>
+          <pre><code>wsl ls -la
+wsl pwd
+wsl uname -a
+wsl -d Debian -- uname -a
+wsl -d Ubuntu-24.04 -u root
+wsl --user root
+wsl ~
+wsl hostname -I
+wsl sudo apt update</code></pre>
+          <p>
+            Tutto ci&ograve; che segue <code>wsl</code> viene eseguito come nella
+            distribuzione predefinita. I comandi con <code>sudo</code>
+            funzionano, e l'output resta nel terminale Windows.
+          </p>
+
+          <h2>File e interoperabilit&agrave;</h2>
+          <pre><code># dentro Linux: apri la cartella corrente in Esplora file
+explorer.exe .
+
+# dentro Linux: apri un file con un programma Windows
+notepad.exe file.txt
+
+# dentro Linux: i dischi Windows sono sotto /mnt
+cd /mnt/c/Users
+
+# da Windows: esegui un comando Linux nella cartella corrente
+wsl ls -la
+
+# da Windows: copia un file dentro la home Linux
+wsl cp file.txt /home/&lt;utente&gt;/</code></pre>
+          <p>
+            In Esplora file il file system Linux si raggiunge con
+            <code>\\wsl.localhost\&lt;distro&gt;\home\&lt;utente&gt;</code>.
+            Per le prestazioni, tieni i repository nel file system Linux e non
+            sotto <code>/mnt/c</code>.
+          </p>
+
+          <h2>Backup, export e import</h2>
+          <pre><code># ferma la distribuzione prima del backup
+wsl --terminate Ubuntu-24.04
+
+# esporta in TAR
+wsl --export Ubuntu-24.04 D:\backup\ubuntu.tar
+
+# esporta in VHDX (solo WSL 2)
+wsl --export Ubuntu-24.04 D:\backup\ubuntu.vhdx --vhd
+
+# importa una copia
+wsl --import Ubuntu-copia D:\WSL\Ubuntu-copia D:\backup\ubuntu.tar
+
+# importa una copia da VHDX
+wsl --import Ubuntu-copia D:\WSL\Ubuntu-copia D:\backup\ubuntu.vhdx --vhd
+
+# rimuove la copia e i suoi dati
+wsl --unregister Ubuntu-copia</code></pre>
+          <div class="callout warn">
+            <code>wsl --unregister</code> &egrave; irreversibile: elimina la
+            distribuzione e tutto ci&ograve; che contiene. Usalo solo dopo aver
+            verificato il backup.
+          </div>
+
+          <h2>Configurazione</h2>
+          <p>File globale <code>%UserProfile%\.wslconfig</code>:</p>
+          <pre><code>[wsl2]
+memory=8GB
+processors=4
+swap=2GB</code></pre>
+          <p>File per distribuzione <code>/etc/wsl.conf</code>:</p>
+          <pre><code>[boot]
+systemd=true
+
+[user]
+default=adriano
+
+[interop]
+appendWindowsPath=false</code></pre>
+          <pre><code># applica le modifiche: ferma tutto e riapri la distro
+wsl --shutdown</code></pre>
+
+          <h2>Rete</h2>
+          <pre><code># indirizzo IP della distribuzione WSL 2
+wsl hostname -I
+
+# indirizzo del host Windows visto da Linux
+ip route show | grep -i default | awk '{ print $3 }'
+
+# riavvia la rete dopo una modifica a .wslconfig
+wsl --shutdown</code></pre>
+          <p>
+            Con la rete NAT predefinita i servizi in ascolto su
+            <code>localhost</code> in WSL sono raggiungibili da Windows. Se usi
+            VPN o firewall aziendali e la rete non funziona, aggiorna WSL e
+            verifica le impostazioni di rete in WSL Settings.
+          </p>
+
+          <h2>Dischi</h2>
+          <pre><code>wsl --mount \\.\PHYSICALDRIVE1
+wsl --mount \\.\PHYSICALDRIVE1 --partition 2
+wsl --mount \\.\PHYSICALDRIVE1 --bare
+wsl --unmount \\.\PHYSICALDRIVE1
+wsl --unmount</code></pre>
+          <p>
+            Il montaggio di dischi fisici richiede privilegi di amministratore.
+            <code>--bare</code> collega il disco senza montarlo, utile per
+            gestire partizioni o file system non supportati automaticamente.
+          </p>
+
+          <h2>Manutenzione</h2>
+          <pre><code>wsl --update
+wsl --update --web-download
+wsl --version
+wsl --list --running
+wsl --shutdown
+
+# dentro Ubuntu o Debian
+sudo apt update
+sudo apt upgrade -y
+sudo apt autoremove -y</code></pre>
+
+          <h2>Se qualcosa va storto</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Situazione</th><th>Comando o controllo</th></tr></thead>
+              <tbody>
+                <tr><td>Versione e stato</td><td><code>wsl --version</code> e <code>wsl --status</code></td></tr>
+                <tr><td>Distro installate</td><td><code>wsl --list --verbose</code></td></tr>
+                <tr><td>Distro in esecuzione</td><td><code>wsl --list --running</code></td></tr>
+                <tr><td>Riavvio completo</td><td><code>wsl --shutdown</code></td></tr>
+                <tr><td>Virtualizzazione attiva</td><td><code>Get-ComputerInfo -Property HyperVRequirementVirtualizationFirmwareEnabled</code></td></tr>
+                <tr><td>Hypervisor attivo</td><td><code>bcdedit /enum | findstr -i hypervisorlaunchtype</code></td></tr>
+                <tr><td>Funzionalit&agrave; WSL</td><td><code>Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux</code></td></tr>
+                <tr><td>Kernel e componenti</td><td><code>wsl --update</code>, poi <code>wsl --version</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/basic-commands" target="_blank" rel="noopener">Microsoft Learn &mdash; Comandi di base di WSL</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/wsl-config" target="_blank" rel="noopener">Microsoft Learn &mdash; wsl.conf e .wslconfig</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/filesystems" target="_blank" rel="noopener">Microsoft Learn &mdash; File system e interoperabilit&agrave;</a></li>
+            <li><a href="https://learn.microsoft.com/it-it/windows/wsl/troubleshooting" target="_blank" rel="noopener">Microsoft Learn &mdash; Risoluzione dei problemi</a></li>
+            <li><a href="https://github.com/microsoft/WSL/releases" target="_blank" rel="noopener">Release ufficiali di WSL</a></li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione WSL</span>
+        <span class="footer-right">
+          <span>Versione documentata: WSL <code>3.0.3</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>
