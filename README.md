@@ -140,7 +140,7 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
 
 ## Immagini della sezione Docker
 
-Le immagini in `assets/img/docker/` provengono dalle fonti ufficiali Docker:
+Le immagini ufficiali in `assets/img/docker/` provengono dalle fonti Docker:
 
 - `docker-logo.svg`: logo ufficiale, dalle Docker Brand Guidelines
   (`docker.com`).
@@ -149,8 +149,18 @@ Le immagini in `assets/img/docker/` provengono dalle fonti ufficiali Docker:
 - `docker-desktop-containers.webp`: screenshot di Docker Desktop, dalla
   documentazione Docker (licenza Apache 2.0).
 
-Le didascalie nelle pagine riportano fonte e, dove applicabile, licenza. Se
-sostituisci un'immagine, aggiorna anche la didascalia.
+Il tab **Approfondimenti** usa tre diagrammi originali di Adripedia:
+
+- `docker-isolation.svg`: namespace, cgroup, capability e seccomp di due
+  container sopra un kernel condiviso.
+- `docker-network.svg`: rete bridge definita dall'utente, DNS interno, porte
+  pubblicate e NAT in uscita.
+- `docker-process.svg`: catena client, `dockerd`, `containerd`,
+  `containerd-shim` e `runc`, fino al processo PID 1.
+
+I concetti sono ripresi dalla documentazione Docker; i disegni non usano
+immagini o marchi Docker. Le didascalie nelle pagine riportano fonte e, dove
+applicabile, licenza. Se sostituisci un'immagine, aggiorna anche la didascalia.
 
 ## Immagini della sezione WSL
 

@@ -69,7 +69,8 @@
                 { text: "Panoramica", href: "informatica/docker/index.html#panoramica" },
                 { text: "Installazione Windows", href: "informatica/docker/index.html#windows" },
                 { text: "Installazione Linux", href: "informatica/docker/index.html#linux" },
-                { text: "Comandi", href: "informatica/docker/index.html#comandi" }
+                { text: "Comandi", href: "informatica/docker/index.html#comandi" },
+                { text: "Approfondimenti", href: "informatica/docker/index.html#approfondimenti" }
               ]
             },
             {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Docker — Adripedia</title>
-  <meta name="description" content="Guida pratica a Docker: che cos'è, installazione su Windows e Linux, immagini, container, Docker Compose e comandi utili con esempi.">
+  <meta name="description" content="Guida pratica a Docker: che cos'è, installazione su Windows e Linux, immagini, container, Docker Compose, comandi utili e approfondimenti su rete, processi e permessi.">
   <link rel="stylesheet" href="../../assets/css/style.css">
   <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#191919">
@@ -35,7 +35,8 @@
       <p class="lead">
         Guida pratica a Docker: che cos'&egrave;, come installarlo su Windows e
         Linux e i comandi che servono davvero per immagini, container, volumi e
-        Docker Compose. Contenuti verificati su Docker Engine
+        Docker Compose. In pi&ugrave;, un approfondimento su reti, processi,
+        utenze e isolamento. Contenuti verificati su Docker Engine
         <code>29.9.3</code> e Docker Desktop <code>4.98.0</code>.
       </p>
 
@@ -50,7 +51,7 @@
       <div class="tabs" data-tabs>
         <noscript>
           <p class="callout">
-            JavaScript &egrave; disattivato: i contenuti dei quattro tab sono
+            JavaScript &egrave; disattivato: i contenuti dei cinque tab sono
             mostrati uno dopo l'altro.
           </p>
         </noscript>
@@ -71,6 +72,10 @@
           <button class="tab" id="tab-comandi" type="button" role="tab"
                   aria-selected="false" aria-controls="comandi" tabindex="-1">
             Comandi
+          </button>
+          <button class="tab" id="tab-approfondimenti" type="button" role="tab"
+                  aria-selected="false" aria-controls="approfondimenti" tabindex="-1">
+            Approfondimenti
           </button>
         </div>
 
@@ -1029,6 +1034,580 @@ docker compose down</code></pre>
               </tbody>
             </table>
           </div>
+        </section>
+
+        <!-- ================================================================
+             Approfondimenti
+             ================================================================ -->
+        <section class="tabpanel" id="approfondimenti" role="tabpanel" aria-labelledby="tab-approfondimenti" hidden>
+          <p>
+            Un container &egrave; un processo Linux con una vista limitata del
+            sistema. Questa pagina entra nei dettagli che di solito restano
+            impliciti: come viene isolato, come comunica sulla rete, chi esegue
+            i processi e con quali permessi. Non serve per iniziare, ma per
+            capire cosa succede quando qualcosa non funziona.
+          </p>
+
+          <h2>Come funziona l'isolamento</h2>
+          <p>
+            Docker non emula una macchina: usa funzionalit&agrave; del kernel
+            Linux. Ogni container riceve <strong>namespace</strong> propri
+            (ci&ograve; che vede), <strong>cgroup</strong> (quanto pu&ograve;
+            consumare) e un insieme ridotto di <strong>permessi</strong>
+            (ci&ograve; che pu&ograve; fare). Il kernel per&ograve; &egrave; lo
+            stesso dell'host e viene condiviso da tutti i container.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/docker/docker-isolation.svg" width="1200" height="660"
+                 alt="Diagramma dell'isolamento di due container: namespace, cgroup, capability e seccomp separano i processi, mentre il kernel Linux resta condiviso">
+            <figcaption>
+              Isolamento di due container sullo stesso kernel.
+              Illustrazione Adripedia &middot; concetti dalla documentazione Docker.
+            </figcaption>
+          </figure>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Namespace</th><th>Cosa isola</th><th>Effetto pratico</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>pid</code></td>
+                  <td>I processi.</td>
+                  <td>Dentro il container il processo principale &egrave; PID 1; non vede i processi dell'host.</td>
+                </tr>
+                <tr>
+                  <td><code>net</code></td>
+                  <td>Interfacce, indirizzi, porte e tabelle di routing.</td>
+                  <td>Ogni container ha la sua <code>eth0</code> e il suo <code>localhost</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>mnt</code></td>
+                  <td>Punti di mount e file system.</td>
+                  <td>Il container vede la sua immagine e i volumi montati, non la radice dell'host.</td>
+                </tr>
+                <tr>
+                  <td><code>uts</code></td>
+                  <td>Hostname e nome di dominio.</td>
+                  <td><code>hostname</code> restituisce l'ID o il nome del container.</td>
+                </tr>
+                <tr>
+                  <td><code>ipc</code></td>
+                  <td>Memoria condivisa, code e semafori System V e POSIX.</td>
+                  <td>Due container non si scambiano messaggi tramite l'IPC dell'host.</td>
+                </tr>
+                <tr>
+                  <td><code>user</code></td>
+                  <td>UID e GID.</td>
+                  <td>Con user namespace, root nel container pu&ograve; corrispondere a un utente non privilegiato sull'host.</td>
+                </tr>
+                <tr>
+                  <td><code>cgroup</code></td>
+                  <td>La vista della gerarchia dei cgroup.</td>
+                  <td>Il container vede i propri limiti, non l'intera gerarchia dell'host.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Il kernel ha anche un namespace <code>time</code>, che Docker non usa
+            per impostazione predefinita. I <strong>cgroup v2</strong> contano e
+            limitano CPU, memoria, I/O e numero di processi. Le
+            <strong>capability</strong> riducono i poteri di root: un container
+            non pu&ograve; montare file system, caricare moduli o cambiare
+            l'orologio. <strong>seccomp</strong> filtra le chiamate di sistema,
+            mentre <strong>AppArmor</strong> o <strong>SELinux</strong> aggiungono
+            un controllo sugli accessi.
+          </p>
+          <div class="callout">
+            <strong>Container e macchina virtuale non sono la stessa cosa:</strong>
+            il container condivide il kernel, quindi una vulnerabilit&agrave; del
+            kernel riguarda tutti. L'isolamento &egrave; solido per processi
+            normali, ma non sostituisce una VM quando devi eseguire codice non
+            fidato.
+          </div>
+
+          <h2>Reti</h2>
+          <p>
+            Docker crea una rete virtuale per ogni progetto. I container
+            collegati alla stessa rete si raggiungono per nome, tramite un DNS
+            interno; le porte sono raggiungibili dall'host o dall'esterno solo se
+            vengono pubblicate.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/docker/docker-network.svg" width="1200" height="680"
+                 alt="Diagramma di una rete Docker: i container web e db sono collegati alla rete app-net, si risolvono per nome e solo la porta 8080 di web è pubblicata sull'host">
+            <figcaption>
+              Rete definita dall'utente: DNS interno, porte pubblicate e NAT in
+              uscita. Illustrazione Adripedia &middot; concetti dalla
+              documentazione Docker.
+            </figcaption>
+          </figure>
+
+          <h3>I driver di rete</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Driver</th><th>A cosa serve</th><th>Quando usarlo</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>bridge</code></td>
+                  <td>Rete virtuale locale all'host, con indirizzi privati e NAT.</td>
+                  <td>&Egrave; il caso normale: applicazione, database e cache sullo stesso host.</td>
+                </tr>
+                <tr>
+                  <td><code>host</code></td>
+                  <td>Il container usa direttamente la rete dell'host, senza NAT.</td>
+                  <td>Servizi che devono usare molte porte o evitare il costo del NAT. Su Docker Desktop richiede l'attivazione nelle impostazioni.</td>
+                </tr>
+                <tr>
+                  <td><code>overlay</code></td>
+                  <td>Collega container su host diversi, come se fossero sulla stessa rete.</td>
+                  <td>Cluster Swarm o ambienti multi-host.</td>
+                </tr>
+                <tr>
+                  <td><code>macvlan</code></td>
+                  <td>Assegna al container un MAC e un indirizzo della rete fisica.</td>
+                  <td>Applicazioni legacy che devono apparire come host fisici.</td>
+                </tr>
+                <tr>
+                  <td><code>ipvlan</code></td>
+                  <td>Come macvlan, ma senza MAC dedicati per container.</td>
+                  <td>Reti con un limite al numero di indirizzi MAC disponibili.</td>
+                </tr>
+                <tr>
+                  <td><code>none</code></td>
+                  <td>Nessuna rete, solo il loopback.</td>
+                  <td>Elaborazioni isolate che non devono comunicare.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Con <code>host</code> l'opzione <code>-p</code> viene ignorata: non
+            c'&egrave; NAT da configurare. Su Docker Desktop il driver
+            <code>host</code> funziona solo dopo aver attivato
+            <em>Enable host networking</em> nelle impostazioni e non copre i
+            protocolli sotto TCP e UDP.
+          </p>
+
+          <h3>Bridge predefinito o rete definita dall'utente?</h3>
+          <p>
+            Senza <code>--network</code> il container finisce sul bridge
+            predefinito, chiamato <code>bridge</code>. Funziona, ma &egrave;
+            considerato un dettaglio legacy. Una rete creata con
+            <code>docker network create</code> offre molto di pi&ugrave;.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Aspetto</th><th>Bridge predefinito</th><th>Rete definita dall'utente</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>DNS per nome</strong></td>
+                  <td>No: servono gli IP o il vecchio <code>--link</code>.</td>
+                  <td>S&igrave;: ogni container &egrave; risolvibile con nome e alias.</td>
+                </tr>
+                <tr>
+                  <td><strong>Isolamento</strong></td>
+                  <td>Tutti i container senza rete finiscono insieme.</td>
+                  <td>Solo i container collegati alla stessa rete si vedono.</td>
+                </tr>
+                <tr>
+                  <td><strong>Modifiche</strong></td>
+                  <td>Configurabile solo dal demone, con riavvio.</td>
+                  <td>Si collega e scollega un container anche mentre &egrave; in esecuzione.</td>
+                </tr>
+                <tr>
+                  <td><strong>Impostazioni</strong></td>
+                  <td>Uniche per tutti.</td>
+                  <td>MTU, subnet e gateway si scelgono per singola rete.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn">
+            <strong>In produzione usa reti dedicate.</strong> Il bridge
+            predefinito non risolve i nomi e mette insieme container di progetti
+            diversi: &egrave; comodo per una prova, non per un'applicazione.
+          </div>
+
+          <h3>Pubblicare porte</h3>
+          <pre><code># pubblica la porta 80 del container sulla 8080 dell'host
+docker run -d --name web -p 8080:80 nginx:alpine
+
+# ascolta solo su localhost, non sulla rete locale
+docker run -d --name web -p 127.0.0.1:8080:80 nginx:alpine
+
+# pubblica tutte le porte dichiarate con EXPOSE su porte casuali
+docker run -d --name web -P nginx:alpine
+
+# mostra la mappatura effettiva
+docker port web</code></pre>
+          <p>
+            La sintassi &egrave; <code>host:container</code>. Senza indirizzo,
+            Docker ascolta su tutte le interfacce; specificando
+            <code>127.0.0.1</code> il servizio resta raggiungibile solo dalla
+            macchina. I container sulla stessa rete non hanno bisogno di
+            pubblicare nulla: si raggiungono direttamente sulla porta interna.
+          </p>
+          <div class="callout">
+            <strong><code>EXPOSE</code> non pubblica nulla.</strong> Nel
+            Dockerfile documenta la porta e la rende disponibile a
+            <code>-P</code>, ma non crea un inoltro. Per aprire una porta verso
+            l'host serve <code>-p</code> (o <code>ports</code> in Compose).
+          </div>
+
+          <h3>DNS, alias e nomi</h3>
+          <pre><code>docker network create app-net
+docker run -d --name db --network app-net postgres:17
+docker run -d --name api --network app-net --network-alias backend mia-api
+
+# dal container api
+getent hosts db
+getent hosts backend</code></pre>
+          <p>
+            Il DNS interno risponde con il nome del container e con gli alias
+            dichiarati. Un container pu&ograve; stare su pi&ugrave; reti e avere un
+            nome diverso su ciascuna; i nomi generati automaticamente, come
+            <code>fervent_lovelace</code>, non sono pensati per essere usati come
+            indirizzi stabili. Su Alpine, se <code>getent</code> non c'&egrave;,
+            usa <code>nslookup db</code>.
+          </p>
+
+          <h3>Uscire verso Internet e raggiungere l'host</h3>
+          <p>
+            Il traffico in uscita passa dal NAT dell'host: i server esterni
+            vedono l'indirizzo dell'host, non quello del container. Per il
+            traffico in entrata serve una porta pubblicata. Un container che
+            deve contattare un servizio in esecuzione sull'host non pu&ograve;
+            usare <code>localhost</code>, perch&eacute; dentro il container
+            <code>localhost</code> &egrave; il container stesso.
+          </p>
+          <pre><code># Docker Desktop: il nome viene risolto automaticamente
+docker run --rm curlimages/curl http://host.docker.internal:8000
+
+# Docker Engine su Linux: mappa il nome sul gateway dell'host
+docker run --rm --add-host=host.docker.internal:host-gateway \
+  curlimages/curl http://host.docker.internal:8000</code></pre>
+          <div class="callout">
+            <strong>Docker Desktop non usa la rete dell'host.</strong> I
+            container girano in una VM Linux: <code>docker0</code> esiste dentro
+            la VM e non sull'host, le porte pubblicate vengono inoltrate dal
+            processo <code>com.docker.backend.exe</code> e
+            <code>host.docker.internal</code> &egrave; il modo previsto per
+            raggiungere i servizi Windows. I firewall vedono il traffico arrivare
+            da quel processo.
+          </div>
+
+          <h3>Diagnosticare la rete</h3>
+          <pre><code>docker network ls
+docker network inspect app-net
+docker port web
+docker inspect --format '{{json .NetworkSettings.Networks}}' web
+
+# dentro un container
+getent hosts db
+ip addr
+ss -tulpn</code></pre>
+          <p>
+            Se due container non si vedono, controlla nell'ordine: sono sulla
+            stessa rete, il nome &egrave; corretto, il servizio ascolta su
+            <code>0.0.0.0</code> e non solo su <code>127.0.0.1</code>, e nessun
+            firewall blocca il traffico. <code>docker inspect</code> mostra IP,
+            gateway e alias assegnati.
+          </p>
+
+          <h2>Processi</h2>
+          <p>
+            Un container non &egrave; un processo speciale del demone: &egrave;
+            un processo normale del kernel, avviato da <code>runc</code> e
+            sorvegliato da <code>containerd-shim</code>. Capire la catena aiuta a
+            interpretare i log, i codici di uscita e i segnali.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/docker/docker-process.svg" width="1200" height="660"
+                 alt="Diagramma della catena di avvio: docker CLI, dockerd, containerd, containerd-shim, runc e processo del container con PID 1 e processi figli">
+            <figcaption>
+              Dal comando al processo: client, demone, runtime e shim.
+              Illustrazione Adripedia &middot; concetti dalla documentazione Docker.
+            </figcaption>
+          </figure>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Comando</th><th>Cosa mostra</th></tr></thead>
+              <tbody>
+                <tr><td><code>docker top web</code></td><td>I processi del container, con i PID visti dall'host.</td></tr>
+                <tr><td><code>docker exec -it web sh</code></td><td>Un nuovo processo dentro gli stessi namespace del container.</td></tr>
+                <tr><td><code>docker stats</code></td><td>CPU, memoria, rete e I/O in tempo reale.</td></tr>
+                <tr><td><code>docker inspect web</code></td><td>Stato, PID iniziale, limiti e codice di uscita.</td></tr>
+                <tr><td><code>docker logs web</code></td><td>Stdout e stderr del processo principale.</td></tr>
+                <tr><td><code>docker events</code></td><td>Eventi del demone: avvii, stop, kill, OOM.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>PID 1, segnali e zombie</h3>
+          <p>
+            Dentro il container il processo principale &egrave; PID 1. Il kernel
+            tratta PID 1 in modo particolare: i segnali con azione predefinita
+            non lo terminano, quindi deve gestirli esplicitamente. Se PID 1
+            &egrave; una shell che lancia l'applicazione come figlia, spesso non
+            inoltra <code>SIGTERM</code>: <code>docker stop</code> aspetta, poi
+            arriva <code>SIGKILL</code> e il container esce con codice 137.
+          </p>
+          <pre><code># aggiunge un init minimo (tini) come PID 1
+docker run -d --init --name web nginx:alpine
+
+# invia un segnale specifico al processo principale
+docker stop web
+docker kill --signal=SIGUSR1 web</code></pre>
+          <div class="callout">
+            <strong>Quando serve <code>--init</code>:</strong> con applicazioni
+            che non gestiscono i segnali o che generano processi figli. Tini
+            inoltra i segnali e raccoglie i processi zombie. Un'applicazione
+            scritta bene pu&ograve; fare lo stesso da sola, ma un container con
+            una shell come PID 1 &egrave; un caso classico da correggere.
+          </div>
+
+          <h3>Limiti, cgroup e OOM</h3>
+          <p>
+            Senza limiti un container pu&ograve; usare tutta la memoria e tutta
+            la CPU disponibili. I cgroup permettono di fissare un tetto e di
+            impedire che un singolo servizio esaurisca le risorse dell'host.
+          </p>
+          <pre><code>docker run -d --name web \
+  --memory=512m --memory-swap=512m \
+  --cpus=1.5 --cpuset-cpus=0,1 --pids-limit=200 \
+  nginx:alpine
+
+docker stats
+docker inspect --format '{{.State.OOMKilled}}' web
+docker update --memory=1g --cpus=2 web</code></pre>
+          <p>
+            <code>--memory</code> &egrave; un limite rigido;
+            <code>--memory-swap</code> uguale a <code>--memory</code> disattiva
+            lo swap per quel container. Se il kernel non riesce a liberare
+            memoria, l'OOM killer termina un processo e il container pu&ograve;
+            uscire con codice 137 e <code>OOMKilled: true</code>.
+          </p>
+          <div class="callout warn">
+            <strong>Non disattivare l'OOM killer senza un limite.</strong>
+            <code>--oom-kill-disable</code> ha senso solo insieme a
+            <code>--memory</code>: altrimenti il rischio &egrave; che il kernel
+            scelga un processo dell'host, con conseguenze peggiori.
+          </div>
+
+          <h3>Entrare nei namespace</h3>
+          <pre><code># PID del processo principale visto dall'host
+docker inspect --format '{{.State.Pid}}' web
+
+# richiede privilegi sull'host e gli strumenti util-linux
+sudo nsenter -t &lt;pid&gt; -n -p -m sh</code></pre>
+          <p>
+            <code>nsenter</code> &egrave; utile per diagnosticare un container
+            senza una shell al suo interno. Va usato con cautela: si entra negli
+            stessi namespace del processo e si possono modificare file e rete.
+          </p>
+
+          <h2>Utenze e privilegi</h2>
+          <p>
+            Di default il processo di un container Linux gira come
+            <strong>root</strong>, ma non &egrave; il root dell'host: perde le
+            capability non necessarie e subisce seccomp, AppArmor o SELinux.
+            Resta comunque un utente con UID 0, quindi la pratica migliore
+            &egrave; eseguire l'applicazione con un utente dedicato.
+          </p>
+          <pre><code># chi sono dentro il container
+docker run --rm alpine id
+
+# utente e gruppo scelti al volo
+docker run --rm --user 1000:1000 alpine id
+docker run --rm --user nobody --group-add 1000 alpine id
+
+# solo la capability necessaria per una porta privilegiata
+docker run --rm --cap-drop ALL --cap-add NET_BIND_SERVICE nginx:alpine
+
+# filesystem in sola lettura, con /tmp scrivibile
+docker run --rm --read-only --tmpfs /tmp \
+  --security-opt no-new-privileges alpine sh -c 'echo ok &gt; /tmp/prova'</code></pre>
+
+          <h3>L'utente nell'immagine</h3>
+          <p>
+            <code>USER</code> nel Dockerfile cambia l'utente predefinito per il
+            processo e per le istruzioni successive. &Egrave; il posto giusto per
+            creare un utente applicativo e assegnargli i file, invece di
+            correggere i permessi a runtime.
+          </p>
+          <pre><code>FROM node:22-alpine
+RUN addgroup -S app &amp;&amp; adduser -S app -G app
+WORKDIR /app
+COPY --chown=app:app . .
+USER app
+CMD ["node", "server.js"]</code></pre>
+          <div class="callout">
+            <strong>UID numerici, non nomi.</strong> Su Linux i permessi dei file
+            sono numerici: se il container gira come UID 1000 e il file montato
+            appartiene a un altro UID, ottieni <em>permission denied</em> anche se
+            il nome utente sembra uguale. Su Docker Desktop i file passano
+            attraverso il livello di condivisione della VM, quindi i permessi
+            Windows non coincidono con quelli Linux: per i dati persistenti
+            preferisci un volume gestito da Docker.
+          </div>
+
+          <h3>Capability</h3>
+          <p>
+            Docker parte con un set ridotto di capability. Quelle pi&ugrave;
+            comuni nel set predefinito sono:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Capability</th><th>Cosa consente</th><th>Nota</th></tr></thead>
+              <tbody>
+                <tr><td><code>CHOWN</code></td><td>Cambiare proprietario dei file.</td><td>Utile per correggere i permessi all'avvio.</td></tr>
+                <tr><td><code>DAC_OVERRIDE</code></td><td>Ignorare i controlli di lettura e scrittura.</td><td>&Egrave; uno dei poteri pi&ugrave; ampi del set.</td></tr>
+                <tr><td><code>KILL</code></td><td>Inviare segnali ad altri processi.</td><td>Riguarda i processi dello stesso namespace.</td></tr>
+                <tr><td><code>NET_BIND_SERVICE</code></td><td>Usare porte sotto la 1024.</td><td>Pu&ograve; sostituire l'esecuzione come root.</td></tr>
+                <tr><td><code>NET_RAW</code></td><td>Aprire socket raw.</td><td>Serve a <code>ping</code> e ad alcuni strumenti di rete.</td></tr>
+                <tr><td><code>SETUID</code> / <code>SETGID</code></td><td>Cambiare UID e GID del processo.</td><td>Necessarie a <code>su</code> e <code>sudo</code>.</td></tr>
+                <tr><td><code>SYS_CHROOT</code></td><td>Cambiare la radice del file system.</td><td>Usata da alcuni server e script di avvio.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>--cap-drop ALL</code> toglie tutto;
+            <code>--cap-add</code> riaggiunge il minimo indispensabile. Molte
+            applicazioni non hanno bisogno di alcuna capability. Evita
+            <code>--privileged</code> se non sai esattamente cosa comporta:
+            annulla quasi tutte le protezioni e d&agrave; accesso ai dispositivi
+            dell'host.
+          </p>
+
+          <h3>Rootless e user namespace</h3>
+          <p>
+            Ci sono due modi per ridurre il rischio legato a root. Nel modo
+            <strong>rootless</strong> sia il demone sia i container girano come
+            utente normale, dentro un user namespace. Con
+            <strong>userns-remap</strong> il demone resta root, ma l'UID 0 del
+            container viene mappato su un UID alto e senza privilegi sull'host.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Aspetto</th><th>Rootless</th><th>userns-remap</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Demone</strong></td><td>Utente non privilegiato.</td><td>Root.</td></tr>
+                <tr><td><strong>Container</strong></td><td>User namespace.</td><td>User namespace per ogni container.</td></tr>
+                <tr><td><strong>Requisiti</strong></td><td><code>newuidmap</code>, <code>newgidmap</code> e range in <code>/etc/subuid</code> e <code>/etc/subgid</code>.</td><td>Range subordinati e configurazione del demone.</td></tr>
+                <tr><td><strong>Limiti</strong></td><td>Alcune funzioni di rete e porte privilegiate richiedono configurazione aggiuntiva.</td><td>Non convive con <code>--privileged</code> o <code>--network=host</code> senza eccezioni.</td></tr>
+                <tr><td><strong>Quando usarlo</strong></td><td>Host condivisi, sviluppo, desktop.</td><td>Server in cui serve un livello di isolamento in pi&ugrave;.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code># installazione rootless (pacchetti DEB/RPM)
+dockerd-rootless-setuptool.sh install
+docker context use rootless
+docker info --format '{{.SecurityOptions}}'</code></pre>
+          <div class="callout warn">
+            <strong>Il gruppo <code>docker</code> equivale a root.</strong>
+            Chi pu&ograve; usare il socket del demone pu&ograve; avviare un
+            container che monta la radice dell'host. Aggiungi un utente al
+            gruppo <code>docker</code> solo se ti fidi di lui come di root;
+            altrimenti usa rootless o un proxy che filtra le chiamate API.
+          </div>
+
+          <h2>Docker Desktop: dove gira davvero</h2>
+          <p>
+            Su Windows Docker Desktop non esegue i container direttamente nel
+            sistema operativo: avvia una VM Linux leggera (con backend WSL 2 o
+            Hyper-V) e mette a disposizione la CLI di Windows. Sapere dove si
+            trova ogni pezzo evita molti errori di rete e di permessi.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Componente</th><th>Dove gira</th><th>Cosa cambia</th></tr></thead>
+              <tbody>
+                <tr><td><strong>CLI <code>docker</code></strong></td><td>Windows.</td><td>Parla con il demone tramite contesto e named pipe.</td></tr>
+                <tr><td><strong>Demone</strong></td><td>VM Linux.</td><td>Non &egrave; un servizio Windows: non lo gestisci con <code>sc</code> o <code>services.msc</code>.</td></tr>
+                <tr><td><strong>Container</strong></td><td>VM Linux.</td><td>Usano il kernel della VM, non quello di Windows.</td></tr>
+                <tr><td><strong>Porte pubblicate</strong></td><td>Inoltrate da <code>com.docker.backend.exe</code>.</td><td>I firewall vedono il traffico arrivare da quel processo.</td></tr>
+                <tr><td><strong>File condivisi</strong></td><td>Livello di condivisione della VM.</td><td>I permessi Windows non coincidono con UID e GID Linux.</td></tr>
+                <tr><td><strong><code>docker0</code></strong></td><td>Dentro la VM.</td><td>Non &egrave; visibile sull'host: <code>ipconfig</code> non lo mostra.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>docker context ls
+docker context use desktop-linux
+wsl -l -v
+docker info --format '{{.OperatingSystem}}'</code></pre>
+          <div class="callout">
+            <strong>Prestazioni dei file.</strong> Con il backend WSL 2 il codice
+            nel file system Linux (per esempio <code>~/progetti</code>) &egrave;
+            molto pi&ugrave; veloce di quello in <code>/mnt/c</code>: gli accessi
+            a Windows passano da un livello di traduzione. Tieni i progetti
+            attivi dentro WSL e usa <code>/mnt/c</code> solo quando serve
+            condividere file con gli strumenti Windows.
+          </div>
+
+          <h2>Errori comuni e diagnosi</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Sintomo</th><th>Causa probabile</th><th>Cosa fare</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><em>connection refused</em> verso un altro container</td>
+                  <td>Rete diversa, nome sbagliato o servizio in ascolto solo su <code>127.0.0.1</code>.</td>
+                  <td>Verifica <code>docker network inspect</code> e fai ascoltare il servizio su <code>0.0.0.0</code>.</td>
+                </tr>
+                <tr>
+                  <td><em>no such host</em></td>
+                  <td>Container sul bridge predefinito o su un'altra rete.</td>
+                  <td>Crea una rete dedicata e collega entrambi i container.</td>
+                </tr>
+                <tr>
+                  <td><em>port is already allocated</em></td>
+                  <td>Un altro processo occupa la porta sull'host.</td>
+                  <td>Cambia la porta con <code>-p</code> o individua il processo con <code>netstat -ano</code> o <code>ss -tulpn</code>.</td>
+                </tr>
+                <tr>
+                  <td><em>permission denied</em> su un bind mount</td>
+                  <td>UID/GID del container diversi dal proprietario dei file.</td>
+                  <td>Allinea <code>--user</code>, usa <code>--chown</code> o passa a un volume.</td>
+                </tr>
+                <tr>
+                  <td>Il container esce con codice 137</td>
+                  <td><code>SIGKILL</code>: stop scaduto oppure OOM killer.</td>
+                  <td>Controlla <code>OOMKilled</code> con <code>docker inspect</code>; gestisci i segnali o aggiungi <code>--init</code>.</td>
+                </tr>
+                <tr>
+                  <td><em>Cannot connect to the Docker daemon</em></td>
+                  <td>Docker Desktop spento o demone non avviato.</td>
+                  <td>Avvia Docker Desktop oppure <code>sudo systemctl start docker</code>.</td>
+                </tr>
+                <tr>
+                  <td><em>permission denied</em> su <code>docker.sock</code></td>
+                  <td>L'utente non &egrave; nel gruppo <code>docker</code>.</td>
+                  <td>Aggiungi il gruppo e riapri la sessione; valuta rootless.</td>
+                </tr>
+                <tr>
+                  <td>Rootless non parte</td>
+                  <td>Mancano <code>newuidmap</code>, <code>newgidmap</code> o i range subordinati.</td>
+                  <td>Installa <code>uidmap</code> e verifica <code>/etc/subuid</code> e <code>/etc/subgid</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://docs.docker.com/engine/network/" target="_blank" rel="noopener">Docker Docs &mdash; Networking</a></li>
+            <li><a href="https://docs.docker.com/engine/network/drivers/" target="_blank" rel="noopener">Docker Docs &mdash; Network drivers</a></li>
+            <li><a href="https://docs.docker.com/engine/network/drivers/bridge/" target="_blank" rel="noopener">Docker Docs &mdash; Bridge network driver</a></li>
+            <li><a href="https://docs.docker.com/engine/security/" target="_blank" rel="noopener">Docker Docs &mdash; Engine security</a></li>
+            <li><a href="https://docs.docker.com/engine/security/rootless/" target="_blank" rel="noopener">Docker Docs &mdash; Rootless mode</a></li>
+            <li><a href="https://docs.docker.com/engine/security/userns-remap/" target="_blank" rel="noopener">Docker Docs &mdash; User namespace remapping</a></li>
+            <li><a href="https://docs.docker.com/engine/security/seccomp/" target="_blank" rel="noopener">Docker Docs &mdash; Seccomp profiles</a></li>
+            <li><a href="https://docs.docker.com/engine/containers/resource_constraints/" target="_blank" rel="noopener">Docker Docs &mdash; Resource constraints</a></li>
+            <li><a href="https://docs.docker.com/desktop/features/networking/" target="_blank" rel="noopener">Docker Docs &mdash; Networking on Docker Desktop</a></li>
+            <li><a href="https://docs.docker.com/desktop/features/wsl/" target="_blank" rel="noopener">Docker Docs &mdash; WSL 2 backend</a></li>
+            <li><a href="https://docs.docker.com/reference/cli/docker/container/run/" target="_blank" rel="noopener">Docker Docs &mdash; docker run</a></li>
+          </ul>
         </section>
       </div>
     </main>
