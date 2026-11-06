@@ -1296,19 +1296,49 @@ kubectl completion zsh &gt; "${fpath[1]}/_kubectl"</code></pre>
         <section class="tabpanel" id="approfondimenti" role="tabpanel" aria-labelledby="tab-approfondimenti" hidden>
           <p>
             Questa sezione entra nei meccanismi che di solito restano impliciti:
-            come il control plane prende le decisioni, come i Pod vengono
-            assegnati ai nodi, come comunicano, dove finiscono i dati e come si
-            diagnosticano i guasti. &Egrave; il livello che serve per
-            amministrare un cluster e per affrontare la certificazione CKA.
-            All'inizio trovi il <a href="#glossario">glossario</a> dei termini
-            pi&ugrave; comuni; pi&ugrave; avanti, le sezioni su memoria e
-            immagini per i principali runtime.
+            come il <a href="#control-plane">control plane</a> prende le
+            decisioni, come i Pod vengono
+            <a href="#scheduling">assegnati ai nodi</a>, come
+            <a href="#networking">comunicano</a>, dove finiscono i
+            <a href="#storage">dati</a> e come si
+            <a href="#troubleshooting">diagnosticano i guasti</a>. &Egrave; il
+            livello che serve per amministrare un cluster e per affrontare la
+            certificazione CKA. All'inizio trovi il
+            <a href="#glossario">glossario</a> dei termini pi&ugrave; comuni;
+            pi&ugrave; avanti, le sezioni su <a href="#memoria">memoria</a> e
+            <a href="#immagini">immagini</a> per i principali runtime.
           </p>
           <div class="callout">
             <strong>La certificazione CKA ha un tab dedicato.</strong>
             Domande e risposte, domini d'esame, piano di studio e laboratori sono
             in <a href="#cka">CKA</a>.
           </div>
+
+          <nav class="section-index" aria-labelledby="section-index-title">
+            <p class="section-index-title" id="section-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#glossario">Glossario</a></li>
+              <li><a href="#control-plane">Control plane</a></li>
+              <li><a href="#workload">Workload e controller</a></li>
+              <li><a href="#scheduling">Scheduling</a></li>
+              <li><a href="#networking">Networking</a></li>
+              <li><a href="#service-ingress">Service, Ingress e Gateway API</a></li>
+              <li><a href="#storage">Storage</a></li>
+              <li><a href="#sicurezza">Sicurezza e RBAC</a></li>
+              <li><a href="#troubleshooting">Troubleshooting</a></li>
+              <li><a href="#memoria">Memoria</a></li>
+              <li><a href="#immagini">Immagini</a></li>
+              <li><a href="#ciclo-vita">Ciclo di vita ed etcd</a></li>
+            </ol>
+            <p class="section-index-sub">
+              Memoria per runtime:
+              <a href="#memoria-java">Java e Spring Boot</a> &middot;
+              <a href="#memoria-node">Node.js e npm</a> &middot;
+              <a href="#memoria-python">Python</a> &middot;
+              <a href="#memoria-php">PHP e PHP-FPM</a> &middot;
+              <a href="#memoria-go">Go serverless</a>
+            </p>
+          </nav>
 
           <h2 id="glossario">Glossario</h2>
           <p>
@@ -1408,12 +1438,13 @@ kubectl completion zsh &gt; "${fpath[1]}/_kubectl"</code></pre>
             </table>
           </div>
 
-          <h2>Control plane nel dettaglio</h2>
+          <h2 id="control-plane">Control plane nel dettaglio</h2>
           <p>
             Il control plane &egrave; un insieme di processi che possono girare
             come Pod statici (con <code>kubeadm</code>), come servizi di sistema
             o essere gestiti dal provider. Tutti parlano con il
-            <code>kube-apiserver</code>; solo l'apiserver parla con etcd.
+            <code>kube-apiserver</code>; solo l'apiserver parla con
+            <a href="#ciclo-vita">etcd</a>.
           </p>
           <div class="table-wrap">
             <table>
@@ -1449,7 +1480,7 @@ kubectl api-resources --namespaced=false</code></pre>
 sudo crictl pods
 sudo crictl ps</code></pre>
 
-          <h2>Workload e controller</h2>
+          <h2 id="workload">Workload e controller</h2>
           <p>
             Un <strong>controller</strong> &egrave; un ciclo che confronta lo
             stato reale con quello desiderato. Il Deployment non crea Pod
@@ -1482,7 +1513,9 @@ sudo crictl ps</code></pre>
           <p>
             Le <strong>probe</strong> decidono quando un container &egrave; pronto
             a ricevere traffico e quando va riavviato. Sono la differenza tra un
-            Pod &laquo;Running&raquo; e un servizio realmente funzionante.
+            Pod &laquo;Running&raquo; e un servizio realmente funzionante: se
+            falliscono, la diagnosi comincia da
+            <a href="#troubleshooting">Troubleshooting</a>.
           </p>
           <div class="table-wrap">
             <table>
@@ -1522,7 +1555,7 @@ sudo crictl ps</code></pre>
             stato del processo.
           </div>
 
-          <h2>Scheduling</h2>
+          <h2 id="scheduling">Scheduling</h2>
           <p>
             Lo scheduler sceglie un nodo in due fasi: <strong>filtering</strong>
             (quali nodi soddisfano i requisiti) e <strong>scoring</strong>
@@ -1547,7 +1580,8 @@ sudo crictl ps</code></pre>
           <p>
             Le classi di qualit&agrave; del servizio (QoS) derivano da come sono
             impostati requests e limits. Influenzano l'ordine con cui il kernel
-            termina i Pod sotto pressione di memoria.
+            termina i Pod sotto
+            <a href="#memoria">pressione di memoria</a>.
           </p>
           <div class="table-wrap">
             <table>
@@ -1598,12 +1632,13 @@ spec:
             aggiusta con <code>kubectl top</code>.
           </div>
 
-          <h2>Networking</h2>
+          <h2 id="networking">Networking</h2>
           <p>
             Kubernetes richiede una <strong>rete piatta</strong>: ogni Pod ha un
             IP e pu&ograve; raggiungere ogni altro Pod senza NAT, anche su nodi
-            diversi. Il CNI realizza questa promessa; i Service aggiungono un
-            livello virtuale stabile sopra gli IP effimeri dei Pod.
+            diversi. Il CNI realizza questa promessa; i
+            <a href="#service-ingress">Service</a> aggiungono un livello
+            virtuale stabile sopra gli IP effimeri dei Pod.
           </p>
           <figure class="figure">
             <img src="../../assets/img/kubernetes/kubernetes-networking.svg" width="1200" height="660"
@@ -1642,7 +1677,7 @@ kubectl get networkpolicies -A</code></pre>
             perfetto.
           </div>
 
-          <h2>Service, Ingress e Gateway API</h2>
+          <h2 id="service-ingress">Service, Ingress e Gateway API</h2>
           <p>
             Un <strong>Service</strong> d&agrave; un indirizzo stabile e bilancia
             il traffico tra i Pod selezionati. Un <strong>Ingress</strong> o un
@@ -1722,10 +1757,11 @@ spec:
             del controller.
           </div>
 
-          <h2>Storage</h2>
+          <h2 id="storage">Storage</h2>
           <p>
             Lo storage persistente separa il ciclo di vita dei dati da quello dei
-            Pod. Il Pod monta un <strong>PersistentVolumeClaim</strong>; il claim
+            Pod. Il <a href="#workload">Pod</a> monta un
+            <strong>PersistentVolumeClaim</strong>; il claim
             viene collegato a un <strong>PersistentVolume</strong>, creato a mano
             o dinamicamente da una <strong>StorageClass</strong> tramite un
             driver <strong>CSI</strong>.
@@ -1791,12 +1827,12 @@ spec:
             pu&ograve; portarsi via il disco, non solo il riferimento.
           </div>
 
-          <h2>Sicurezza e RBAC</h2>
+          <h2 id="sicurezza">Sicurezza e RBAC</h2>
           <p>
             Kubernetes non ha un unico interruttore di sicurezza: somma
             autenticazione, autorizzazione, admission, isolamento dei Pod e
-            policy di rete. Il modello RBAC &egrave; composto da soggetti,
-            verbi e risorse.
+            <a href="#networking">policy di rete</a>. Il modello RBAC &egrave;
+            composto da soggetti, verbi e risorse.
           </p>
           <div class="table-wrap">
             <table>
@@ -1866,7 +1902,7 @@ roleRef:
             Secrets Operator, Secret Manager del cloud).
           </div>
 
-          <h2>Troubleshooting</h2>
+          <h2 id="troubleshooting">Troubleshooting</h2>
           <p>
             Il metodo &egrave; sempre lo stesso: capire <strong>cosa</strong>
             dovrebbe succedere, guardare lo stato reale, leggere gli eventi,
@@ -1877,16 +1913,16 @@ roleRef:
             <table>
               <thead><tr><th>Sintomo</th><th>Causa probabile</th><th>Primi comandi</th></tr></thead>
               <tbody>
-                <tr><td>Pod <code>Pending</code></td><td>Risorse insufficienti, taint, affinity o PVC non pronta.</td><td><code>describe pod</code>, <code>describe node</code>, <code>get pvc</code></td></tr>
-                <tr><td><code>ImagePullBackOff</code></td><td>Nome o tag errato, registry privato, credenziali mancanti.</td><td><code>describe pod</code>, <code>get secret</code></td></tr>
-                <tr><td><code>CrashLoopBackOff</code></td><td>L'applicazione esce, configurazione errata, dipendenza assente.</td><td><code>logs</code>, <code>logs --previous</code>, <code>describe pod</code></td></tr>
-                <tr><td><code>OOMKilled</code></td><td>Limite di memoria troppo basso o perdita di memoria.</td><td><code>describe pod</code>, <code>top pod</code></td></tr>
-                <tr><td><code>ContainerCreating</code> bloccato</td><td>Volume non montato, CNI non pronto, immagine lenta.</td><td><code>describe pod</code>, eventi del nodo</td></tr>
-                <tr><td>Service irraggiungibile</td><td>Selettore errato, Pod non Ready, porta sbagliata.</td><td><code>get endpointslices</code>, <code>describe svc</code></td></tr>
-                <tr><td>DNS non risolve</td><td>CoreDNS in errore, namespace o nome errati, policy di rete.</td><td><code>nslookup</code>, log di CoreDNS</td></tr>
-                <tr><td><code>Forbidden</code></td><td>RBAC insufficiente per utente o ServiceAccount.</td><td><code>auth can-i</code>, <code>describe rolebinding</code></td></tr>
-                <tr><td>Nodo <code>NotReady</code></td><td>Kubelet fermo, runtime guasto, disco o memoria pieni, certificati scaduti.</td><td><code>describe node</code>, <code>systemctl status kubelet</code>, <code>journalctl -u kubelet</code></td></tr>
-                <tr><td>API non risponde</td><td>Apiserver o etcd in errore, quorum perso, certificati scaduti.</td><td><code>crictl ps</code>, log dei Pod statici, <code>kubeadm certs check-expiration</code></td></tr>
+                <tr><td><a href="#scheduling">Pod <code>Pending</code></a></td><td>Risorse insufficienti, taint, affinity o PVC non pronta.</td><td><code>describe pod</code>, <code>describe node</code>, <code>get pvc</code></td></tr>
+                <tr><td><a href="#immagini"><code>ImagePullBackOff</code></a></td><td>Nome o tag errato, registry privato, credenziali mancanti.</td><td><code>describe pod</code>, <code>get secret</code></td></tr>
+                <tr><td><a href="#workload"><code>CrashLoopBackOff</code></a></td><td>L'applicazione esce, configurazione errata, dipendenza assente.</td><td><code>logs</code>, <code>logs --previous</code>, <code>describe pod</code></td></tr>
+                <tr><td><a href="#memoria"><code>OOMKilled</code></a></td><td>Limite di memoria troppo basso o perdita di memoria.</td><td><code>describe pod</code>, <code>top pod</code></td></tr>
+                <tr><td><a href="#storage"><code>ContainerCreating</code> bloccato</a></td><td>Volume non montato, CNI non pronto, immagine lenta.</td><td><code>describe pod</code>, eventi del nodo</td></tr>
+                <tr><td><a href="#service-ingress">Service irraggiungibile</a></td><td>Selettore errato, Pod non Ready, porta sbagliata.</td><td><code>get endpointslices</code>, <code>describe svc</code></td></tr>
+                <tr><td><a href="#networking">DNS non risolve</a></td><td>CoreDNS in errore, namespace o nome errati, policy di rete.</td><td><code>nslookup</code>, log di CoreDNS</td></tr>
+                <tr><td><a href="#sicurezza"><code>Forbidden</code></a></td><td>RBAC insufficiente per utente o ServiceAccount.</td><td><code>auth can-i</code>, <code>describe rolebinding</code></td></tr>
+                <tr><td><a href="#ciclo-vita">Nodo <code>NotReady</code></a></td><td>Kubelet fermo, runtime guasto, disco o memoria pieni, certificati scaduti.</td><td><code>describe node</code>, <code>systemctl status kubelet</code>, <code>journalctl -u kubelet</code></td></tr>
+                <tr><td><a href="#ciclo-vita">API non risponde</a></td><td>Apiserver o etcd in errore, quorum perso, certificati scaduti.</td><td><code>crictl ps</code>, log dei Pod statici, <code>kubeadm certs check-expiration</code></td></tr>
               </tbody>
             </table>
           </div>
@@ -1931,12 +1967,18 @@ kubectl auth can-i get pods --as=system:serviceaccount:default:ci</code></pre>
           </p>
           <div class="callout">
             <strong>Tre numeri da non confondere.</strong> La
-            <em>request</em> dice allo scheduler quanto riservare; il
+            <em>request</em> dice allo <a href="#scheduling">scheduler</a>
+            quanto riservare; il
             <em>limit</em> &egrave; il tetto reale del cgroup; il
             <em>working set</em> &egrave; la memoria attivamente usata, ed
             &egrave; quella che kubelet guarda per l'eviction e che HPA/VPA
             usano come riferimento.
           </div>
+          <p>
+            Per il confronto tra runtime parti da
+            <a href="#memoria-runtime">Memoria per runtime</a>; per costruire e
+            mantenere le immagini vedi <a href="#immagini">Immagini</a>.
+          </p>
 
           <h3>Request, limit e working set</h3>
           <div class="table-wrap">
@@ -2051,11 +2093,11 @@ kubectl exec -n &lt;namespace&gt; &lt;pod&gt; -- cat /sys/fs/cgroup/memory.event
             <table>
               <thead><tr><th>Runtime</th><th>Dove va la memoria</th><th>Leva principale</th><th>Sintomo tipico</th></tr></thead>
               <tbody>
-                <tr><td>Java / Spring Boot</td><td>Heap, metaspace, code cache, stack dei thread, buffer diretti e memoria nativa.</td><td><code>-XX:MaxRAMPercentage</code>, <code>-Xmx</code>, dimensione dei pool di thread.</td><td><code>OOMKilled</code> con heap sotto il massimo, oppure <code>OutOfMemoryError</code>.</td></tr>
-                <tr><td>Node.js / npm</td><td>Old space e new space di V8, buffer esterni, codice, stack, isolate dei worker.</td><td><code>--max-old-space-size</code>, numero di worker, streaming al posto del buffering.</td><td><code>JavaScript heap out of memory</code> oppure <code>137</code>.</td></tr>
-                <tr><td>Python</td><td>Interprete, oggetti, arene dell'allocatore, estensioni native, un proprio spazio per ogni worker.</td><td>Numero di worker, <code>--preload</code>, <code>MALLOC_ARENA_MAX</code>, riciclo dei worker.</td><td><code>MemoryError</code> oppure <code>137</code>; RSS che cresce lentamente.</td></tr>
-                <tr><td>PHP / PHP-FPM</td><td>N processi worker, ciascuno con il proprio <code>memory_limit</code>, pi&ugrave; OPcache condivisa.</td><td><code>pm.max_children</code>, <code>memory_limit</code>, <code>pm.max_requests</code>.</td><td><code>Allowed memory size exhausted</code>, errori 502, <code>137</code>.</td></tr>
-                <tr><td>Go serverless</td><td>Heap Go, stack delle goroutine, GC, memoria dell'ambiente di esecuzione.</td><td><code>GOMEMLIMIT</code>, <code>GOGC</code>, memoria assegnata alla funzione.</td><td><code>signal: killed</code>, <code>Max Memory Used</code> vicino al limite.</td></tr>
+                <tr><td><a href="#memoria-java">Java / Spring Boot</a></td><td>Heap, metaspace, code cache, stack dei thread, buffer diretti e memoria nativa.</td><td><code>-XX:MaxRAMPercentage</code>, <code>-Xmx</code>, dimensione dei pool di thread.</td><td><code>OOMKilled</code> con heap sotto il massimo, oppure <code>OutOfMemoryError</code>.</td></tr>
+                <tr><td><a href="#memoria-node">Node.js / npm</a></td><td>Old space e new space di V8, buffer esterni, codice, stack, isolate dei worker.</td><td><code>--max-old-space-size</code>, numero di worker, streaming al posto del buffering.</td><td><code>JavaScript heap out of memory</code> oppure <code>137</code>.</td></tr>
+                <tr><td><a href="#memoria-python">Python</a></td><td>Interprete, oggetti, arene dell'allocatore, estensioni native, un proprio spazio per ogni worker.</td><td>Numero di worker, <code>--preload</code>, <code>MALLOC_ARENA_MAX</code>, riciclo dei worker.</td><td><code>MemoryError</code> oppure <code>137</code>; RSS che cresce lentamente.</td></tr>
+                <tr><td><a href="#memoria-php">PHP / PHP-FPM</a></td><td>N processi worker, ciascuno con il proprio <code>memory_limit</code>, pi&ugrave; OPcache condivisa.</td><td><code>pm.max_children</code>, <code>memory_limit</code>, <code>pm.max_requests</code>.</td><td><code>Allowed memory size exhausted</code>, errori 502, <code>137</code>.</td></tr>
+                <tr><td><a href="#memoria-go">Go serverless</a></td><td>Heap Go, stack delle goroutine, GC, memoria dell'ambiente di esecuzione.</td><td><code>GOMEMLIMIT</code>, <code>GOGC</code>, memoria assegnata alla funzione.</td><td><code>signal: killed</code>, <code>Max Memory Used</code> vicino al limite.</td></tr>
               </tbody>
             </table>
           </div>
@@ -2577,7 +2619,11 @@ CMD [ "bootstrap" ]</code></pre>
             veloce, meno superficie di attacco, cold start pi&ugrave; breve e
             meno spazio su disco nel nodo. Sono due problemi distinti e vanno
             misurati separatamente. Gli esempi di Dockerfile specifici sono
-            nelle sottosezioni Java, Node, Python, PHP e Go qui sopra.
+            nelle sottosezioni <a href="#memoria-java">Java</a>,
+            <a href="#memoria-node">Node</a>,
+            <a href="#memoria-python">Python</a>,
+            <a href="#memoria-php">PHP</a> e
+            <a href="#memoria-go">Go</a> qui sopra.
           </p>
           <div class="table-wrap">
             <table>
@@ -2651,7 +2697,7 @@ crane digest registry.example.com/app:1.4.0</code></pre>
             artefatto e distribuirne un altro.
           </div>
 
-          <h2>Ciclo di vita, upgrade ed etcd</h2>
+          <h2 id="ciclo-vita">Ciclo di vita, upgrade ed etcd</h2>
           <p>
             Un cluster va aggiornato con regolarit&agrave;: le versioni restano
             supportate per circa un anno e le patch di sicurezza non mancano.

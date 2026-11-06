@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Adripedia — Wiki personale</title>
-  <meta name="description" content="Adripedia: enciclopedia personale di documentazione e appunti, in ogni ambito.">
+  <title>Adripedia — Guide, appunti e link scelti</title>
+  <meta name="description" content="Adripedia: guide pratiche e appunti su Docker, Kubernetes, WSL, Git e OpenCode, più una selezione di link esterni.">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#191919">
@@ -28,80 +28,212 @@
       <section class="home-hero" aria-labelledby="home-title">
         <span class="ghost-letter" aria-hidden="true">A</span>
         <div class="home-hero-inner">
-          <span class="hero-pill">Wiki personale &middot; in crescita</span>
+          <span class="hero-pill">Wiki personale &middot; cresce con calma</span>
           <h1 class="home-title" id="home-title">Adri<span class="hl">pedia</span></h1>
           <p class="lead">
-            Un posto solo per i documenti che produco e le cose che voglio
-            ricordare: macro aree che crescono nel tempo, ognuna con le sue
-            pagine.
+            Guide pratiche, appunti e link scelti: il posto dove le cose che
+            imparo smettono di essere un tab aperto da qualche parte e
+            diventano qualcosa che si ritrova quando serve.
           </p>
         </div>
+        <aside class="home-quick" aria-label="Indice rapido">
+          <p class="home-quick-title">Dentro Adripedia</p>
+          <ul class="home-quick-list">
+            <li>
+              <a href="informatica/index.html">
+                <span>Informatica</span>
+                <span class="home-quick-meta">5 sezioni</span>
+              </a>
+            </li>
+            <li>
+              <a href="link/index.html">
+                <span>Link</span>
+                <span class="home-quick-meta">2 collegamenti</span>
+              </a>
+            </li>
+            <li>
+              <a href="#aggiornamenti">
+                <span>Aggiornamenti</span>
+                <span class="home-quick-meta" data-updates-count>10 voci</span>
+              </a>
+            </li>
+          </ul>
+          <p class="home-quick-foot">
+            Ultimo aggiornamento
+            <time datetime="2026-11-06">6 nov 2026</time>
+          </p>
+        </aside>
       </section>
 
       <div class="callout">
-        <strong>Stato:</strong> in costruzione. Le prime due aree sono
-        <strong>Informatica</strong> e <strong>Link</strong>; le prossime
-        arriveranno qui, una alla volta.
+        <strong>Da dove iniziare:</strong> se sei qui per i container, apri
+        <a href="informatica/docker/index.html">Docker</a> o
+        <a href="informatica/kubernetes/index.html">Kubernetes</a>; se cerchi
+        risorse esterne, vai su <a href="link/index.html">Link</a>. Il resto
+        cresce con calma, una sezione alla volta.
       </div>
 
-      <h2>Che cos'&egrave; Adripedia</h2>
+      <div class="section-head">
+        <p class="eyebrow">La wiki</p>
+        <h2>Che cos'&egrave; Adripedia</h2>
+      </div>
       <p>
-        Adripedia &egrave; una wiki personale: il posto dove finiscono i documenti
-        che produco e tutto ci&ograve; che voglio poter ritrovare. &Egrave;
-        organizzata in <strong>macro aree</strong>, che aumenteranno nel tempo,
-        e ogni area raccoglie le sue <strong>pagine</strong>. Non &egrave; un
-        blog e non &egrave; un manuale unico: &egrave; un archivio consultabile,
-        che cresce quando serve.
+        Adripedia &egrave; una wiki personale, ma soprattutto un archivio di
+        cose utili: guide passo passo, approfondimenti e riferimenti raccolti
+        mentre studio, lavoro o provo a far funzionare qualcosa. Non &egrave;
+        un blog, quindi non troverai pensieri del giorno; &egrave; il posto in
+        cui tornare quando serve ricordare un comando, capire come funziona
+        uno strumento o ritrovare quel link che non si trovava pi&ugrave;.
+      </p>
+      <p>
+        Le pagine sono indipendenti e si possono leggere in qualsiasi ordine:
+        c'&egrave; una panoramica per orientarsi, i dettagli per chi vuole
+        andare a fondo e, dove serve, un riferimento rapido per chi ha solo
+        bisogno di copiare il comando giusto.
       </p>
 
-      <h2>Le aree</h2>
+      <div class="section-head">
+        <p class="eyebrow">Mappa</p>
+        <h2>Cosa trovi qui</h2>
+      </div>
       <div class="cards">
         <a class="card" href="informatica/index.html">
+          <span class="card-mark" aria-hidden="true">&lt;/&gt;</span>
           <h3>Informatica</h3>
-          <p>Guide e documenti tecnici, a partire da OpenCode, Git, Docker, Kubernetes e WSL.</p>
+          <p>Guide passo passo e approfondimenti su container, sistemi e strumenti di sviluppo. Dentro: Docker, Kubernetes, WSL, Git e OpenCode.</p>
         </a>
         <a class="card" href="link/index.html">
+          <span class="card-mark" aria-hidden="true">&nearr;</span>
           <h3>Link</h3>
-          <p>Collegamenti esterni che vale la pena tenere a portata di mano.</p>
+          <p>Una selezione volutamente breve di risorse esterne: documentazione, strumenti e profili da tenere a portata di clic.</p>
         </a>
         <div class="card soon">
+          <span class="card-mark" aria-hidden="true">+</span>
           <h3>Le prossime aree</h3>
-          <p>Nuove macro categorie, ognuna con le sue sezioni e le sue pagine.</p>
+          <p>Altre macro categorie in preparazione. Arrivano quando hanno abbastanza contenuti per meritare una visita, non prima.</p>
         </div>
       </div>
 
-      <h2>Come &egrave; organizzata</h2>
-      <ul>
-        <li>Un'<strong>area</strong> &egrave; una macro categoria: Informatica, Link e quelle che verranno.</li>
-        <li>Dentro un'area ci sono le <strong>pagine</strong>, raggruppate in <strong>sezioni</strong> quando servono.</li>
-        <li>Il menu a sinistra segue la stessa gerarchia e apre il ramo della pagina corrente.</li>
-        <li>Le pagine sono indipendenti e si possono leggere in qualsiasi ordine.</li>
-      </ul>
-
-      <h2>Com'&egrave; fatto</h2>
+      <div class="section-head">
+        <p class="eyebrow">Percorsi</p>
+        <h2>Da dove iniziare</h2>
+      </div>
       <p>
-        HTML, CSS e JavaScript puri: nessuna build, nessuna dipendenza. Si apre
-        <code>index.html</code> e funziona, e si pubblica su GitHub Pages senza
-        configurazione.
+        Non serve seguire un percorso unico. Questi sono i punti di ingresso
+        pi&ugrave; battuti, con un'idea di quello che trovi dall'altra parte.
+      </p>
+      <div class="cards">
+        <a class="card" href="informatica/docker/index.html">
+          <span class="card-mark" aria-hidden="true">01</span>
+          <h3>Muovere i primi passi con i container</h3>
+          <p>Che cos'&egrave; un container, come si installa Docker, i comandi di tutti i giorni e gli approfondimenti su reti, processi e permessi.</p>
+        </a>
+        <a class="card" href="informatica/kubernetes/index.html">
+          <span class="card-mark" aria-hidden="true">02</span>
+          <h3>Capire Kubernetes senza perdersi</h3>
+          <p>Architettura, installazione, comandi, rete, storage, memoria e immagini. In pi&ugrave;: glossario con ricerca e 51 domande per la CKA.</p>
+        </a>
+        <a class="card" href="informatica/wsl/index.html">
+          <span class="card-mark" aria-hidden="true">03</span>
+          <h3>Linux dentro Windows</h3>
+          <p>Installazione di WSL, scelta e gestione delle distribuzioni, configurazione e comandi per lavorare senza cambiare computer.</p>
+        </a>
+        <a class="card" href="informatica/git/index.html">
+          <span class="card-mark" aria-hidden="true">04</span>
+          <h3>Avere Git sotto controllo</h3>
+          <p>Concetti base, installazione su Windows e Linux e i comandi che servono davvero, raccolti in una pagina a tab.</p>
+        </a>
+        <a class="card" href="opencode/index.html">
+          <span class="card-mark" aria-hidden="true">05</span>
+          <h3>Usare OpenCode da zero</h3>
+          <p>Otto pagine per installarlo, configurare agenti e scorciatoie, e convivere con la riga di comando senza troppi drammi.</p>
+        </a>
+      </div>
+
+      <div class="section-head">
+        <p class="eyebrow">Pubblico</p>
+        <h2>A chi serve</h2>
+      </div>
+      <p>
+        Adripedia non &egrave; un corso con un inizio e una fine. &Egrave; pensata
+        per chi lavora con questi strumenti, per chi li sta studiando e per chi,
+        ogni tanto, ha solo bisogno di ricordare dove finisce un flag.
       </p>
       <ul>
-        <li>Menu laterale generato da un unico elenco in <code>assets/js/site.js</code>.</li>
-        <li>Stile centralizzato in <code>assets/css/style.css</code>.</li>
-        <li>Contenuti in italiano.</li>
+        <li>Per chi usa Docker e Kubernetes e vuole un riferimento compatto, con esempi e comandi pronti.</li>
+        <li>Per chi prepara la certificazione CKA e cerca domande, risposte e collegamenti tra i concetti.</li>
+        <li>Per chi monta e rimonta l'ambiente di sviluppo su Windows e vorrebbe non ricominciare ogni volta da capo.</li>
       </ul>
 
-      <h2>Aggiornamenti</h2>
+      <div class="section-head">
+        <p class="eyebrow">Struttura</p>
+        <h2>Come &egrave; organizzata</h2>
+      </div>
       <ul>
-        <li><time datetime="2026-11-06">6 novembre 2026</time> &mdash; sezione Kubernetes: glossario in cima agli Approfondimenti con ricerca locale, e nuove sezioni su memoria e immagini per Java/Spring Boot, Node.js, Python, PHP e Go serverless.</li>
-        <li><time datetime="2026-11-05">5 novembre 2026</time> &mdash; creata la sezione Kubernetes, con cinque tab: panoramica illustrata, installazione, comandi, approfondimenti e una guida completa alla certificazione CKA con 51 domande e risposte.</li>
-        <li><time datetime="2026-11-05">5 novembre 2026</time> &mdash; ampliata la sezione Docker con il tab Approfondimenti: reti, processi, utenze e isolamento, con tre diagrammi originali.</li>
-        <li><time datetime="2026-11-04">4 novembre 2026</time> &mdash; creata la sezione WSL, con panoramica illustrata, installazione su Windows e comandi in una pagina a tab.</li>
-        <li><time datetime="2026-11-04">4 novembre 2026</time> &mdash; creata la sezione Docker, con panoramica illustrata, installazione e comandi in una pagina a tab.</li>
-        <li><time datetime="2026-11-04">4 novembre 2026</time> &mdash; creata la sezione Git, con installazione e comandi in una pagina a tab.</li>
-        <li><time datetime="2026-11-03">3 novembre 2026</time> &mdash; nuova testata della home e creata l'area Link.</li>
-        <li><time datetime="2026-11-03">3 novembre 2026</time> &mdash; creata l'area Informatica e spostata qui la sezione OpenCode.</li>
-        <li><time datetime="2026-11-03">3 novembre 2026</time> &mdash; creata la sezione OpenCode con otto pagine.</li>
+        <li>Un'<strong>area</strong> &egrave; una macro categoria: Informatica, Link e quelle che verranno.</li>
+        <li>Dentro un'area ci sono le <strong>sezioni</strong>, e dentro ogni sezione le <strong>pagine</strong>.</li>
+        <li>Il menu a sinistra segue la stessa gerarchia e apre il ramo della pagina corrente.</li>
+        <li>Molte sezioni usano le <strong>tab</strong> per tenere insieme panoramica, installazione, comandi e approfondimenti; gli indici interni portano direttamente al punto giusto.</li>
       </ul>
+
+      <div class="section-head">
+        <p class="eyebrow">Diario</p>
+        <h2 id="aggiornamenti">Aggiornamenti</h2>
+      </div>
+      <p>
+        Cosa &egrave; cambiato nel sito, dal pi&ugrave; recente al pi&ugrave;
+        vecchio. Niente feed infinito: si sfoglia una pagina alla volta.
+      </p>
+      <div class="updates" data-updates data-page-size="3">
+        <ol class="updates-list" id="aggiornamenti-list" data-updates-list>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-06">6 novembre 2026</time>
+            <p>Home riorganizzata: descrizioni dei contenuti, percorsi di ingresso e aggiornamenti navigabili.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-06">6 novembre 2026</time>
+            <p>Sezione Kubernetes: glossario in cima agli Approfondimenti con ricerca locale, indice con link interni e nuove sezioni su memoria e immagini per Java/Spring Boot, Node.js, Python, PHP e Go serverless.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-05">5 novembre 2026</time>
+            <p>Creata la sezione Kubernetes, con cinque tab: panoramica illustrata, installazione, comandi, approfondimenti e una guida completa alla certificazione CKA con 51 domande e risposte.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-05">5 novembre 2026</time>
+            <p>Ampliata la sezione Docker con il tab Approfondimenti: reti, processi, utenze e isolamento, con tre diagrammi originali.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-04">4 novembre 2026</time>
+            <p>Creata la sezione WSL, con panoramica illustrata, installazione su Windows e comandi in una pagina a tab.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-04">4 novembre 2026</time>
+            <p>Creata la sezione Docker, con panoramica illustrata, installazione e comandi in una pagina a tab.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-04">4 novembre 2026</time>
+            <p>Creata la sezione Git, con installazione e comandi in una pagina a tab.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-03">3 novembre 2026</time>
+            <p>Nuova testata della home e creata l'area Link.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-03">3 novembre 2026</time>
+            <p>Creata l'area Informatica e spostata qui la sezione OpenCode.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-03">3 novembre 2026</time>
+            <p>Creata la sezione OpenCode con otto pagine.</p>
+          </li>
+        </ol>
+        <div class="updates-controls" data-updates-controls role="group" aria-label="Paginazione aggiornamenti" hidden>
+          <button class="updates-btn" type="button" data-updates-prev aria-controls="aggiornamenti-list" aria-label="Vai alla pagina precedente degli aggiornamenti">&larr;</button>
+          <div class="updates-pages" data-updates-pages role="group" aria-label="Pagine degli aggiornamenti"></div>
+          <button class="updates-btn" type="button" data-updates-next aria-controls="aggiornamenti-list" aria-label="Vai alla pagina successiva degli aggiornamenti">&rarr;</button>
+          <p class="updates-status" data-updates-status aria-live="polite"></p>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">

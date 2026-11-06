@@ -210,13 +210,7 @@
       "</div>" +
       '<nav class="nav" aria-label="Aree e sezioni di Adripedia">' +
       NAV.map(renderSection).join("") +
-      "</nav>" +
-      '<div class="sidebar-footer">' +
-      '<span class="badge">beta</span>' +
-      '<a href="' +
-      withRoot("README.md") +
-      '">README</a>' +
-      "</div>";
+      "</nav>";
   }
 
   /* Aggiorna lo stato attivo dei link senza ridisegnare il menu, così i
@@ -752,6 +746,98 @@
       }
     });
   })();
+
+  /* ---------------------------------------------------------------------
+     Aggiornamenti paginati in home
+     Il contenitore [data-updates] mostra le voci a gruppi; senza JavaScript
+     restano tutte visibili e i controlli non compaiono.
+     --------------------------------------------------------------------- */
+  document.querySelectorAll("[data-updates]").forEach(function (container) {
+    var list = container.querySelector("[data-updates-list]");
+    var controls = container.querySelector("[data-updates-controls]");
+    var prev = container.querySelector("[data-updates-prev]");
+    var next = container.querySelector("[data-updates-next]");
+    var pagesWrap = container.querySelector("[data-updates-pages]");
+    var status = container.querySelector("[data-updates-status]");
+
+    if (!list || !controls || !prev || !next || !status) return;
+
+    var items = Array.prototype.slice.call(list.children).filter(function (item) {
+      return item.nodeType === 1;
+    });
+    var pageSize = parseInt(container.getAttribute("data-page-size"), 10) || 3;
+    var pages = Math.ceil(items.length / pageSize);
+    var page = 0;
+    var pageButtons = [];
+
+    document.querySelectorAll("[data-updates-count]").forEach(function (label) {
+      label.textContent =
+        items.length + (items.length === 1 ? " voce" : " voci");
+    });
+
+    if (pages <= 1) return;
+
+    controls.hidden = false;
+
+    if (pagesWrap) {
+      pagesWrap.textContent = "";
+
+      for (var i = 0; i < pages; i += 1) {
+        (function (index) {
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "updates-page";
+          button.textContent = String(index + 1);
+          button.setAttribute("aria-label", "Vai alla pagina " + (index + 1));
+
+          button.addEventListener("click", function () {
+            page = index;
+            render();
+          });
+
+          pagesWrap.appendChild(button);
+          pageButtons.push(button);
+        })(i);
+      }
+    }
+
+    function render() {
+      var start = page * pageSize;
+      var end = start + pageSize;
+
+      items.forEach(function (item, index) {
+        item.hidden = index < start || index >= end;
+      });
+
+      pageButtons.forEach(function (button, index) {
+        if (index === page) {
+          button.setAttribute("aria-current", "page");
+        } else {
+          button.removeAttribute("aria-current");
+        }
+      });
+
+      prev.disabled = page === 0;
+      next.disabled = page === pages - 1;
+      status.textContent =
+        "Pagina " + (page + 1) + " di " + pages + " \u00b7 " + items.length +
+        (items.length === 1 ? " voce" : " voci");
+    }
+
+    prev.addEventListener("click", function () {
+      if (page === 0) return;
+      page -= 1;
+      render();
+    });
+
+    next.addEventListener("click", function () {
+      if (page === pages - 1) return;
+      page += 1;
+      render();
+    });
+
+    render();
+  });
 
   /* ---------------------------------------------------------------------
      Pulsante "Copia" per i blocchi di codice

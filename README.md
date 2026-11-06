@@ -113,7 +113,18 @@ Le sottosezioni sulla memoria (`#memoria`, `#memoria-java`, `#memoria-node`,
 `#memoria-python`, `#memoria-php`, `#memoria-go`) e quella sulle immagini
 (`#immagini`) sono normali `id` interni: un hash verso una di esse apre il tab
 che le contiene e scorre al titolo, con `scroll-margin-top` per non finire
-sotto la barra superiore.
+sotto la barra superiore. In cima agli Approfondimenti un indice
+(`.section-index`) raccoglie i link a tutte le sezioni; le introduzioni e la
+tabella di troubleshooting rimandano ai paragrafi collegati.
+
+## Aggiornamenti in home
+
+La home chiude con un elenco di aggiornamenti paginato: il contenitore
+`[data-updates]` mostra tre voci per pagina, con pulsanti precedenti/successivi
+e indicatore `Pagina N di M`. Senza JavaScript tutte le voci restano visibili
+e i controlli non compaiono. Per aggiungere una novità, inserisci un `<li>`
+in cima a `[data-updates-list]` in `index.html`: la paginazione si adatta da
+sola al numero di voci.
 
 ## Aggiungere un'area
 
