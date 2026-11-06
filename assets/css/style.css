@@ -672,6 +672,10 @@ th code {
   white-space: nowrap;
 }
 
+.glossary-table tr[hidden] {
+  display: none;
+}
+
 /* Codice ----------------------------------------------------------------- */
 
 code {
@@ -868,7 +872,9 @@ kbd {
   outline-offset: 2px;
 }
 
-.tabpanel {
+.tabpanel,
+h2[id],
+h3[id] {
   scroll-margin-top: calc(var(--topbar-h) + 1rem);
 }
 

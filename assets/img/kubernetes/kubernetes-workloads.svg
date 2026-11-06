@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" role="img" aria-labelledby="title desc">
+  <title id="title">Dal manifest ai Pod: controller, Service e configurazione</title>
+  <desc id="desc">Un Deployment descrive il template dei Pod. Il ReplicaSet mantiene il numero di repliche e crea i Pod. Il Service seleziona i Pod per label, l'HorizontalPodAutoscaler cambia le repliche, ConfigMap e Secret forniscono configurazione e il PodDisruptionBudget limita le interruzioni volontarie.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .body { font: 400 18px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .box-title { font: 600 20px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .box-sub { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .mono { font: 600 16px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="658" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">WORKLOAD</text>
+  <text x="56" y="100" class="title">Dal manifest ai Pod</text>
+  <text x="56" y="128" class="small">Controller, Service, configurazione e scalabilit&#224; lavorano insieme.</text>
+
+  <!-- Riga 1 -->
+  <rect x="56" y="170" width="240" height="130" rx="14" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="76" y="204" class="box-title">Deployment</text>
+  <text x="76" y="228" class="box-sub">template del Pod</text>
+  <rect x="76" y="244" width="200" height="38" rx="8" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="90" y="268" class="tiny">replicas: 3 &#183; strategy: RollingUpdate</text>
+
+  <rect x="340" y="170" width="240" height="130" rx="14" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="360" y="204" class="box-title">ReplicaSet</text>
+  <text x="360" y="228" class="box-sub">mantiene il numero di Pod</text>
+  <rect x="360" y="244" width="200" height="38" rx="8" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="374" y="268" class="tiny">hash della revisione</text>
+
+  <rect x="640" y="170" width="504" height="130" rx="14" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="660" y="196" class="box-title">Pod</text>
+  <text x="1118" y="196" class="tiny" text-anchor="end">app=web</text>
+
+  <rect x="660" y="210" width="150" height="72" rx="8" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="674" y="236" class="mono">web-1</text>
+  <text x="674" y="260" class="tiny">container nginx</text>
+  <rect x="816" y="210" width="150" height="72" rx="8" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="830" y="236" class="mono">web-2</text>
+  <text x="830" y="260" class="tiny">container nginx</text>
+  <rect x="972" y="210" width="150" height="72" rx="8" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="986" y="236" class="mono">web-3</text>
+  <text x="986" y="260" class="tiny">container nginx</text>
+
+  <path d="M 296 235 H 336" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="298" y="226" class="tiny">crea</text>
+  <path d="M 580 235 H 636" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="582" y="226" class="tiny">crea</text>
+
+  <!-- Riga 2 -->
+  <rect x="56" y="340" width="240" height="110" rx="14" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="76" y="370" class="box-title">ConfigMap / Secret</text>
+  <text x="76" y="394" class="box-sub">variabili e file montati</text>
+  <text x="76" y="424" class="tiny">separati dall'immagine</text>
+
+  <rect x="340" y="340" width="240" height="110" rx="14" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="360" y="370" class="box-title">HorizontalPodAutoscaler</text>
+  <text x="360" y="394" class="box-sub">regola replicas in base alle metriche</text>
+  <text x="360" y="424" class="tiny">CPU, memoria o metriche custom</text>
+
+  <rect x="640" y="340" width="240" height="110" rx="14" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="660" y="370" class="box-title">Service</text>
+  <text x="660" y="394" class="box-sub">indirizzo stabile e load balancing</text>
+  <text x="660" y="424" class="tiny">selettore per label</text>
+
+  <rect x="920" y="340" width="224" height="110" rx="14" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="940" y="370" class="box-title">PodDisruptionBudget</text>
+  <text x="940" y="394" class="box-sub">limita le interruzioni volontarie</text>
+  <text x="940" y="424" class="tiny">minAvailable: 2</text>
+
+  <path d="M 176 340 V 306" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="120" y="328" class="tiny">env / mount</text>
+  <path d="M 460 340 V 306" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="468" y="328" class="tiny">scala</text>
+  <path d="M 760 340 V 306" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="768" y="328" class="tiny">seleziona</text>
+  <path d="M 1032 340 V 306" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="1040" y="328" class="tiny">protegge</text>
+
+  <!-- Nota -->
+  <rect x="56" y="484" width="1088" height="76" rx="16" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="512" class="body">Il Deployment descrive ci&#242; che vuoi; i controller lo trasformano in Pod e lo mantengono nel tempo.</text>
+  <text x="80" y="540" class="small">Il Service non crea i Pod: li trova per label. ConfigMap e Secret non entrano nell'immagine: vengono montati o iniettati.</text>
+
+  <text x="56" y="616" class="small">Illustrazione Adripedia &#183; concetti dalla documentazione Kubernetes.</text>
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" role="img" aria-labelledby="title desc">
+  <title id="title">Architettura di un cluster Kubernetes</title>
+  <desc id="desc">Il client kubectl, Helm e Kustomize parlano con il kube-apiserver. Nel control plane l'apiserver usa etcd come archivio dello stato, il kube-scheduler assegna i Pod ai nodi e il kube-controller-manager mantiene lo stato desiderato. In ogni worker node il kubelet gestisce i Pod tramite il container runtime, mentre il kube-proxy realizza le regole di rete dei Service.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .body { font: 400 18px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .box-title { font: 600 20px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .box-sub { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .chip { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .mono { font: 600 16px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="658" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">ARCHITETTURA</text>
+  <text x="56" y="100" class="title">Come funziona un cluster Kubernetes</text>
+  <text x="56" y="128" class="small">Il control plane decide, i nodi eseguono. Ogni richiesta passa dal kube-apiserver.</text>
+
+  <!-- Client -->
+  <rect x="56" y="170" width="220" height="340" rx="20" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="205" class="box-title">Client</text>
+  <text x="80" y="228" class="box-sub">fuori dal cluster</text>
+
+  <rect x="80" y="250" width="172" height="48" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="94" y="280" class="mono">kubectl</text>
+  <rect x="80" y="310" width="172" height="48" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="94" y="340" class="mono">helm</text>
+  <rect x="80" y="370" width="172" height="48" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="94" y="400" class="mono">kustomize</text>
+
+  <text x="80" y="452" class="tiny">HTTPS verso</text>
+  <text x="80" y="472" class="tiny">l'API del cluster</text>
+
+  <!-- Control plane -->
+  <rect x="310" y="170" width="520" height="340" rx="20" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="334" y="205" class="box-title">Control plane</text>
+  <text x="334" y="228" class="box-sub">il cervello del cluster</text>
+
+  <rect x="334" y="248" width="210" height="62" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="348" y="274" class="box-title">kube-apiserver</text>
+  <text x="348" y="296" class="box-sub">API REST e autenticazione</text>
+
+  <rect x="570" y="248" width="236" height="62" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="584" y="274" class="box-title">etcd</text>
+  <text x="584" y="296" class="box-sub">stato del cluster, chiave-valore</text>
+
+  <rect x="334" y="330" width="210" height="58" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="348" y="354" class="box-title">kube-scheduler</text>
+  <text x="348" y="376" class="box-sub">sceglie il nodo per ogni Pod</text>
+
+  <rect x="570" y="330" width="236" height="58" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="584" y="354" class="box-title">kube-controller-manager</text>
+  <text x="584" y="376" class="box-sub">reconciliation dei controller</text>
+
+  <rect x="334" y="408" width="472" height="58" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="348" y="432" class="box-title">cloud-controller-manager</text>
+  <text x="348" y="454" class="box-sub">solo se il cluster gira su un cloud provider</text>
+
+  <!-- Worker node -->
+  <rect x="860" y="170" width="284" height="340" rx="20" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="884" y="205" class="box-title">Worker node</text>
+  <text x="884" y="228" class="box-sub">dove girano i Pod</text>
+
+  <rect x="884" y="248" width="236" height="58" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="898" y="272" class="box-title">kubelet</text>
+  <text x="898" y="294" class="box-sub">agente del nodo, parla con l'API</text>
+
+  <rect x="884" y="318" width="236" height="58" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="898" y="342" class="box-title">Container runtime</text>
+  <text x="898" y="364" class="box-sub">containerd oppure CRI-O</text>
+
+  <rect x="884" y="388" width="236" height="58" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="898" y="412" class="box-title">kube-proxy</text>
+  <text x="898" y="434" class="box-sub">regole per i Service, iptables o IPVS</text>
+
+  <rect x="884" y="458" width="236" height="42" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="898" y="485" class="chip">Pod &#183; uno o pi&#249; container</text>
+
+  <!-- Frecce -->
+  <path d="M 276 340 H 302 V 279 H 328" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="288" y="326" class="tiny">HTTPS</text>
+
+  <path d="M 546 279 H 566" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <path d="M 440 330 V 316" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 688 330 V 316" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <path d="M 830 240 H 878" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="834" y="232" class="tiny">watch</text>
+
+  <path d="M 1002 306 V 314" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 1002 376 V 384" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 1002 446 V 454" fill="none" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Nota -->
+  <rect x="56" y="536" width="1088" height="66" rx="16" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="562" class="body">Il kube-apiserver &#232; l'unico punto di contatto: client, scheduler, controller e kubelet passano da lui.</text>
+  <text x="80" y="586" class="small">Lo stato persistente vive in etcd; i nodi non decidono, eseguono ci&#242; che il control plane ha assegnato.</text>
+
+  <text x="56" y="636" class="small">Illustrazione Adripedia &#183; concetti dalla documentazione Kubernetes.</text>
+</svg>

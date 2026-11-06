@@ -4,8 +4,8 @@ Enciclopedia personale: documentazione e appunti, in ogni ambito.
 
 La gerarchia è **area → sezione → pagine**. Le prime due aree sono
 **Informatica** (che contiene le sezioni **OpenCode**, V2, versione `2.2.5`,
-**Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, e **WSL**,
-versione `3.0.3`) e **Link** (collegamenti esterni).
+**Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Kubernetes**,
+versione `1.37`, e **WSL**, versione `3.0.3`) e **Link** (collegamenti esterni).
 
 ## Struttura
 
@@ -18,6 +18,8 @@ adripedia/
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ docker/                 # sezione Docker
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
+│  ├─ kubernetes/             # sezione Kubernetes
+│  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti, CKA
 │  └─ wsl/                    # sezione WSL
 │     └─ index.html           # pagina unica a tab: panoramica, Windows, comandi
 ├─ opencode/                  # sezione OpenCode (dentro Informatica)
@@ -39,6 +41,7 @@ adripedia/
 │  └─ img/
 │     ├─ favicon.svg          # marchio "Globo A"
 │     ├─ docker/              # logo, diagramma e screenshot della sezione Docker
+│     ├─ kubernetes/          # cinque diagrammi originali della sezione Kubernetes
 │     └─ wsl/                 # diagramma dell'architettura WSL 2
 ├─ .nojekyll                  # GitHub Pages: non processare con Jekyll
 └─ README.md
@@ -74,7 +77,8 @@ Poi visita <http://localhost:8000>.
 
 ## Pagine a tab
 
-Le sezioni Git, Docker e WSL usano una pagina unica con tab riutilizzabili:
+Le sezioni Git, Docker, Kubernetes e WSL usano una pagina unica con tab
+riutilizzabili:
 
 ```html
 <div class="tabs" data-tabs>
@@ -94,12 +98,22 @@ supporta le frecce e Home/End e apre il tab indicato dall'hash (`#due`). Senza
 JavaScript tutti i pannelli restano visibili. Per aggiungere un tab basta un
 pulsante con `aria-controls` uguale all'`id` del pannello.
 
-Il tab **Comandi** delle pagine Git, Docker e WSL ha in più una ricerca
+Il tab **Comandi** delle pagine Git, Docker, Kubernetes e WSL ha in più una ricerca
 (`#cmd-search-input`) che indicizza le righe delle tabelle e dei blocchi di
 codice del pannello: scrivendo si filtrano i comandi, con frecce e Invio
 oppure con il mouse si
 salta al comando scelto, evidenziato per qualche secondo. Il markup è
 `.cmd-search`; il comportamento è lo stesso modulo in `assets/js/site.js`.
+
+Il pannello **Approfondimenti** di Kubernetes apre con il glossario
+(`#glossario`) e un filtro locale (`#glossary-search-input`) che nasconde le
+righe della tabella senza ricaricare la pagina. La ricerca ignora maiuscole e
+accenti, accetta più parole e aggiorna il conteggio in `#glossary-search-hint`.
+Le sottosezioni sulla memoria (`#memoria`, `#memoria-java`, `#memoria-node`,
+`#memoria-python`, `#memoria-php`, `#memoria-go`) e quella sulle immagini
+(`#immagini`) sono normali `id` interni: un hash verso una di esse apre il tab
+che le contiene e scorre al titolo, con `scroll-margin-top` per non finire
+sotto la barra superiore.
 
 ## Aggiungere un'area
 
@@ -136,7 +150,7 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
   la navigazione laterale non compare.
 - Le pagine a tab mostrano tutti i pannelli quando JavaScript è disattivato.
 - I contenuti sono in italiano e allineati alla documentazione ufficiale
-  OpenCode V2, Git 2.56.0, Docker 29.9.3 e WSL 3.0.3.
+  OpenCode V2, Git 2.56.0, Docker 29.9.3, Kubernetes 1.37 e WSL 3.0.3.
 
 ## Immagini della sezione Docker
 
@@ -168,3 +182,23 @@ applicabile, licenza. Se sostituisci un'immagine, aggiorna anche la didascalia.
 che illustra l'architettura di WSL 2: host Windows, VM leggera con kernel Linux
 condiviso e distribuzioni isolate. I concetti sono ripresi dalla documentazione
 Microsoft Learn; il disegno non usa immagini o marchi Microsoft.
+
+## Immagini della sezione Kubernetes
+
+Tutti i diagrammi in `assets/img/kubernetes/` sono originali di Adripedia e
+riprendono concetti dalla documentazione Kubernetes:
+
+- `kubernetes-architecture.svg`: client, control plane e worker node, con il
+  flusso delle richieste attraverso il kube-apiserver.
+- `kubernetes-workloads.svg`: Deployment, ReplicaSet e Pod, con Service,
+  ConfigMap, Secret, HorizontalPodAutoscaler e PodDisruptionBudget.
+- `kubernetes-networking.svg`: Ingress o Gateway API, Service, Pod, kube-proxy,
+  CNI, CoreDNS e NetworkPolicy.
+- `kubernetes-storage.svg`: Pod, PVC, PV, StorageClass e driver CSI, con i
+  volumi effimeri.
+- `kubernetes-cka.svg`: i cinque domini della certificazione CKA con i pesi e i
+  dati principali dell'esame.
+
+I disegni non usano loghi o marchi Kubernetes. Le didascalie nelle pagine
+riportano la fonte concettuale; se sostituisci un'immagine, aggiorna anche la
+didascalia.

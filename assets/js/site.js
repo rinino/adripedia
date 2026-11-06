@@ -74,6 +74,16 @@
               ]
             },
             {
+              text: "Kubernetes",
+              children: [
+                { text: "Panoramica", href: "informatica/kubernetes/index.html#panoramica" },
+                { text: "Installazione", href: "informatica/kubernetes/index.html#installazione" },
+                { text: "Comandi", href: "informatica/kubernetes/index.html#comandi" },
+                { text: "Approfondimenti", href: "informatica/kubernetes/index.html#approfondimenti" },
+                { text: "CKA", href: "informatica/kubernetes/index.html#cka" }
+              ]
+            },
+            {
               text: "WSL",
               children: [
                 { text: "Panoramica", href: "informatica/wsl/index.html#panoramica" },
@@ -334,7 +344,23 @@
         if (items[i].panel.id === id) return items[i];
       }
 
+      // Un'ancora interna a un pannello (per esempio #glossario) deve
+      // attivare il pannello che la contiene.
+      var target = document.getElementById(id);
+      if (target) {
+        for (var j = 0; j < items.length; j += 1) {
+          if (items[j].panel.contains(target)) return items[j];
+        }
+      }
+
       return null;
+    }
+
+    function scrollToHash(item) {
+      var id = window.location.hash.replace(/^#/, "");
+      var target = id === item.panel.id ? item.panel : document.getElementById(id);
+      if (!target || !item.panel.contains(target)) target = item.panel;
+      target.scrollIntoView({ block: "start", behavior: "instant" });
     }
 
     items.forEach(function (item, index) {
@@ -367,7 +393,7 @@
     activate(initial || items[0], false);
 
     if (initial) {
-      initial.panel.scrollIntoView({ block: "start", behavior: "auto" });
+      scrollToHash(initial);
     } else {
       setHash(items[0].panel.id);
       refreshNav();
@@ -378,7 +404,7 @@
       if (!item) return;
 
       activate(item, false);
-      item.panel.scrollIntoView({ block: "start", behavior: "auto" });
+      scrollToHash(item);
     });
   });
 
@@ -673,6 +699,57 @@
       if (event.target.closest(".cmd-search")) return;
 
       close();
+    });
+  })();
+
+  /* ---------------------------------------------------------------------
+     Filtro del glossario
+     Nasconde le righe che non contengono tutte le parole cercate.
+     --------------------------------------------------------------------- */
+  (function () {
+    var input = document.getElementById("glossary-search-input");
+    var table = document.getElementById("glossary-table");
+    var hint = document.getElementById("glossary-search-hint");
+
+    if (!input || !table || !hint) return;
+
+    var rows = Array.prototype.slice.call(table.querySelectorAll("tbody tr"));
+    var defaultHint = hint.textContent.trim();
+
+    function normalize(value) {
+      return String(value)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    var entries = rows.map(function (row) {
+      return {
+        row: row,
+        text: normalize(row.textContent)
+      };
+    });
+
+    input.addEventListener("input", function () {
+      var tokens = normalize(input.value).split(/\s+/).filter(Boolean);
+      var found = 0;
+
+      entries.forEach(function (entry) {
+        var match = tokens.every(function (token) {
+          return entry.text.indexOf(token) !== -1;
+        });
+
+        entry.row.hidden = !match;
+        if (match) found += 1;
+      });
+
+      if (!tokens.length) {
+        hint.textContent = defaultHint;
+      } else if (!found) {
+        hint.textContent = "Nessuna voce trovata.";
+      } else {
+        hint.textContent = found + (found === 1 ? " voce trovata." : " voci trovate.");
+      }
     });
   })();
 
