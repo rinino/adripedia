@@ -117,21 +117,39 @@ sotto la barra superiore. In cima agli Approfondimenti un indice
 (`.section-index`) raccoglie i link a tutte le sezioni; le introduzioni e la
 tabella di troubleshooting rimandano ai paragrafi collegati.
 
+## Struttura della home
+
+La home è costruita a blocchi, tutti in `index.html`:
+
+- `home-hero` con `home-quick`: testata a due colonne e indice rapido.
+- `home-stats`: quattro numeri di orientamento (aree, sezioni, pagine, domande CKA).
+- `home-feature`: banner “In evidenza” verso Kubernetes.
+- card dei percorsi con chip informative (`card-chips`).
+- `persona-grid`: “A chi serve” in tre card.
+- `structure-flow` e `structure-tags`: gerarchia Area → Sezione → Pagina.
+- `data-updates`: diario paginato.
+
+I numeri in `home-stats` sono statici: aggiornali quando cambia il numero di
+aree, sezioni, pagine o domande CKA. Il conteggio degli aggiornamenti in
+`[data-updates-count]` si aggiorna da solo.
+
 ## Aggiornamenti in home
 
 La home chiude con un elenco di aggiornamenti paginato: il contenitore
-`[data-updates]` mostra tre voci per pagina, con pulsanti precedenti/successivi
-e indicatore `Pagina N di M`. Senza JavaScript tutte le voci restano visibili
-e i controlli non compaiono. Per aggiungere una novità, inserisci un `<li>`
-in cima a `[data-updates-list]` in `index.html`: la paginazione si adatta da
-sola al numero di voci.
+`[data-updates]` mostra tre voci per pagina, con frecce, numeri di pagina e
+indicatore `Pagina N di M`. Il conteggio in `[data-updates-count]` si aggiorna
+da solo. Senza JavaScript tutte le voci restano visibili e i controlli non
+compaiono. Per aggiungere una novità, inserisci un `<li>` in cima a
+`[data-updates-list]` in `index.html`: la paginazione si adatta da sola al
+numero di voci.
 
 ## Aggiungere un'area
 
 1. Crea la cartella, per esempio `fai-da-te/`, con `index.html` e le sezioni.
 2. Aggiungi un nuovo oggetto con `children` dentro `NAV`, in
    `assets/js/site.js`.
-3. Aggiungi una card nella home (`index.html`).
+3. Aggiungi una card nella home (`index.html`) e aggiorna i numeri in
+   `home-stats` se cambiano aree, sezioni o pagine.
 
 ## Pubblicare su GitHub Pages
 

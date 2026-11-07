@@ -54,24 +54,43 @@
             <li>
               <a href="#aggiornamenti">
                 <span>Aggiornamenti</span>
-                <span class="home-quick-meta" data-updates-count>10 voci</span>
+                <span class="home-quick-meta" data-updates-count>13 voci</span>
               </a>
             </li>
           </ul>
           <p class="home-quick-foot">
             Ultimo aggiornamento
-            <time datetime="2026-11-06">6 nov 2026</time>
+            <time datetime="2026-11-07">7 nov 2026</time>
           </p>
         </aside>
       </section>
 
-      <div class="callout">
-        <strong>Da dove iniziare:</strong> se sei qui per i container, apri
-        <a href="informatica/docker/index.html">Docker</a> o
-        <a href="informatica/kubernetes/index.html">Kubernetes</a>; se cerchi
-        risorse esterne, vai su <a href="link/index.html">Link</a>. Il resto
-        cresce con calma, una sezione alla volta.
-      </div>
+      <ul class="home-stats" aria-label="Adripedia in numeri">
+        <li class="home-stat"><b>2</b><span>aree</span></li>
+        <li class="home-stat"><b>5</b><span>sezioni</span></li>
+        <li class="home-stat"><b>16</b><span>pagine</span></li>
+        <li class="home-stat"><b>51</b><span>domande CKA</span></li>
+      </ul>
+
+      <a class="home-feature" href="informatica/kubernetes/index.html">
+        <span class="home-feature-body">
+          <span class="home-feature-pill">In evidenza</span>
+          <span class="home-feature-title">Kubernetes, senza perdersi</span>
+          <span class="home-feature-desc">Architettura, comandi, rete e storage.
+            Con glossario cercabile e una guida completa alla certificazione.</span>
+          <span class="home-feature-chips">
+            <span>CKA &middot; 51 domande</span>
+            <span>glossario</span>
+            <span>5 tab</span>
+          </span>
+          <span class="home-feature-cta">Apri la sezione &rarr;</span>
+        </span>
+        <span class="home-feature-art" aria-hidden="true">
+          <span class="home-feature-node"><i></i>control plane</span>
+          <span class="home-feature-node is-dim"><i></i>node 1</span>
+          <span class="home-feature-node is-dim"><i></i>node 2</span>
+        </span>
+      </a>
 
       <div class="section-head">
         <p class="eyebrow">La wiki</p>
@@ -127,26 +146,31 @@
           <span class="card-mark" aria-hidden="true">01</span>
           <h3>Muovere i primi passi con i container</h3>
           <p>Che cos'&egrave; un container, come si installa Docker, i comandi di tutti i giorni e gli approfondimenti su reti, processi e permessi.</p>
+          <span class="card-chips"><span>Docker</span><span>5 tab</span><span>comandi</span></span>
         </a>
         <a class="card" href="informatica/kubernetes/index.html">
           <span class="card-mark" aria-hidden="true">02</span>
           <h3>Capire Kubernetes senza perdersi</h3>
           <p>Architettura, installazione, comandi, rete, storage, memoria e immagini. In pi&ugrave;: glossario con ricerca e 51 domande per la CKA.</p>
+          <span class="card-chips"><span>Kubernetes</span><span>5 tab</span><span>CKA</span></span>
         </a>
         <a class="card" href="informatica/wsl/index.html">
           <span class="card-mark" aria-hidden="true">03</span>
           <h3>Linux dentro Windows</h3>
           <p>Installazione di WSL, scelta e gestione delle distribuzioni, configurazione e comandi per lavorare senza cambiare computer.</p>
+          <span class="card-chips"><span>WSL</span><span>3 tab</span><span>setup</span></span>
         </a>
         <a class="card" href="informatica/git/index.html">
           <span class="card-mark" aria-hidden="true">04</span>
           <h3>Avere Git sotto controllo</h3>
           <p>Concetti base, installazione su Windows e Linux e i comandi che servono davvero, raccolti in una pagina a tab.</p>
+          <span class="card-chips"><span>Git</span><span>4 tab</span><span>comandi</span></span>
         </a>
         <a class="card" href="opencode/index.html">
           <span class="card-mark" aria-hidden="true">05</span>
           <h3>Usare OpenCode da zero</h3>
           <p>Otto pagine per installarlo, configurare agenti e scorciatoie, e convivere con la riga di comando senza troppi drammi.</p>
+          <span class="card-chips"><span>OpenCode</span><span>8 pagine</span><span>agenti</span></span>
         </a>
       </div>
 
@@ -159,22 +183,60 @@
         per chi lavora con questi strumenti, per chi li sta studiando e per chi,
         ogni tanto, ha solo bisogno di ricordare dove finisce un flag.
       </p>
-      <ul>
-        <li>Per chi usa Docker e Kubernetes e vuole un riferimento compatto, con esempi e comandi pronti.</li>
-        <li>Per chi prepara la certificazione CKA e cerca domande, risposte e collegamenti tra i concetti.</li>
-        <li>Per chi monta e rimonta l'ambiente di sviluppo su Windows e vorrebbe non ricominciare ogni volta da capo.</li>
-      </ul>
+      <div class="persona-grid">
+        <div class="persona">
+          <span class="persona-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </span>
+          <h3>Chi lavora</h3>
+          <p>Un riferimento compatto per Docker e Kubernetes, con esempi e comandi pronti.</p>
+        </div>
+        <div class="persona">
+          <span class="persona-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <h3>Chi studia</h3>
+          <p>Domande, risposte e collegamenti tra i concetti per preparare la certificazione CKA.</p>
+        </div>
+        <div class="persona">
+          <span class="persona-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 3v6h6"/></svg>
+          </span>
+          <h3>Chi rimonta</h3>
+          <p>WSL e ambiente di sviluppo da rimettere in piedi su Windows senza ricominciare da zero.</p>
+        </div>
+      </div>
 
       <div class="section-head">
         <p class="eyebrow">Struttura</p>
         <h2>Come &egrave; organizzata</h2>
       </div>
-      <ul>
-        <li>Un'<strong>area</strong> &egrave; una macro categoria: Informatica, Link e quelle che verranno.</li>
-        <li>Dentro un'area ci sono le <strong>sezioni</strong>, e dentro ogni sezione le <strong>pagine</strong>.</li>
-        <li>Il menu a sinistra segue la stessa gerarchia e apre il ramo della pagina corrente.</li>
-        <li>Molte sezioni usano le <strong>tab</strong> per tenere insieme panoramica, installazione, comandi e approfondimenti; gli indici interni portano direttamente al punto giusto.</li>
-      </ul>
+      <p>
+        Tre livelli, sempre gli stessi: un'<strong>area</strong> contiene le
+        <strong>sezioni</strong>, e ogni sezione contiene le <strong>pagine</strong>.
+      </p>
+      <div class="structure-flow" role="img" aria-label="Esempio di gerarchia: area Informatica, sezione Docker, pagina Panoramica">
+        <div class="structure-node">
+          <span class="structure-kicker">Area</span>
+          <span class="structure-name">Informatica</span>
+        </div>
+        <span class="structure-arrow" aria-hidden="true">&rarr;</span>
+        <div class="structure-node">
+          <span class="structure-kicker">Sezione</span>
+          <span class="structure-name">Docker</span>
+        </div>
+        <span class="structure-arrow" aria-hidden="true">&rarr;</span>
+        <div class="structure-node">
+          <span class="structure-kicker">Pagina</span>
+          <span class="structure-name">Panoramica</span>
+        </div>
+      </div>
+      <div class="structure-tags">
+        <span>menu a sinistra</span>
+        <span>tab</span>
+        <span>indici interni</span>
+        <span>ricerca nel glossario</span>
+      </div>
 
       <div class="section-head">
         <p class="eyebrow">Diario</p>
@@ -186,6 +248,18 @@
       </p>
       <div class="updates" data-updates data-page-size="3">
         <ol class="updates-list" id="aggiornamenti-list" data-updates-list>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-07">7 novembre 2026</time>
+            <p>Home pi&ugrave; piena: fascia numeri, banner &ldquo;In evidenza&rdquo; per Kubernetes, chip sui percorsi, &ldquo;A chi serve&rdquo; in card e diagramma della struttura.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-07">7 novembre 2026</time>
+            <p>Home: hero a due colonne con indice rapido, card con indicatori visivi e aggiornamenti trasformati in una timeline con paginazione numerata.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-07">7 novembre 2026</time>
+            <p>Sidebar ripulita: rimossi il badge &ldquo;beta&rdquo; e il link al README, poco utili a chi legge il sito.</p>
+          </li>
           <li class="update">
             <time class="update-date" datetime="2026-11-06">6 novembre 2026</time>
             <p>Home riorganizzata: descrizioni dei contenuti, percorsi di ingresso e aggiornamenti navigabili.</p>
