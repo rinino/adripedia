@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>k3s — Adripedia</title>
-  <meta name="description" content="Sezione k3s in preparazione: panoramica, installazione, comandi e approfondimenti sulla distribuzione Kubernetes leggera.">
+  <meta name="description" content="k3s: guida alla distribuzione Kubernetes leggera. Panoramica, installazione, comandi con ricerca, datastore, rete, storage, sicurezza e aggiornamenti.">
   <link rel="stylesheet" href="../../assets/css/style.css">
   <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#191919">
@@ -33,18 +33,20 @@
       <p class="eyebrow">Sezione &middot; Informatica</p>
       <h1>k3s</h1>
       <p class="lead">
-        k3s &egrave; una distribuzione Kubernetes leggera, pensata per server
-        piccoli, ambienti edge e laboratori. La sezione raccoglier&agrave;
-        installazione, configurazione e comandi per partire in fretta senza
-        rinunciare alle API di Kubernetes.
+        k3s &egrave; una distribuzione Kubernetes leggera: un solo binario,
+        pochi requisiti e un'installazione che sta in una riga. La guida copre
+        architettura, installazione, comandi, datastore, rete, storage e
+        sicurezza, con particolare attenzione ai default e ai percorsi reali.
       </p>
 
       <div class="callout">
-        <strong>Sezione in preparazione.</strong> Lo scheletro &egrave; pronto:
-        i tab qui sotto verranno riempiti con panoramica, installazione,
-        comandi e approfondimenti. Nel frattempo restano disponibili le guide
-        <a href="../kubernetes/index.html">Kubernetes</a> e
-        <a href="../k9s/index.html">k9s</a>.
+        <strong>Versione documentata:</strong> k3s <code>v1.37.2+k3s1</code>
+        (3 novembre 2026), che aggiorna Kubernetes a <code>v1.37.2</code>.
+        Licenza Apache 2.0; documentazione CC BY 4.0. Include containerd
+        <code>2.3.7</code>, Traefik <code>3.7.14</code>, Flannel
+        <code>0.28.10</code> e Gateway API <code>1.6.3</code>. Per le risorse
+        Kubernetes di base resta disponibile la guida
+        <a href="../kubernetes/index.html">Kubernetes</a>.
       </div>
 
       <div class="tabs" data-tabs>
@@ -78,16 +80,243 @@
              Panoramica
              ================================================================ -->
         <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
-          <h2>Panoramica</h2>
-          <div class="callout">
-            <strong>Contenuti in arrivo.</strong> Qui troveranno posto: che
-            cos'&egrave; k3s, differenze rispetto a Kubernetes completo, casi
-            d'uso tipici e componenti inclusi.
+          <h2>Che cos'&egrave; k3s</h2>
+          <p>
+            k3s &egrave; una distribuzione Kubernetes <strong>leggera e
+            autosufficiente</strong>, distribuita come un singolo binario da
+            meno di 100 MB. Raccoglie in un unico eseguibile il control plane,
+            il kubelet, il runtime dei container e i componenti di rete che di
+            solito si installano separatamente. &Egrave; un progetto
+            <strong>CNCF Sandbox</strong> dal 19 agosto 2020, con codice
+            Apache 2.0.
+          </p>
+          <p>
+            L'obiettivo non &egrave; sostituire un cluster Kubernetes completo,
+            ma rendere Kubernetes utilizzabile dove un'installazione
+            tradizionale sarebbe sproporzionata: server piccoli, ambienti edge,
+            dispositivi IoT, laboratori, CI/CD e macchine con poca RAM. Le API
+            restano quelle di Kubernetes, quindi manifest, Helm chart,
+            <code>kubectl</code> e operatori funzionano come al solito.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/k3s/k3s-architecture-single-server.svg"
+                 width="1100" height="637"
+                 alt="Architettura k3s con un server e database SQLite incorporato, collegato a due agent">
+            <figcaption>
+              Cluster a server singolo con database SQLite incorporato. Fonte:
+              <a href="https://docs.k3s.io/architecture" target="_blank" rel="noopener">k3s Docs &mdash; Architecture</a>,
+              licenza <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+              &middot;
+              <a href="../../assets/img/k3s/k3s-architecture-single-server.svg" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Server e agent</h2>
+          <p>
+            k3s usa due ruoli. Un <strong>server</strong> esegue il control
+            plane e il datastore; un <strong>agent</strong> esegue solo il
+            kubelet, il runtime e la rete. Entrambi avviano kubelet, containerd
+            e la CNI. Per semplicit&agrave;, un server esegue anche i componenti
+            dell'agent ed &egrave; <strong>programmabile per i workload per
+            default</strong>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Ruolo</th><th>Cosa esegue</th><th>Quando serve</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>k3s server</code></td>
+                  <td>API server, scheduler, controller-manager, cloud-controller-manager, datastore e componenti agent.</td>
+                  <td>Almeno un nodo; per l'alta disponibilit&agrave; tre o pi&ugrave; server.</td>
+                </tr>
+                <tr>
+                  <td><code>k3s agent</code></td>
+                  <td>containerd, Flannel, kubelet, kube-proxy e controller delle network policy.</td>
+                  <td>Nodi aggiuntivi che eseguono solo i carichi di lavoro.</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+
+          <h2>Alta disponibilit&agrave;</h2>
+          <p>
+            Per un control plane ridondante servono <strong>tre o pi&ugrave;
+            server</strong>, sempre in numero dispari quando il datastore
+            &egrave; etcd incorporato: il quorum si calcola come
+            <code>(n/2)+1</code>. Il primo server si inizializza con
+            <code>--cluster-init</code>; gli altri si uniscono con
+            <code>--server https://server1:6443</code>. In alternativa si pu&ograve;
+            usare un database esterno.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/k3s/k3s-architecture-ha-embedded.svg"
+                 width="1100" height="518"
+                 alt="Architettura k3s ad alta disponibilit&agrave; con tre server e etcd incorporato, un load balancer e due agent">
+            <figcaption>
+              Alta disponibilit&agrave; con etcd incorporato e indirizzo di
+              registrazione fisso. Fonte:
+              <a href="https://docs.k3s.io/architecture" target="_blank" rel="noopener">k3s Docs &mdash; Architecture</a>,
+              licenza <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+              &middot;
+              <a href="../../assets/img/k3s/k3s-architecture-ha-embedded.svg" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Datastore</h2>
+          <p>
+            La scelta del datastore dipende dal numero di server e dai requisiti
+            di disponibilit&agrave;. k3s seleziona automaticamente etcd se trova
+            un cluster da inizializzare o un database etcd gi&agrave; presente
+            su disco; altrimenti usa SQLite.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Datastore</th><th>Server</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>SQLite</code></td>
+                  <td>Uno</td>
+                  <td>Default. Semplice e senza dipendenze, ma non pu&ograve; essere condiviso da pi&ugrave; server.</td>
+                </tr>
+                <tr>
+                  <td><code>etcd</code> incorporato</td>
+                  <td>Tre o pi&ugrave;, dispari</td>
+                  <td>Scelta tipica per l'HA senza gestire un database esterno. Richiede dischi veloci.</td>
+                </tr>
+                <tr>
+                  <td><code>MySQL</code> / <code>MariaDB</code></td>
+                  <td>Due o pi&ugrave;</td>
+                  <td>Database esterno gestito fuori da k3s. MySQL 8.0/8.4; MariaDB 10.11/11.4.</td>
+                </tr>
+                <tr>
+                  <td><code>PostgreSQL</code></td>
+                  <td>Due o pi&ugrave;</td>
+                  <td>Database esterno. Versioni certificate: 15.12, 16.7 e 17.3.</td>
+                </tr>
+                <tr>
+                  <td><code>etcd</code> esterno</td>
+                  <td>Due o pi&ugrave;</td>
+                  <td>Per chi gestisce gi&agrave; un cluster etcd. Certificato contro etcd 3.5.21.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Componenti inclusi</h2>
+          <p>
+            k3s non &egrave; solo Kubernetes: include anche i pezzi che di solito
+            si installano a parte. Quasi tutti sono AddOn gestiti tramite i
+            manifest in <code>/var/lib/rancher/k3s/server/manifests</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Componente</th><th>Ruolo</th><th>Come si disabilita</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>containerd</code></td><td>Runtime dei container.</td><td>Si pu&ograve; usare cri-dockerd con <code>--docker</code>, opzione sperimentale.</td></tr>
+                <tr><td><code>Flannel</code></td><td>CNI predefinita, con backend VXLAN.</td><td><code>--flannel-backend=none</code> per usare una CNI propria.</td></tr>
+                <tr><td><code>CoreDNS</code></td><td>DNS interno del cluster.</td><td><code>--disable=coredns</code>.</td></tr>
+                <tr><td><code>Traefik</code></td><td>Ingress controller e reverse proxy.</td><td><code>--disable=traefik</code>.</td></tr>
+                <tr><td><code>ServiceLB</code></td><td>Controller LoadBalancer basato su hostPort.</td><td><code>--disable=servicelb</code>.</td></tr>
+                <tr><td><code>kube-router netpol</code></td><td>Applica le NetworkPolicy.</td><td><code>--disable-network-policy</code>.</td></tr>
+                <tr><td><code>local-path-provisioner</code></td><td>StorageClass <code>local-path</code> per volumi locali.</td><td><code>--disable=local-storage</code>.</td></tr>
+                <tr><td><code>metrics-server</code></td><td>Metriche di pod e nodi per <code>kubectl top</code>.</td><td><code>--disable=metrics-server</code>.</td></tr>
+                <tr><td><code>Helm controller</code></td><td>Installa Helm chart tramite manifest e <code>HelmChartConfig</code>.</td><td><code>--disable-helm-controller</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Quando sceglierlo</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Buon fit</th><th>Meno adatto</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Server con 2 core e 2 GB di RAM, Raspberry Pi, mini PC, device edge.</td>
+                  <td>Cluster con molti server e carichi che richiedono un control plane molto personalizzato.</td>
+                </tr>
+                <tr>
+                  <td>Laboratori, demo, ambienti di test e CI/CD che devono partire in fretta.</td>
+                  <td>Requisiti di alta disponibilit&agrave; senza dischi veloci per etcd.</td>
+                </tr>
+                <tr>
+                  <td>Installazioni air-gap o con connettivit&agrave; intermittente.</td>
+                  <td>Ambienti che richiedono Windows nativo: k3s non lo supporta.</td>
+                </tr>
+                <tr>
+                  <td>Chi vuole le API Kubernetes senza montare e mantenere ogni componente a mano.</td>
+                  <td>Chi ha gi&agrave; una piattaforma Kubernetes gestita e non ha bisogno di un cluster locale.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Requisiti minimi</h2>
+          <p>
+            I requisiti riguardano k3s e i suoi componenti, non i workload. Le
+            prestazioni dipendono molto dal disco: per etcd &egrave; consigliato
+            un SSD, non una scheda SD o eMMC.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nodo</th><th>CPU</th><th>RAM</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Server</td><td>2 core</td><td>2 GB</td></tr>
+                <tr><td>Agent</td><td>1 core</td><td>512 MB</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Per il dimensionamento del control plane, la guida ufficiale indica
+            circa 0-350 agent con 2 core e 4 GB, 351-900 con 4 core e 8 GB,
+            901-1800 con 8 core e 16 GB e oltre 1800 con 16+ core e 32 GB. Con
+            tre server in HA si pu&ograve; scalare di circa il 50% in pi&ugrave;;
+            gli agent conviene aggiungerli in gruppi da 50 o meno.
+          </p>
           <ul>
-            <li>Architettura: server, agent, datastore e add-on inclusi.</li>
-            <li>Quando scegliere k3s e quando no.</li>
-            <li>Requisiti minimi e limiti pratici.</li>
+            <li>Linux moderno, kernel con supporto a cgroup; architetture <code>x86_64</code>, <code>armhf</code> e <code>arm64/aarch64</code>.</li>
+            <li>Hostname univoci. Se vengono riutilizzati, usare <code>--with-node-id</code> o <code>--node-name</code>.</li>
+            <li>Firewall: aprire le porte necessarie o disabilitare <code>firewalld</code>/<code>ufw</code>.</li>
+            <li>Su Raspberry Pi OS abilitare i cgroup in <code>/boot/firmware/cmdline.txt</code>.</li>
+            <li>Su RHEL 10 installare <code>kernel-modules-extra</code>.</li>
+          </ul>
+
+          <h2>Porte</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Porta</th><th>Protocollo</th><th>Uso</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>6443</code></td><td>TCP</td><td>API Kubernetes e supervisor k3s; deve essere raggiungibile da tutti i nodi.</td></tr>
+                <tr><td><code>8472</code></td><td>UDP</td><td>Flannel VXLAN. Non esporla a Internet.</td></tr>
+                <tr><td><code>51820</code></td><td>UDP</td><td>Flannel WireGuard con IPv4.</td></tr>
+                <tr><td><code>51821</code></td><td>UDP</td><td>Flannel WireGuard con IPv6.</td></tr>
+                <tr><td><code>10250</code></td><td>TCP</td><td>Kubelet: metriche e API; serve al metrics-server.</td></tr>
+                <tr><td><code>2379-2380</code></td><td>TCP</td><td>Solo per l'HA con etcd incorporato, tra i server.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://docs.k3s.io/architecture" target="_blank" rel="noopener">k3s Docs &mdash; Architecture</a></li>
+            <li><a href="https://docs.k3s.io/installation/requirements" target="_blank" rel="noopener">k3s Docs &mdash; Requirements</a></li>
+            <li><a href="https://docs.k3s.io/datastore" target="_blank" rel="noopener">k3s Docs &mdash; Cluster Datastore</a></li>
+            <li><a href="https://docs.k3s.io/installation/packaged-components" target="_blank" rel="noopener">k3s Docs &mdash; Managing Packaged Components</a></li>
+            <li><a href="https://www.cncf.io/projects/k3s/" target="_blank" rel="noopener">CNCF &mdash; k3s</a></li>
+            <li><a href="https://github.com/k3s-io/k3s/releases/tag/v1.37.2%2Bk3s1" target="_blank" rel="noopener">GitHub &mdash; Release v1.37.2+k3s1</a></li>
           </ul>
         </section>
 
@@ -95,16 +324,192 @@
              Installazione
              ================================================================ -->
         <section class="tabpanel" id="installazione" role="tabpanel" aria-labelledby="tab-installazione" hidden>
-          <h2>Installazione</h2>
-          <div class="callout">
-            <strong>Contenuti in arrivo.</strong> Qui troveranno posto:
-            installazione su Linux, configurazione del server, join degli
-            agent e verifica del cluster.
-          </div>
+          <h2>Prima di iniziare</h2>
+          <p>
+            Servono un host Linux con hostname univoco, i cgroup attivi e le
+            porte libere. Lo script ufficiale installa k3s come servizio
+            <strong>systemd</strong> o <strong>OpenRC</strong>; su sistemi senza
+            questi init system si pu&ograve; usare il binario o il container.
+          </p>
+          <pre><code>uname -m
+cat /etc/os-release
+systemctl status firewalld
+ufw status
+curl -sfL https://get.k3s.io | sh -s - --help</code></pre>
+          <p>
+            L'ultimo comando non installa nulla: scarica lo script e mostra le
+            opzioni disponibili. Dopo l'installazione, <code>k3s check-config</code>
+            controlla i prerequisiti del sistema.
+          </p>
+
+          <h2>Installazione rapida del server</h2>
+          <p>
+            Con i default si ottiene un server con SQLite, Flannel, CoreDNS,
+            Traefik, ServiceLB, local-path, metrics-server e Helm controller:
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | sh -</code></pre>
+          <p>Al termine l'installer ha creato:</p>
           <ul>
-            <li>Installazione rapida con lo script ufficiale.</li>
-            <li>Configurazione tramite file e variabili d'ambiente.</li>
-            <li>Aggiunta di nodi worker e controllo dello stato.</li>
+            <li>il binario <code>/usr/local/bin/k3s</code> e il servizio <code>k3s</code>;</li>
+            <li>il kubeconfig <code>/etc/rancher/k3s/k3s.yaml</code>, di propriet&agrave; di root e con mode <code>600</code>;</li>
+            <li>il token del server in <code>/var/lib/rancher/k3s/server/token</code>;</li>
+            <li>i dati in <code>/var/lib/rancher/k3s</code> e i manifest degli AddOn in <code>/var/lib/rancher/k3s/server/manifests</code>;</li>
+            <li>gli script <code>k3s-uninstall.sh</code> e <code>k3s-killall.sh</code> in <code>/usr/local/bin</code>.</li>
+          </ul>
+
+          <h2>Verifica</h2>
+          <pre><code>sudo systemctl status k3s
+sudo journalctl -u k3s -f
+sudo k3s kubectl get nodes -o wide
+sudo k3s kubectl get pods -A
+sudo k3s kubectl cluster-info</code></pre>
+          <p>
+            Il nodo deve risultare <code>Ready</code>. I pod di sistema girano
+            nel namespace <code>kube-system</code>: CoreDNS, Traefik,
+            local-path-provisioner, metrics-server e gli altri AddOn.
+          </p>
+
+          <h2>Kubeconfig per l'utente</h2>
+          <p>
+            <code>k3s kubectl</code> usa automaticamente
+            <code>/etc/rancher/k3s/k3s.yaml</code> se <code>KUBECONFIG</code>
+            non &egrave; impostata. Per usare il <code>kubectl</code> di sistema
+            si pu&ograve; esportare la variabile o copiare il file:
+          </p>
+          <pre><code>export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $(id -u):$(id -g) ~/.kube/config
+chmod 600 ~/.kube/config</code></pre>
+          <p>
+            Se il server &egrave; remoto, nel kubeconfig il campo
+            <code>server</code> va cambiato da <code>127.0.0.1</code>
+            all'indirizzo raggiungibile del server.
+          </p>
+
+          <h2>Aggiungere un agent</h2>
+          <p>
+            Recuperare il token dal server e usarlo sul nodo da aggiungere. La
+            presenza di <code>K3S_URL</code> fa assumere il ruolo di agent:
+          </p>
+          <pre><code>sudo cat /var/lib/rancher/k3s/server/token</code></pre>
+          <pre><code>curl -sfL https://get.k3s.io | K3S_URL=https://10.0.0.11:6443 K3S_TOKEN=K10SECRET sh -</code></pre>
+          <p>
+            Il token del server d&agrave; accesso amministrativo al cluster: va
+            trattato come una password. Per gli agent si pu&ograve; configurare un
+            token separato con <code>--agent-token</code>; se non lo si fa, il
+            token dell'agent &egrave; lo stesso del server.
+          </p>
+
+          <h2>Configurazione con file YAML</h2>
+          <p>
+            Il file predefinito &egrave; <code>/etc/rancher/k3s/config.yaml</code>;
+            i drop-in stanno in <code>/etc/rancher/k3s/config.yaml.d/*.yaml</code>
+            e vengono letti in ordine alfabetico. I flag da riga di comando hanno
+            la precedenza sul file.
+          </p>
+          <pre><code>write-kubeconfig-mode: "0644"
+tls-san:
+  - "k3s.example.com"
+node-label:
+  - "ambiente=produzione"
+disable:
+  - traefik
+secrets-encryption: true
+cluster-init: true</code></pre>
+          <p>
+            I nomi delle chiavi corrispondono ai flag senza i due trattini; i
+            flag ripetibili diventano liste. Nei drop-in, il suffisso <code>+</code>
+            aggiunge un valore invece di sostituirlo:
+          </p>
+          <pre><code>node-taint+:
+  - "dedicato=infra:NoSchedule"</code></pre>
+          <div class="callout">
+            <strong>Attenzione:</strong> se si riconfigura k3s con lo script,
+            le variabili e gli argomenti vanno ripetuti. Il contenuto di
+            <code>config.yaml</code> non viene gestito dall'installer: per una
+            configurazione stabile conviene usare il file YAML.
+          </div>
+
+          <h2>HA con etcd incorporato</h2>
+          <p>
+            Il primo server inizializza il cluster; gli altri si uniscono
+            passando l'indirizzo del primo. Servono almeno tre server e un
+            indirizzo di registrazione fisso, per esempio un load balancer, da
+            indicare in <code>--tls-san</code>.
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | K3S_TOKEN=SECRET sh -s - server --cluster-init --tls-san=203.0.113.10</code></pre>
+          <pre><code>curl -sfL https://get.k3s.io | K3S_TOKEN=SECRET sh -s - server --server https://10.0.0.11:6443 --tls-san=203.0.113.10</code></pre>
+          <p>
+            Aggiungere gli agent con lo stesso token e <code>K3S_URL</code>
+            puntato all'indirizzo fisso. Dopo il join, ogni server mostra i ruoli
+            <code>control-plane,etcd,master</code>.
+          </p>
+
+          <h2>HA con database esterno</h2>
+          <p>
+            In alternativa a etcd incorporato si pu&ograve; usare MySQL,
+            MariaDB, PostgreSQL o etcd esterno. L'endpoint si passa con
+            <code>--datastore-endpoint</code> o <code>K3S_DATASTORE_ENDPOINT</code>:
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | K3S_TOKEN=SECRET sh -s - server --datastore-endpoint="postgres://k3s:password@db.example.com:5432/k3s"</code></pre>
+          <p>
+            Il database deve essere raggiungibile da tutti i server e va
+            configurato per i backup secondo le procedure del DBMS. k3s
+            richiede il supporto alle prepared statement.
+          </p>
+
+          <h2>Disabilitare componenti</h2>
+          <p>
+            Gli AddOn si disattivano con <code>--disable</code>; la disattivazione
+            elimina anche il manifest corrispondente. Esempio con Traefik e
+            ServiceLB:
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | sh -s - server --disable=traefik,servicelb</code></pre>
+          <div class="callout">
+            <strong>Coerenza tra server:</strong> i flag critici devono avere lo
+            stesso valore su tutti i server. Se cambiano
+            <code>--cluster-cidr</code>, <code>--service-cidr</code>,
+            <code>--cluster-dns</code>, <code>--cluster-domain</code>,
+            <code>--disable=servicelb</code>, <code>--secrets-encryption</code> e
+            simili, i nuovi server non riescono a unirsi o il cluster si
+            comporta in modo incoerente.
+          </div>
+
+          <h2>Installazione air-gap</h2>
+          <p>
+            In un ambiente senza Internet servono il binario, lo script di
+            installazione e le immagini dei componenti. Le immagini vanno messe
+            in <code>/var/lib/rancher/k3s/agent/images/</code> su ogni nodo;
+            poi si installa con <code>INSTALL_K3S_SKIP_DOWNLOAD=true</code>.
+          </p>
+          <pre><code>sudo mkdir -p /var/lib/rancher/k3s/agent/images/
+sudo cp k3s-airgap-images-amd64.tar.zst /var/lib/rancher/k3s/agent/images/
+chmod +x install.sh
+INSTALL_K3S_SKIP_DOWNLOAD=true ./install.sh</code></pre>
+          <p>
+            Per un agent air-gap si aggiungono <code>K3S_URL</code> e
+            <code>K3S_TOKEN</code>. In alternativa si pu&ograve; usare un registry
+            privato o il registry distribuito incorporato.
+          </p>
+
+          <h2>Disinstallazione</h2>
+          <p>
+            Gli script vengono creati dall'installer. Attenzione: la
+            disinstallazione elimina il datastore locale, i volumi locali e la
+            configurazione del nodo.
+          </p>
+          <pre><code>sudo /usr/local/bin/k3s-uninstall.sh
+sudo /usr/local/bin/k3s-agent-uninstall.sh</code></pre>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://docs.k3s.io/quick-start" target="_blank" rel="noopener">k3s Docs &mdash; Quick-Start Guide</a></li>
+            <li><a href="https://docs.k3s.io/installation/configuration" target="_blank" rel="noopener">k3s Docs &mdash; Configuration Options</a></li>
+            <li><a href="https://docs.k3s.io/datastore/ha-embedded" target="_blank" rel="noopener">k3s Docs &mdash; High Availability Embedded etcd</a></li>
+            <li><a href="https://docs.k3s.io/datastore/ha" target="_blank" rel="noopener">k3s Docs &mdash; High Availability External DB</a></li>
+            <li><a href="https://docs.k3s.io/installation/airgap" target="_blank" rel="noopener">k3s Docs &mdash; Air-Gap Install</a></li>
+            <li><a href="https://docs.k3s.io/installation/uninstall" target="_blank" rel="noopener">k3s Docs &mdash; Uninstalling K3s</a></li>
           </ul>
         </section>
 
@@ -112,16 +517,231 @@
              Comandi
              ================================================================ -->
         <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
-          <h2>Comandi</h2>
-          <div class="callout">
-            <strong>Contenuti in arrivo.</strong> Qui troveranno posto: i
-            comandi <code>kubectl</code> e <code>k3s</code> pi&ugrave; usati,
-            con esempi pronti da copiare.
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: snapshot, token, get nodes, rotate&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare le tabelle e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
           </div>
+
+          <h2>Servizio e log</h2>
+          <p>
+            Dopo l'installazione con lo script, k3s gira come servizio. Fermare
+            il servizio non ferma i container dei pod: per quello serve
+            <code>k3s-killall.sh</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>sudo systemctl status k3s</code></td><td>Stato del server</td><td>Per gli agent: <code>k3s-agent</code>.</td></tr>
+                <tr><td><code>sudo systemctl restart k3s</code></td><td>Riavvia il server</td><td>I pod continuano a girare.</td></tr>
+                <tr><td><code>sudo systemctl stop k3s</code></td><td>Ferma il servizio</td><td>Non elimina i dati.</td></tr>
+                <tr><td><code>sudo journalctl -u k3s -f</code></td><td>Segue i log del server</td><td>Per gli agent: <code>-u k3s-agent</code>.</td></tr>
+                <tr><td><code>sudo /usr/local/bin/k3s-killall.sh</code></td><td>Ferma container e resetta lo stato</td><td>Pulisce anche rete e regole iptables; i dati del cluster restano.</td></tr>
+                <tr><td><code>sudo rc-service k3s restart</code></td><td>Riavvio su OpenRC</td><td>Alternativa a systemd.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Cluster, nodi e workload</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>sudo k3s kubectl get nodes -o wide</code></td><td>Elenca i nodi</td><td>Mostra IP, versione e runtime.</td></tr>
+                <tr><td><code>sudo k3s kubectl get pods -A</code></td><td>Pod di tutti i namespace</td><td>Utile per controllare gli AddOn.</td></tr>
+                <tr><td><code>sudo k3s kubectl cluster-info</code></td><td>Endpoint del control plane</td><td>Verifica rapida della API.</td></tr>
+                <tr><td><code>sudo k3s kubectl top nodes</code></td><td>Metriche dei nodi</td><td>Richiede metrics-server.</td></tr>
+                <tr><td><code>sudo k3s kubectl describe node &lt;NOME&gt;</code></td><td>Dettaglio del nodo</td><td>Eventi, taint, allocazione.</td></tr>
+                <tr><td><code>sudo k3s kubectl drain &lt;NOME&gt; --ignore-daemonsets</code></td><td>Svuota un nodo</td><td>Prima di manutenzione o upgrade.</td></tr>
+                <tr><td><code>sudo k3s kubectl uncordon &lt;NOME&gt;</code></td><td>Rimette il nodo in servizio</td><td>Dopo la manutenzione.</td></tr>
+                <tr><td><code>sudo k3s kubectl get events -A --sort-by=.lastTimestamp</code></td><td>Eventi recenti</td><td>Per capire cosa non parte.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Strumenti inclusi nel binario</h2>
+          <p>
+            <code>k3s</code> incorpora <code>kubectl</code>, <code>crictl</code>
+            e <code>ctr</code>. Sono utili per la diagnostica e per non dover
+            installare client separati sul nodo.
+          </p>
+          <pre><code>sudo k3s kubectl get pods
+sudo k3s crictl ps
+sudo k3s crictl images
+sudo k3s ctr containers list
+sudo k3s ctr images list</code></pre>
+          <p>
+            <code>crictl</code> parla con il runtime tramite CRI; <code>ctr</code>
+            &egrave; il client nativo di containerd. Per un uso quotidiano
+            <code>kubectl</code> &egrave; quasi sempre la scelta giusta.
+          </p>
+
+          <h2>Snapshot etcd</h2>
+          <p>
+            Con etcd incorporato i backup si gestiscono con
+            <code>k3s etcd-snapshot</code>. Gli snapshot programmati sono attivi
+            per default ogni 12 ore (<code>0 */12 * * *</code>), con retention 5
+            e directory <code>/var/lib/rancher/k3s/server/db/snapshots</code>.
+            Gli snapshot on-demand non hanno retention automatica.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>sudo k3s etcd-snapshot save</code></td><td>Crea uno snapshot on-demand</td><td>Nome base <code>on-demand</code>.</td></tr>
+                <tr><td><code>sudo k3s etcd-snapshot save --name pre-upgrade</code></td><td>Snapshot con nome riconoscibile</td><td>Comodo prima di un upgrade.</td></tr>
+                <tr><td><code>sudo k3s etcd-snapshot ls</code></td><td>Elenca gli snapshot</td><td>Alias: <code>list</code>, <code>l</code>.</td></tr>
+                <tr><td><code>sudo k3s etcd-snapshot delete &lt;NOME&gt;</code></td><td>Elimina uno snapshot</td><td>Accetta pi&ugrave; nomi.</td></tr>
+                <tr><td><code>sudo k3s etcd-snapshot prune --snapshot-retention 3</code></td><td>Riduce gli snapshot on-demand</td><td>La retention &egrave; obbligatoria per gli on-demand.</td></tr>
+                <tr><td><code>sudo k3s etcd-snapshot save --etcd-snapshot-compress</code></td><td>Salva comprimendo</td><td>Utile per risparmiare spazio.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>sudo k3s etcd-snapshot save --name pre-upgrade
+sudo k3s etcd-snapshot ls
+sudo k3s etcd-snapshot prune --snapshot-retention 3</code></pre>
+          <p>
+            Per copiare gli snapshot su S3 si usano i flag <code>--etcd-s3</code>,
+            <code>--etcd-s3-bucket</code>, <code>--etcd-s3-region</code> e le
+            credenziali corrispondenti. La retention S3 si controlla con
+            <code>--etcd-s3-retention</code>.
+          </p>
+
+          <h2>Ripristino</h2>
+          <p>
+            Il ripristino richiede il token originale: gli snapshot sono
+            cifrati con una chiave derivata dal token del server. Senza quel
+            token lo snapshot &egrave; inutilizzabile.
+          </p>
+          <pre><code>sudo systemctl stop k3s
+sudo k3s server --cluster-reset --cluster-reset-restore-path=/var/lib/rancher/k3s/server/db/snapshots/&lt;NOME&gt;
+sudo systemctl start k3s</code></pre>
+          <p>
+            In un cluster HA si fermano tutti i server, si esegue il restore su
+            un solo server, si eliminano i dati <code>/var/lib/rancher/k3s/server/db/</code>
+            sugli altri e si riavviano. Se si ripristina su host nuovi, passare
+            il token originale con <code>--token</code>.
+          </p>
+
+          <h2>Token</h2>
+          <p>
+            Il token del server abilita il join e cifra i dati riservati nel
+            datastore. I token bootstrap, invece, sono temporanei e si gestiscono
+            con <code>k3s token</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>sudo k3s token list</code></td><td>Elenca i token bootstrap</td><td>Mostra ID, descrizione e TTL residuo.</td></tr>
+                <tr><td><code>sudo k3s token create --ttl 1h</code></td><td>Crea un token temporaneo</td><td>Il segreto viene mostrato una sola volta.</td></tr>
+                <tr><td><code>sudo k3s token delete &lt;ID&gt;</code></td><td>Elimina un token</td><td>Accetta anche il token completo.</td></tr>
+                <tr><td><code>sudo k3s token rotate</code></td><td>Ruota il token del server</td><td>Dopo la rotazione vanno riavviati server e agent.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>sudo cat /var/lib/rancher/k3s/server/token
+sudo k3s token list
+sudo k3s token create --ttl 1h --description "join temporaneo"</code></pre>
+
+          <h2>Secrets encryption</h2>
+          <p>
+            L'attivazione va fatta all'avvio del server con
+            <code>--secrets-encryption</code>. Lo stato e la rotazione delle
+            chiavi si gestiscono con <code>k3s secrets-encrypt</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>sudo k3s secrets-encrypt status</code></td><td>Stato della cifratura</td><td>Mostra anche la fase di rotazione.</td></tr>
+                <tr><td><code>sudo k3s secrets-encrypt enable</code></td><td>Abilita su un cluster esistente</td><td>Richiede riavvio e poi <code>rotate-keys</code>.</td></tr>
+                <tr><td><code>sudo k3s secrets-encrypt disable</code></td><td>Disabilita</td><td>Richiede riavvio e reencrypt.</td></tr>
+                <tr><td><code>sudo k3s secrets-encrypt rotate-keys</code></td><td>Ruota le chiavi</td><td>La reencrypt procede a circa 5 secret al secondo.</td></tr>
+                <tr><td><code>sudo k3s secrets-encrypt reencrypt</code></td><td>Riscrive i secret esistenti</td><td>Utile dopo un cambio di chiave.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>sudo k3s secrets-encrypt status
+sudo k3s secrets-encrypt rotate-keys</code></pre>
+          <div class="callout">
+            <strong>Attenzione:</strong> una rotazione fatta male pu&ograve;
+            corrompere il cluster in modo permanente. Seguire la procedura
+            ufficiale, attendere <code>reencrypt_finished</code> e riavviare i
+            server nell'ordine indicato.
+          </div>
+
+          <h2>Certificati</h2>
+          <p>
+            I certificati foglia valgono 365 giorni e vengono rinnovati
+            automaticamente quando ne mancano 120. Le CA durano 10 anni e non si
+            rinnovano da sole.
+          </p>
+          <pre><code>sudo k3s certificate check --output table
+sudo systemctl stop k3s
+sudo k3s certificate rotate
+sudo systemctl start k3s</code></pre>
+          <p>
+            Per ruotare solo alcuni certificati si usa
+            <code>--service &lt;NOME&gt;</code>. La rotazione delle CA si fa con
+            <code>k3s certificate rotate-ca</code>, seguendo la procedura
+            dedicata.
+          </p>
+
+          <h2>Aggiornamento</h2>
+          <p>
+            Si aggiornano prima i server, uno alla volta, poi gli agent. Lo
+            script va rieseguito con le stesse variabili e gli stessi argomenti
+            dell'installazione originale. Rispettare il version skew di
+            Kubernetes: non si saltano minor.
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.37.2+k3s1 sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_START=true sh -</code></pre>
+          <p>
+            Prima di un upgrade si pu&ograve; creare uno snapshot con
+            <code>k3s etcd-snapshot save --name pre-upgrade</code> e, se il
+            carico &egrave; sensibile alle brevi interruzioni dell'API, svuotare
+            il nodo con <code>kubectl drain</code>.
+          </p>
+
+          <h2>Fonti</h2>
           <ul>
-            <li>Gestione del servizio e dei log.</li>
-            <li>Controllo di nodi, pod e servizi.</li>
-            <li>Backup, ripristino e aggiornamento.</li>
+            <li><a href="https://docs.k3s.io/cli" target="_blank" rel="noopener">k3s Docs &mdash; CLI Tools</a></li>
+            <li><a href="https://docs.k3s.io/cli/server" target="_blank" rel="noopener">k3s Docs &mdash; server</a></li>
+            <li><a href="https://docs.k3s.io/cli/etcd-snapshot" target="_blank" rel="noopener">k3s Docs &mdash; etcd-snapshot</a></li>
+            <li><a href="https://docs.k3s.io/cli/token" target="_blank" rel="noopener">k3s Docs &mdash; token</a></li>
+            <li><a href="https://docs.k3s.io/cli/secrets-encrypt" target="_blank" rel="noopener">k3s Docs &mdash; secrets-encrypt</a></li>
+            <li><a href="https://docs.k3s.io/cli/certificate" target="_blank" rel="noopener">k3s Docs &mdash; certificate</a></li>
+            <li><a href="https://docs.k3s.io/upgrades/manual" target="_blank" rel="noopener">k3s Docs &mdash; Manual Upgrades</a></li>
+            <li><a href="https://docs.k3s.io/upgrades/killall" target="_blank" rel="noopener">k3s Docs &mdash; Stopping K3s</a></li>
           </ul>
         </section>
 
@@ -129,15 +749,239 @@
              Approfondimenti
              ================================================================ -->
         <section class="tabpanel" id="approfondimenti" role="tabpanel" aria-labelledby="tab-approfondimenti" hidden>
-          <h2>Approfondimenti</h2>
-          <div class="callout">
-            <strong>Contenuti in arrivo.</strong> Qui troveranno posto: rete,
-            storage, registry, sicurezza e troubleshooting.
+          <h2>Rete</h2>
+          <p>
+            La CNI predefinita &egrave; <strong>Flannel</strong> in modalit&agrave;
+            VXLAN. k3s assegna ai pod e ai servizi due intervalli distinti e
+            configura CoreDNS sul primo indirizzo del service CIDR.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Impostazione</th><th>Default</th><th>Flag</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Pod CIDR</td><td><code>10.42.0.0/16</code></td><td><code>--cluster-cidr</code></td></tr>
+                <tr><td>Service CIDR</td><td><code>10.43.0.0/16</code></td><td><code>--service-cidr</code></td></tr>
+                <tr><td>Cluster DNS</td><td><code>10.43.0.10</code></td><td><code>--cluster-dns</code></td></tr>
+                <tr><td>Dominio del cluster</td><td><code>cluster.local</code></td><td><code>--cluster-domain</code></td></tr>
+                <tr><td>Backend Flannel</td><td><code>vxlan</code></td><td><code>--flannel-backend</code></td></tr>
+              </tbody>
+            </table>
           </div>
+          <p>
+            Se gli intervalli predefiniti si sovrappongono alla rete esistente,
+            vanno cambiati su <strong>tutti</strong> i server. Per usare una CNI
+            propria si disabilita Flannel e si installa il plugin scelto:
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | sh -s - server --cluster-cidr=10.200.0.0/16 --service-cidr=10.201.0.0/16
+curl -sfL https://get.k3s.io | sh -s - server --flannel-backend=none --disable-network-policy</code></pre>
+          <div class="callout">
+            <strong>Sicurezza della rete:</strong> la porta VXLAN <code>8472/UDP</code>
+            non va esposta a Internet. Flannel usa il bridge CNI e pod con
+            <code>NET_RAW</code> potrebbero sfruttarlo per attacchi di tipo ARP
+            spoofing: limitare <code>NET_RAW</code> ai pod non fidati.
+          </div>
+
+          <h2>Ingress, ServiceLB e Gateway API</h2>
+          <p>
+            <strong>Traefik</strong> &egrave; l'Ingress controller predefinito:
+            espone un Service di tipo <code>LoadBalancer</code> sulle porte 80 e
+            443. <strong>ServiceLB</strong> (klipper-lb) realizza quel
+            LoadBalancer usando le porte host dei nodi; per default usa tutti i
+            nodi del cluster, quindi le porte 80 e 443 non sono pi&ugrave;
+            disponibili per altri pod HostPort o NodePort.
+          </p>
+          <p>
+            Traefik si personalizza con un <code>HelmChartConfig</code> nella
+            directory dei manifest, non modificando il manifest generato. Per
+            rimuoverlo: <code>--disable=traefik</code>. La <strong>Gateway
+            API</strong> &egrave; supportata da Traefik v3 e si abilita con
+            <code>providers.kubernetesGateway.enabled: true</code>.
+          </p>
+          <p>
+            Con <code>--disable=servicelb</code> si rinuncia al LoadBalancer
+            integrato: in quel caso serve un load balancer esterno o un altro
+            controller.
+          </p>
+
+          <h2>Storage</h2>
+          <p>
+            k3s include <strong>local-path-provisioner</strong>, che crea volumi
+            persistenti sul disco del nodo in
+            <code>/var/lib/rancher/k3s/storage</code>. La StorageClass predefinita
+            si chiama <code>local-path</code> ed &egrave; adatta a test e a
+            cluster piccoli; non replica i dati tra nodi.
+          </p>
+          <pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dati
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi</code></pre>
+          <p>
+            Per volumi condivisi o replicati serve una CSI esterna (Longhorn,
+            Ceph, NFS, un provider cloud). I server sono programmabili per
+            default: se non si vogliono workload sul control plane, applicare un
+            taint.
+          </p>
+
+          <h2>Registry privato</h2>
+          <p>
+            containerd legge <code>/etc/rancher/k3s/registries.yaml</code>
+            all'avvio. Il file va presente su <strong>ogni nodo</strong> che deve
+            scaricare immagini dal registry, server compresi se eseguono pod.
+          </p>
+          <pre><code>mirrors:
+  docker.io:
+    endpoint:
+      - "https://registry.example.com:5000"
+configs:
+  "registry.example.com:5000":
+    auth:
+      username: utente
+      password: password
+    tls:
+      ca_file: /etc/ssl/certs/registry-ca.pem
+      insecure_skip_verify: false</code></pre>
+          <p>
+            <code>mirrors</code> definisce gli endpoint, <code>configs</code>
+            credenziali e TLS. Il rewrite permette di cambiare il nome
+            dell'immagine durante il pull. Dopo la modifica va riavviato k3s.
+          </p>
+
+          <h2>Sicurezza</h2>
           <ul>
-            <li>Traefik, ServiceLB e gestione dell'ingresso.</li>
-            <li>Storage locale e volumi persistenti.</li>
-            <li>Registry privato e configurazione dei container.</li>
+            <li><strong>Token:</strong> il token del server equivale a un accesso amministrativo. Conservarlo con cura e usare token bootstrap temporanei per i join.</li>
+            <li><strong>Secret cifrati:</strong> abilitare <code>--secrets-encryption</code> fin dal primo avvio; il provider predefinito &egrave; <code>aescbc</code>, in alternativa <code>secretbox</code>.</li>
+            <li><strong>Certificati:</strong> foglia a 365 giorni con rinnovo automatico a 120 giorni; CA a 10 anni. Controllare con <code>k3s certificate check</code>.</li>
+            <li><strong>Firewall:</strong> esporre solo le porte necessarie; in particolare non pubblicare <code>8472/UDP</code>, <code>2379</code> e <code>2380</code>.</li>
+            <li><strong>Pod:</strong> limitare <code>NET_RAW</code> e usare le NetworkPolicy; k3s include il controller kube-router.</li>
+            <li><strong>Hardening:</strong> seguire la guida CIS di k3s e verificare il cluster con i test di autovalutazione.</li>
+          </ul>
+
+          <h2>Backup e ripristino</h2>
+          <p>
+            La procedura dipende dal datastore. Con SQLite si copia
+            <code>/var/lib/rancher/k3s/server/db/</code>; con etcd incorporato si
+            usano gli snapshot; con un database esterno si usano gli strumenti
+            del DBMS.
+          </p>
+          <div class="callout">
+            <strong>Regola d'oro:</strong> insieme al datastore va salvato anche
+            <code>/var/lib/rancher/k3s/server/token</code>. Il token &egrave; la
+            passphrase che protegge i dati riservati dello snapshot: senza,
+            il backup non &egrave; ripristinabile.
+          </div>
+          <p>
+            Uno snapshot contiene l'intero datastore, le CA e le chiavi private;
+            se la cifratura dei secret &egrave; attiva, contiene anche la
+            configurazione e le chiavi di cifratura. Va trattato come materiale
+            altamente sensibile.
+          </p>
+
+          <h2>Air-gap e registry distribuito</h2>
+          <p>
+            In air-gap le immagini possono essere importate dal tar nella
+            directory <code>/var/lib/rancher/k3s/agent/images/</code>. Ogni avvio
+            reimporta gli archivi, a meno che non si crei
+            <code>.cache.json</code> nella stessa directory: in quel caso
+            l'import avviene solo se dimensione e data di modifica cambiano.
+          </p>
+          <p>
+            k3s include anche un <strong>registry OCI distribuito</strong>: con
+            <code>--embedded-registry</code> le immagini presenti nello store di
+            un nodo possono essere servite agli altri nodi del cluster, senza un
+            registry esterno. Le porte <code>5001/TCP</code> e
+            <code>6443/TCP</code> devono essere raggiungibili tra i nodi.
+          </p>
+
+          <h2>Aggiornamenti e version skew</h2>
+          <p>
+            k3s segue il <strong>version skew</strong> di Kubernetes: si sale di
+            una minor alla volta e si aggiornano prima i server, poi gli agent.
+            I canali principali sono <code>stable</code> (default),
+            <code>latest</code> e i canali per minor, per esempio
+            <code>v1.37</code>.
+          </p>
+          <pre><code>curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.37.2+k3s1 sh -</code></pre>
+          <p>
+            Per aggiornamenti automatici si pu&ograve; usare il
+            <strong>system-upgrade-controller</strong>; in air-gap vanno
+            predisposte nel registry le immagini del controller, di
+            <code>rancher/k3s-upgrade</code> e di <code>kubectl</code>.
+          </p>
+
+          <h2>Troubleshooting</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sintomo</th><th>Dove guardare</th><th>Comando utile</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Il servizio non parte</td><td>Log di systemd e prerequisiti</td><td><code>sudo journalctl -u k3s -n 200</code></td></tr>
+                <tr><td>Prerequisiti mancanti</td><td>Cgroup, moduli, porte</td><td><code>sudo k3s check-config</code></td></tr>
+                <tr><td>Un pod non parte</td><td>Eventi e stato del container</td><td><code>sudo k3s kubectl describe pod &lt;NOME&gt;</code></td></tr>
+                <tr><td>Problemi di runtime</td><td>Container e immagini</td><td><code>sudo k3s crictl ps -a</code></td></tr>
+                <tr><td>Il nodo non si unisce</td><td>Token, porta 6443, hostname</td><td><code>sudo journalctl -u k3s-agent -f</code></td></tr>
+                <tr><td>Nodo con nome gi&agrave; usato</td><td>Node password secret</td><td><code>kubectl delete node &lt;NOME&gt;</code></td></tr>
+                <tr><td>Rete instabile</td><td>Porta VXLAN o CNI</td><td><code>sudo k3s kubectl get pods -n kube-system</code></td></tr>
+                <tr><td>Stato sporco dopo test</td><td>Container e iptables</td><td><code>sudo k3s-killall.sh</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Domande frequenti</h2>
+          <h3>k3s supporta Windows?</h3>
+          <p>
+            No, k3s non supporta nativamente Windows. I nodi devono essere
+            Linux; per lavorare da Windows si pu&ograve; usare una macchina
+            Linux remota o una distribuzione Linux in WSL, ma non &egrave; un
+            ambiente supportato ufficialmente come nodo k3s.
+          </p>
+          <h3>Dove sono i log?</h3>
+          <p>
+            Con l'installazione via script i log del servizio sono in
+            <code>journalctl -u k3s</code> (o <code>k3s-agent</code>). I log dei
+            container si leggono con <code>kubectl logs</code> o
+            <code>crictl logs</code>.
+          </p>
+          <h3>Posso usare il mio Ingress al posto di Traefik?</h3>
+          <p>
+            S&igrave;: avviare tutti i server con <code>--disable=traefik</code>
+            e installare l'Ingress controller scelto.
+          </p>
+          <h3>Posso convertire un cluster SQLite in etcd?</h3>
+          <p>
+            S&igrave;: basta riavviare il server con <code>--cluster-init</code>.
+            Da quel momento si possono aggiungere altri server. Se k3s trova
+            gi&agrave; un datastore etcd su disco, i flag di inizializzazione
+            vengono ignorati.
+          </p>
+          <h3>Dove stanno i dati?</h3>
+          <p>
+            In <code>/var/lib/rancher/k3s</code>, salvo diverso
+            <code>--data-dir</code>. Kubeconfig e configurazione stanno in
+            <code>/etc/rancher/k3s</code>.
+          </p>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://docs.k3s.io/networking/networking-services" target="_blank" rel="noopener">k3s Docs &mdash; Networking Services</a></li>
+            <li><a href="https://docs.k3s.io/networking/basic-network-options" target="_blank" rel="noopener">k3s Docs &mdash; Basic Network Options</a></li>
+            <li><a href="https://docs.k3s.io/storage" target="_blank" rel="noopener">k3s Docs &mdash; Volumes and Storage</a></li>
+            <li><a href="https://docs.k3s.io/installation/private-registry" target="_blank" rel="noopener">k3s Docs &mdash; Private Registry Configuration</a></li>
+            <li><a href="https://docs.k3s.io/security" target="_blank" rel="noopener">k3s Docs &mdash; Security</a></li>
+            <li><a href="https://docs.k3s.io/security/secrets-encryption" target="_blank" rel="noopener">k3s Docs &mdash; Secrets Encryption</a></li>
+            <li><a href="https://docs.k3s.io/datastore/backup-restore" target="_blank" rel="noopener">k3s Docs &mdash; Backup and Restore</a></li>
+            <li><a href="https://docs.k3s.io/installation/airgap" target="_blank" rel="noopener">k3s Docs &mdash; Air-Gap Install</a></li>
+            <li><a href="https://docs.k3s.io/faq" target="_blank" rel="noopener">k3s Docs &mdash; FAQ</a></li>
           </ul>
         </section>
       </div>
@@ -147,7 +991,7 @@
       <div class="footer-inner">
         <span>&copy; 2026 Adripedia &middot; sezione k3s</span>
         <span class="footer-right">
-          <span>Stato: <code>in preparazione</code></span>
+          <span>Versione documentata: <code>v1.37.2+k3s1</code></span>
           <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
             <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
             Offrimi un caff&egrave;

@@ -5,7 +5,7 @@ Enciclopedia personale: documentazione e appunti, in ogni ambito.
 La gerarchia è **area → sezione → pagine**. Le prime due aree sono
 **Informatica** (che contiene le sezioni **OpenCode**, V2, versione `2.2.5`,
 **Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Kubernetes**,
-versione `1.37`, **k3s** (in preparazione) e **k9s**, versione `0.51.0`, e
+versione `1.37`, **k3s**, versione `1.37.2+k3s1`, e **k9s**, versione `0.51.0`, e
 **WSL**, versione `3.0.3`) e **Link** (collegamenti esterni).
 
 ## Struttura
@@ -21,8 +21,8 @@ adripedia/
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ kubernetes/             # sezione Kubernetes
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti, CKA
-│  ├─ k3s/                    # sezione k3s (scheletro in preparazione)
-│  │  └─ index.html           # pagina a tab con segnaposto
+│  ├─ k3s/                    # sezione k3s
+│  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti
 │  ├─ k9s/                    # sezione k9s
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, configurazione, approfondimenti
 │  └─ wsl/                    # sezione WSL
@@ -46,6 +46,8 @@ adripedia/
 │  └─ img/
 │     ├─ favicon.svg          # marchio "Globo A"
 │     ├─ docker/              # logo, diagramma e screenshot della sezione Docker
+│     ├─ k3s/                 # due diagrammi ufficiali dell'architettura k3s
+│     ├─ k9s/                 # tre screenshot ufficiali di k9s
 │     ├─ kubernetes/          # cinque diagrammi originali della sezione Kubernetes
 │     └─ wsl/                 # diagramma dell'architettura WSL 2
 ├─ .nojekyll                  # GitHub Pages: non processare con Jekyll
@@ -83,9 +85,8 @@ Poi visita <http://localhost:8000>.
 ## Pagine a tab
 
 Le sezioni Git, Docker, Kubernetes e WSL usano una pagina unica con tab
-riutilizzabili. Anche le sezioni k3s e k9s usano lo stesso schema: k3s contiene
-solo i segnaposto dei pannelli, mentre k9s &egrave; completa con tutti e cinque
-i tab.
+riutilizzabili. Anche le sezioni k3s e k9s usano lo stesso schema: k3s &egrave;
+completa con quattro tab, k9s con cinque.
 
 ```html
 <div class="tabs" data-tabs>
@@ -186,7 +187,8 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
   la navigazione laterale non compare.
 - Le pagine a tab mostrano tutti i pannelli quando JavaScript è disattivato.
 - I contenuti sono in italiano e allineati alla documentazione ufficiale
-  OpenCode V2, Git 2.56.0, Docker 29.9.3, Kubernetes 1.37 e WSL 3.0.3.
+  OpenCode V2, Git 2.56.0, Docker 29.9.3, Kubernetes 1.37, k3s 1.37.2+k3s1,
+  k9s 0.51.0 e WSL 3.0.3.
 
 ## Immagini della sezione Docker
 
@@ -227,6 +229,20 @@ Gli screenshot in `assets/img/k9s/` provengono dal repository ufficiale
 - `screen_po.png`: vista dei pod, usata nella Panoramica.
 - `screen_logs.png`: vista dei log, usata nei Comandi.
 - `screen_dp.png`: vista dei deployment, usata negli Approfondimenti.
+
+## Immagini della sezione k3s
+
+I due diagrammi in `assets/img/k3s/` provengono dalla documentazione ufficiale
+[k3s Docs](https://docs.k3s.io/architecture), licenza
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+
+- `k3s-architecture-single-server.svg`: server singolo con database SQLite e
+  agent, usato nella Panoramica.
+- `k3s-architecture-ha-embedded.svg`: alta disponibilità con etcd incorporato e
+  indirizzo di registrazione fisso, usato nella Panoramica.
+
+Le didascalie nelle pagine riportano fonte e licenza. Se sostituisci un
+diagramma, aggiorna anche la didascalia.
 
 ## Immagini della sezione Kubernetes
 
