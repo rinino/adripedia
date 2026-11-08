@@ -84,6 +84,25 @@
               ]
             },
             {
+              text: "k3s",
+              children: [
+                { text: "Panoramica", href: "informatica/k3s/index.html#panoramica" },
+                { text: "Installazione", href: "informatica/k3s/index.html#installazione" },
+                { text: "Comandi", href: "informatica/k3s/index.html#comandi" },
+                { text: "Approfondimenti", href: "informatica/k3s/index.html#approfondimenti" }
+              ]
+            },
+            {
+              text: "k9s",
+              children: [
+                { text: "Panoramica", href: "informatica/k9s/index.html#panoramica" },
+                { text: "Installazione", href: "informatica/k9s/index.html#installazione" },
+                { text: "Comandi", href: "informatica/k9s/index.html#comandi" },
+                { text: "Configurazione", href: "informatica/k9s/index.html#configurazione" },
+                { text: "Approfondimenti", href: "informatica/k9s/index.html#approfondimenti" }
+              ]
+            },
+            {
               text: "WSL",
               children: [
                 { text: "Panoramica", href: "informatica/wsl/index.html#panoramica" },

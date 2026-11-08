@@ -5,7 +5,8 @@ Enciclopedia personale: documentazione e appunti, in ogni ambito.
 La gerarchia è **area → sezione → pagine**. Le prime due aree sono
 **Informatica** (che contiene le sezioni **OpenCode**, V2, versione `2.2.5`,
 **Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Kubernetes**,
-versione `1.37`, e **WSL**, versione `3.0.3`) e **Link** (collegamenti esterni).
+versione `1.37`, **k3s** (in preparazione) e **k9s**, versione `0.51.0`, e
+**WSL**, versione `3.0.3`) e **Link** (collegamenti esterni).
 
 ## Struttura
 
@@ -20,6 +21,10 @@ adripedia/
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ kubernetes/             # sezione Kubernetes
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti, CKA
+│  ├─ k3s/                    # sezione k3s (scheletro in preparazione)
+│  │  └─ index.html           # pagina a tab con segnaposto
+│  ├─ k9s/                    # sezione k9s
+│  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, configurazione, approfondimenti
 │  └─ wsl/                    # sezione WSL
 │     └─ index.html           # pagina unica a tab: panoramica, Windows, comandi
 ├─ opencode/                  # sezione OpenCode (dentro Informatica)
@@ -78,7 +83,9 @@ Poi visita <http://localhost:8000>.
 ## Pagine a tab
 
 Le sezioni Git, Docker, Kubernetes e WSL usano una pagina unica con tab
-riutilizzabili:
+riutilizzabili. Anche le sezioni k3s e k9s usano lo stesso schema: k3s contiene
+solo i segnaposto dei pannelli, mentre k9s &egrave; completa con tutti e cinque
+i tab.
 
 ```html
 <div class="tabs" data-tabs>
@@ -211,6 +218,15 @@ applicabile, licenza. Se sostituisci un'immagine, aggiorna anche la didascalia.
 che illustra l'architettura di WSL 2: host Windows, VM leggera con kernel Linux
 condiviso e distribuzioni isolate. I concetti sono ripresi dalla documentazione
 Microsoft Learn; il disegno non usa immagini o marchi Microsoft.
+
+## Immagini della sezione k9s
+
+Gli screenshot in `assets/img/k9s/` provengono dal repository ufficiale
+[derailed/k9s](https://github.com/derailed/k9s), licenza Apache 2.0:
+
+- `screen_po.png`: vista dei pod, usata nella Panoramica.
+- `screen_logs.png`: vista dei log, usata nei Comandi.
+- `screen_dp.png`: vista dei deployment, usata negli Approfondimenti.
 
 ## Immagini della sezione Kubernetes
 

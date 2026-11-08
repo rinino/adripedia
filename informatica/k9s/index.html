@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>k9s — Adripedia</title>
+  <meta name="description" content="k9s: guida completa al terminale interattivo per Kubernetes. Panoramica, installazione, comandi con ricerca, configurazione, RBAC e troubleshooting.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/k9s/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">k9s</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>k9s</h1>
+      <p class="lead">
+        k9s &egrave; un terminale interattivo per Kubernetes: permette di
+        esplorare risorse, seguire i log e gestire un cluster senza scrivere
+        ogni volta <code>kubectl</code>. La guida copre installazione, comandi,
+        configurazione e uso sicuro del cluster.
+      </p>
+
+      <div class="callout">
+        <strong>Versione documentata:</strong> k9s <code>v0.51.0</code>
+        (6 giugno 2026), licenza Apache 2.0. Richiede un
+        <code>kubeconfig</code> valido e preferisce Kubernetes 1.28 o
+        successivo. Per i comandi di riferimento resta disponibile la guida
+        <a href="../kubernetes/index.html">Kubernetes</a>.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei cinque tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida k9s">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-installazione" type="button" role="tab"
+                  aria-selected="false" aria-controls="installazione" tabindex="-1">
+            Installazione
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi
+          </button>
+          <button class="tab" id="tab-configurazione" type="button" role="tab"
+                  aria-selected="false" aria-controls="configurazione" tabindex="-1">
+            Configurazione
+          </button>
+          <button class="tab" id="tab-approfondimenti" type="button" role="tab"
+                  aria-selected="false" aria-controls="approfondimenti" tabindex="-1">
+            Approfondimenti
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <h2>Che cos'&egrave; k9s</h2>
+          <p>
+            k9s &egrave; un'interfaccia a terminale (TUI) per
+            <strong>esplorare, osservare e gestire un cluster Kubernetes</strong>.
+            Scritta in Go e distribuita con licenza Apache 2.0, non sostituisce
+            <code>kubectl</code>: lo usa per leggere e modificare le risorse e
+            aggiorna la vista in tempo reale mentre il cluster cambia.
+          </p>
+          <p>
+            In pratica sostituisce una sequenza di comandi con una tabella
+            navigabile: si sceglie la risorsa, si filtra, si apre il dettaglio e
+            da l&igrave; si vedono log, YAML, eventi e azioni disponibili. &Egrave;
+            comodo soprattutto durante il debug e quando si passa spesso da un
+            namespace o da un contesto all'altro.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/k9s/screen_po.png" width="1138" height="542"
+                 alt="Vista dei pod in k9s: tabella con nome, stato, riavvii, et&agrave;, IP e nodo">
+            <figcaption>
+              Vista dei pod in k9s. Fonte:
+              <a href="https://github.com/derailed/k9s" target="_blank" rel="noopener">derailed/k9s</a>,
+              licenza Apache 2.0. &middot;
+              <a href="../../assets/img/k9s/screen_po.png" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Cosa si pu&ograve; fare</h2>
+          <ul>
+            <li>Esplorare risorse standard e <strong>Custom Resource Definition</strong> con la stessa interfaccia.</li>
+            <li>Seguire i <strong>log</strong> di pod e container, anche precedenti, con timestamp e ricerca.</li>
+            <li>Aprire una <strong>shell</strong>, fare attach o avviare un <strong>port-forward</strong>.</li>
+            <li>Descrivere, modificare, scalare, riavviare ed eliminare risorse.</li>
+            <li>Vedere le <strong>metriche</strong> di pod, container e nodi quando il cluster le espone.</li>
+            <li>Filtrare per nome, label, namespace e contesto; usare alias e scorciatoie personalizzate.</li>
+            <li>Aprire le viste aggregate <strong>Pulses</strong> e <strong>XRay</strong> per guardare pi&ugrave; risorse insieme.</li>
+            <li>Controllare RBAC, ruoli e binding, con ricerca inversa di ci&ograve; che un utente pu&ograve; fare.</li>
+            <li>Personalizzare skin, colonne, alias, hotkey e plugin.</li>
+          </ul>
+
+          <h2>k9s o kubectl?</h2>
+          <p>
+            Non &egrave; una scelta secca. <code>kubectl</code> resta lo
+            strumento giusto per script, pipeline e comandi ripetibili; k9s
+            conviene quando bisogna <strong>guardare</strong> un cluster,
+            spostarsi tra risorse e fare debug. Per evitare modifiche
+            accidentali si pu&ograve; avviare in modalit&agrave; sola lettura con
+            <code>k9s --readonly</code>.
+          </p>
+
+          <h2>Interfaccia</h2>
+          <p>
+            Lo schermo &egrave; diviso in tre parti: l'<strong>intestazione</strong>
+            con contesto, namespace e filtro attivo; la <strong>tabella</strong>
+            delle risorse con le colonne principali; la <strong>barra dei
+            comandi</strong> in basso, dove compaiono i tasti disponibili e i
+            messaggi. I breadcrumb mostrano il percorso della vista e
+            <kbd>Esc</kbd> risale di un livello.
+          </p>
+
+          <h2>Versione documentata</h2>
+          <p>
+            Questa guida fa riferimento a k9s <code>v0.51.0</code>, pubblicato
+            il 6 giugno 2026. k9s richiede un <code>kubeconfig</code> valido e
+            preferisce Kubernetes 1.28 o successivo; la matrice di
+            compatibilit&agrave; completa &egrave; nel README del progetto.
+          </p>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://k9scli.io/" target="_blank" rel="noopener">k9s &mdash; sito ufficiale</a></li>
+            <li><a href="https://github.com/derailed/k9s" target="_blank" rel="noopener">GitHub &mdash; derailed/k9s</a></li>
+            <li><a href="https://github.com/derailed/k9s/releases/tag/v0.51.0" target="_blank" rel="noopener">Release v0.51.0</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Installazione
+             ================================================================ -->
+        <section class="tabpanel" id="installazione" role="tabpanel" aria-labelledby="tab-installazione" hidden>
+          <h2>Requisiti</h2>
+          <ul>
+            <li>Un <code>kubeconfig</code> valido e un contesto raggiungibile.</li>
+            <li>Un terminale a 256 colori; su sistemi Unix conviene impostare <code>TERM=xterm-256color</code>.</li>
+            <li><code>EDITOR</code> o <code>KUBE_EDITOR</code> se si vogliono modificare le risorse dalla UI.</li>
+            <li>Kubernetes 1.28 o successivo, salvo esigenze particolari.</li>
+          </ul>
+
+          <h2>Windows</h2>
+          <p>
+            k9s &egrave; disponibile per Windows e si installa con i gestori di
+            pacchetti pi&ugrave; comuni. Da PowerShell:
+          </p>
+          <pre><code>winget install k9s
+scoop install k9s
+choco install k9s</code></pre>
+          <p>
+            Basta uno dei tre comandi. Dopo l'installazione va aperto un nuovo
+            terminale, cos&igrave; il <code>PATH</code> viene aggiornato.
+          </p>
+
+          <h2>Linux e macOS</h2>
+          <pre><code># macOS o Linux con Homebrew
+brew install derailed/k9s/k9s
+
+# macOS con MacPorts
+sudo port install k9s
+
+# Linux
+snap install k9s --devmode
+pacman -S k9s
+zypper install k9s
+pkg install k9s</code></pre>
+          <p>
+            Su Ubuntu si pu&ograve; usare il pacchetto <code>.deb</code>, mentre
+            da Fedora 42 in poi k9s &egrave; nei repository ufficiali:
+          </p>
+          <pre><code># Ubuntu
+wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb
+sudo apt install ./k9s_linux_amd64.deb
+rm k9s_linux_amd64.deb
+
+# Fedora 42+
+sudo dnf install k9s</code></pre>
+
+          <h2>Binari, Go e Docker</h2>
+          <p>
+            In alternativa si scaricano i binari dalla pagina delle release,
+            oppure si compila da sorgente. k9s pu&ograve; anche girare in un
+            container, montando il <code>kubeconfig</code>:
+          </p>
+          <pre><code># dalla sorgente (versione di sviluppo)
+go install github.com/derailed/k9s@latest
+
+# container ufficiale
+docker run --rm -it -v ~/.kube/config:/root/.kube/config derailed/k9s</code></pre>
+
+          <h2>Primo avvio</h2>
+          <p>
+            Dopo l'installazione si controlla la versione e si individuano i
+            percorsi di configurazione e log con <code>k9s info</code>. Poi si
+            avvia k9s sul contesto corrente:
+          </p>
+          <pre><code>k9s version
+k9s info
+
+# avvio normale
+k9s
+
+# namespace specifico
+k9s -n kube-system
+
+# contesto specifico
+k9s --context nome-contesto
+
+# sola lettura: comandi di modifica disabilitati
+k9s --readonly
+
+# partire direttamente dalla vista dei pod
+k9s -c pod</code></pre>
+          <div class="callout">
+            <strong>Suggerimento:</strong> se k9s non vede il cluster, il
+            problema &egrave; quasi sempre nel <code>kubeconfig</code> o nel
+            contesto attivo. Verifica prima con
+            <code>kubectl config current-context</code> e
+            <code>kubectl get pods</code>.
+          </div>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://k9scli.io/topics/install/" target="_blank" rel="noopener">k9s Docs &mdash; Installation</a></li>
+            <li><a href="https://github.com/derailed/k9s#installation" target="_blank" rel="noopener">GitHub &mdash; Installation</a></li>
+            <li><a href="https://github.com/derailed/k9s/releases" target="_blank" rel="noopener">GitHub &mdash; Releases</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Comandi
+             ================================================================ -->
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: :pod, log, port-forward, Ctrl-d&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare la cheat sheet e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <h2>La tastiera di k9s</h2>
+          <p>
+            k9s si usa quasi solo da tastiera. Due tasti aprono tutto il resto:
+            <kbd>:</kbd> per scegliere una risorsa o un comando,
+            <kbd>/</kbd> per filtrare la vista corrente e <kbd>?</kbd> per
+            vedere le scorciatoie disponibili. <kbd>Esc</kbd> torna indietro.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/k9s/screen_logs.png" width="1137" height="565"
+                 alt="Vista dei log di un container in k9s, con ricerca e barra di stato">
+            <figcaption>
+              Log di un container in k9s. Fonte:
+              <a href="https://github.com/derailed/k9s" target="_blank" rel="noopener">derailed/k9s</a>,
+              licenza Apache 2.0. &middot;
+              <a href="../../assets/img/k9s/screen_logs.png" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Cheat sheet</h2>
+          <p>I comandi che userai il 90% delle volte.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tasto o comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>?</code></td><td>Mostra guida e scorciatoie</td><td>Solo ci&ograve; che &egrave; attivo nella vista corrente.</td></tr>
+                <tr><td><code>Ctrl-a</code></td><td>Elenca gli alias delle risorse</td><td>Pod, deployment, servizi e risorse personalizzate.</td></tr>
+                <tr><td><code>:pod</code></td><td>Apre la vista dei pod</td><td>Accetta singolare, plurale, short name o alias.</td></tr>
+                <tr><td><code>:pod mio-ns</code></td><td>Apre una risorsa in un namespace</td><td>Cambia il namespace della vista.</td></tr>
+                <tr><td><code>/testo</code></td><td>Filtra per nome</td><td>Supporta espressioni regolari.</td></tr>
+                <tr><td><code>/-l app=web</code></td><td>Filtra per label</td><td>Selettore di label Kubernetes.</td></tr>
+                <tr><td><code>/! testo</code></td><td>Filtro inverso</td><td>Tiene ci&ograve; che non corrisponde.</td></tr>
+                <tr><td><code>:ctx</code></td><td>Cambia contesto</td><td>Mostra l'elenco dei contesti del kubeconfig.</td></tr>
+                <tr><td><code>:ns</code></td><td>Cambia namespace</td><td>Mostra l'elenco dei namespace.</td></tr>
+                <tr><td><code>Esc</code></td><td>Torna alla vista precedente</td><td>Con i breadcrumb attivi risale di un livello.</td></tr>
+                <tr><td><code>-</code></td><td>Ultimo comando</td><td>Funziona come <code>cd -</code>.</td></tr>
+                <tr><td><code>[</code> / <code>]</code></td><td>Indietro / avanti nello storico</td><td>Come il comando precedente, ma con la cronologia delle viste.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Azioni sulle risorse</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tasto</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>d</code></td><td>Descrivi</td><td>Equivale a <code>kubectl describe</code>.</td></tr>
+                <tr><td><code>y</code></td><td>Vedi YAML</td><td>Apre il manifest della risorsa selezionata.</td></tr>
+                <tr><td><code>l</code></td><td>Log</td><td>Nei pod e nei container.</td></tr>
+                <tr><td><code>p</code></td><td>Log precedenti</td><td>Utile dopo un riavvio del container.</td></tr>
+                <tr><td><code>s</code></td><td>Shell nel container</td><td>Solo per i pod; sulle risorse con repliche serve a scalare.</td></tr>
+                <tr><td><code>a</code></td><td>Attach al container</td><td>Solo per i pod.</td></tr>
+                <tr><td><code>e</code></td><td>Modifica</td><td>Non disponibile in modalit&agrave; sola lettura.</td></tr>
+                <tr><td><code>Ctrl-d</code></td><td>Elimina</td><td>Conferma con <kbd>Tab</kbd> e <kbd>Invio</kbd>.</td></tr>
+                <tr><td><code>Ctrl-k</code></td><td>Kill immediato</td><td>Come <code>kubectl delete --now</code>, senza conferma.</td></tr>
+                <tr><td><code>Shift-f</code></td><td>Port-forward</td><td>Pod, servizi e container; <code>f</code> mostra quelli attivi.</td></tr>
+                <tr><td><code>r</code></td><td>Riavvia o drain</td><td>Deployment, DaemonSet e StatefulSet; sui nodi esegue il drain.</td></tr>
+                <tr><td><code>u</code></td><td>Cordon / uncordon</td><td>Nella vista dei nodi; nei namespace cambia namespace.</td></tr>
+                <tr><td><code>Shift-j</code></td><td>Salta al proprietario</td><td>Quando la risorsa ha un owner.</td></tr>
+                <tr><td><code>w</code></td><td>Warp al namespace</td><td>Quando &egrave; visibile la colonna namespace.</td></tr>
+                <tr><td><code>Ctrl-l</code></td><td>Rollback</td><td>Nella vista dei ReplicaSet.</td></tr>
+                <tr><td><code>z</code></td><td>Vedi ReplicaSet</td><td>Dalla vista dei Deployment.</td></tr>
+                <tr><td><code>t</code></td><td>Trigger</td><td>Nella vista dei CronJob; nei log attiva il timestamp.</td></tr>
+                <tr><td><code>b</code></td><td>Benchmark</td><td>Servizi e port-forward.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Selezione, colonne e viste</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tasto o comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>Spazio</code></td><td>Marca una risorsa</td><td>Per agire su pi&ugrave; risorse insieme.</td></tr>
+                <tr><td><code>Ctrl-Spazio</code></td><td>Marca un intervallo</td><td>Selezione multipla consecutiva.</td></tr>
+                <tr><td><code>Ctrl-\</code></td><td>Azzera le marcature</td><td></td></tr>
+                <tr><td><code>Ctrl-s</code></td><td>Salva su file</td><td>Salva le risorse selezionate.</td></tr>
+                <tr><td><code>Ctrl-w</code></td><td>Colonne larghe</td><td>Mostra o nasconde le colonne extra.</td></tr>
+                <tr><td><code>Shift-n</code></td><td>Ordina per nome</td><td></td></tr>
+                <tr><td><code>Shift-a</code></td><td>Ordina per et&agrave;</td><td></td></tr>
+                <tr><td><code>Shift-s</code></td><td>Ordina per stato</td><td></td></tr>
+                <tr><td><code>Shift-p</code></td><td>Ordina per namespace</td><td>Solo quando si vedono tutti i namespace.</td></tr>
+                <tr><td><code>Ctrl-r</code></td><td>Aggiorna la vista</td><td>Ricarica le risorse.</td></tr>
+                <tr><td><code>:pulses</code></td><td>Apre Pulses</td><td>Panoramica dello stato del cluster.</td></tr>
+                <tr><td><code>:xray po</code></td><td>Apre XRay</td><td>Relazioni tra risorse; accetta anche <code>dp</code>, <code>svc</code>, <code>rs</code>, <code>sts</code>, <code>ds</code>.</td></tr>
+                <tr><td><code>:q</code></td><td>Esci da k9s</td><td>In alternativa <code>Ctrl-c</code>, se abilitato.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Dalla riga di comando</h2>
+          <p>
+            Le stesse opzioni dell'installazione, raccolte qui per comodit&agrave;:
+            vengono indicizzate anche dalla ricerca.
+          </p>
+          <pre><code>k9s
+k9s -n kube-system
+k9s --context prod
+k9s --readonly
+k9s -c pod
+k9s info
+k9s version</code></pre>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://k9scli.io/topics/commands/" target="_blank" rel="noopener">k9s Docs &mdash; Commands</a></li>
+            <li><a href="https://github.com/derailed/k9s#key-bindings" target="_blank" rel="noopener">GitHub &mdash; Key Bindings</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Configurazione
+             ================================================================ -->
+        <section class="tabpanel" id="configurazione" role="tabpanel" aria-labelledby="tab-configurazione" hidden>
+          <h2>Dove stanno i file</h2>
+          <p>
+            k9s segue lo standard XDG e tiene le configurazioni in una cartella
+            <code>k9s</code>. Il comando <code>k9s info</code> mostra i percorsi
+            reali usati sul sistema. La cartella si pu&ograve; cambiare con la
+            variabile <code>K9S_CONFIG_DIR</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sistema</th><th>Cartella di configurazione</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Linux e Unix</td><td><code>~/.config/k9s</code></td></tr>
+                <tr><td>macOS</td><td><code>~/Library/Application Support/k9s</code></td></tr>
+                <tr><td>Windows</td><td><code>%LOCALAPPDATA%\k9s</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>I file principali sono:</p>
+          <ul>
+            <li><code>config.yaml</code>: preferenze generali e interfaccia.</li>
+            <li><code>aliases.yaml</code>: scorciatoie per le risorse.</li>
+            <li><code>hotkeys.yaml</code>: combinazioni di tasti personalizzate.</li>
+            <li><code>plugins.yaml</code>: comandi aggiuntivi.</li>
+            <li><code>views.yaml</code>: colonne personalizzate per risorsa.</li>
+            <li><code>jumps.yaml</code>: salti tra risorse e CRD.</li>
+            <li><code>skins/</code>: temi di colore.</li>
+          </ul>
+
+          <h2>config.yaml</h2>
+          <p>
+            Le opzioni pi&ugrave; utili riguardano frequenza di aggiornamento,
+            timeout, modalit&agrave; sola lettura e interfaccia. Un esempio
+            minimo:
+          </p>
+          <pre><code>k9s:
+  readOnly: false
+  refreshRate: 2
+  apiServerTimeout: 120s
+  maxConnRetry: 15
+  defaultView: ""
+  liveViewAutoRefresh: false
+  noExitOnCtrlC: false
+  skipLatestRevCheck: false
+  ui:
+    skin: dracula
+    enableMouse: false
+    headless: false
+    crumbsless: false
+    logoless: false
+    noIcons: false
+  logger:
+    tail: 100
+    buffer: 1000
+    sinceSeconds: -1
+    showTime: false
+    textWrap: false</code></pre>
+          <p>
+            <code>readOnly</code> disabilita eliminazione, kill e modifica;
+            <code>refreshRate</code> accetta valori da 2 secondi in su;
+            <code>apiServerTimeout</code> e <code>maxConnRetry</code> servono
+            sui cluster lenti. <code>liveViewAutoRefresh</code> abilita
+            l'aggiornamento periodico delle viste.
+          </p>
+
+          <h2>Skin e colori</h2>
+          <p>
+            La skin predefinita &egrave; indicata in <code>ui.skin</code>
+            (per esempio <code>dracula</code>) e si pu&ograve; forzare con
+            <code>K9S_SKIN</code>. I file delle skin stanno in
+            <code>$XDG_DATA_HOME/k9s/skins</code>; <code>ui.invert</code>
+            converte una skin scura in chiara, o viceversa, mantenendo le
+            tonalit&agrave;.
+          </p>
+
+          <h2>Alias</h2>
+          <p>
+            Un alias collega un nome breve a una risorsa o a un comando con
+            namespace e label gi&agrave; impostati:
+          </p>
+          <pre><code>aliases:
+  pp: v1/pods
+  crb: rbac.authorization.k8s.io/v1/clusterrolebindings
+  web: pod default app=web</code></pre>
+          <p>
+            Con questo file <code>:pp</code>, <code>:crb</code> e
+            <code>:web</code> aprono direttamente le viste corrispondenti.
+          </p>
+
+          <h2>Hotkey</h2>
+          <p>
+            Le hotkey aprono una vista con una combinazione di tasti. Si
+            possono definire a livello globale o per singolo contesto:
+          </p>
+          <pre><code>hotKeys:
+  shift-0:
+    shortCut: Shift-0
+    description: Pod
+    command: pods
+  shift-1:
+    shortCut: Shift-1
+    description: Deployment
+    command: dp</code></pre>
+          <p>
+            Le hotkey personalizzate compaiono nella guida <kbd>?</kbd> e il
+            file viene ricaricato automaticamente.
+          </p>
+
+          <h2>Colonne personalizzate</h2>
+          <p>
+            <code>views.yaml</code> cambia le colonne mostrate per una risorsa.
+            Si possono estrarre valori dal manifest e aggiungere attributi di
+            allineamento o visibilit&agrave;:
+          </p>
+          <pre><code>views:
+  v1/pods:
+    columns:
+      - NAME
+      - NAMESPACE|WR
+      - STATUS
+      - AGE
+      - IP
+      - NODE</code></pre>
+          <p>
+            Gli attributi principali sono <code>T</code> (tempo),
+            <code>N</code> (numero), <code>W</code> (solo in modalit&agrave;
+            larga), <code>S</code> (forza visibile), <code>H</code> (nascondi),
+            <code>L</code> e <code>R</code> (allineamento). Dalla
+            <code>v0.40.0</code> si possono usare espressioni per estrarre campi
+            JSON; si possono avere viste diverse per namespace o alias.
+          </p>
+
+          <h2>Plugin</h2>
+          <p>
+            Un plugin aggiunge un comando alla UI. Riceve variabili come
+            <code>$NAME</code>, <code>$NAMESPACE</code>, <code>$CONTEXT</code>
+            e <code>$CLUSTER</code>:
+          </p>
+          <pre><code>plugins:
+  pod-yaml:
+    shortCut: Ctrl-Y
+    description: YAML del pod
+    scopes:
+      - po
+    command: kubectl
+    background: false
+    args:
+      - get
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - -o
+      - yaml</code></pre>
+          <p>
+            I plugin possono chiedere input, girare in background e usare
+            <code>dangerous: true</code> per essere disabilitati in sola
+            lettura. Gli ambienti disponibili includono anche
+            <code>$POD</code>, <code>$CONTAINER</code>, <code>$FILTER</code> e
+            <code>$COL-NOME</code>.
+          </p>
+
+          <h2>Configurazione per contesto</h2>
+          <p>
+            Ogni cluster e contesto pu&ograve; avere preferenze proprie in
+            <code>$XDG_DATA_HOME/k9s/clusters/clusterX/contextY/</code>:
+            namespace preferiti, vista iniziale e feature gate.
+          </p>
+          <pre><code>k9s:
+  cluster: cluster-1
+  readOnly: false
+  namespace:
+    active: default
+    lockFavorites: false
+    favorites:
+      - kube-system
+      - default
+  view:
+    active: po
+  featureGates:
+    nodeShell: true</code></pre>
+
+          <h2>Variabili d'ambiente</h2>
+          <ul>
+            <li><code>K9S_CONFIG_DIR</code>: cartella delle configurazioni.</li>
+            <li><code>K9S_SKIN</code>: skin da usare.</li>
+            <li><code>K9S_LOGS_DIR</code>: cartella dei log.</li>
+            <li><code>K9S_DEFAULT_PF_ADDRESS</code>: indirizzo locale dei port-forward.</li>
+            <li><code>K9S_FEATURE_GATE_NODE_SHELL</code>: abilita la shell sui nodi.</li>
+            <li><code>K9S_CLIPBOARD</code>: <code>auto</code>, <code>native</code> o <code>osc52</code>.</li>
+            <li><code>K9S_OSC52_MAX</code>: dimensione massima dei dati copiati via OSC52.</li>
+          </ul>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://k9scli.io/topics/config/" target="_blank" rel="noopener">k9s Docs &mdash; Configuration</a></li>
+            <li><a href="https://github.com/derailed/k9s#k9s-configuration" target="_blank" rel="noopener">GitHub &mdash; Configuration</a></li>
+            <li><a href="https://github.com/derailed/k9s#command-aliases" target="_blank" rel="noopener">GitHub &mdash; Alias e hotkey</a></li>
+          </ul>
+        </section>
+
+        <!-- ================================================================
+             Approfondimenti
+             ================================================================ -->
+        <section class="tabpanel" id="approfondimenti" role="tabpanel" aria-labelledby="tab-approfondimenti" hidden>
+          <h2>Sola lettura e cluster condivisi</h2>
+          <p>
+            Su un cluster di produzione o condiviso conviene partire in
+            <strong>modalit&agrave; sola lettura</strong>:
+            <code>k9s --readonly</code> oppure <code>readOnly: true</code> in
+            <code>config.yaml</code>. In questa modalit&agrave; sono disabilitati
+            eliminazione, kill e modifica; anche i plugin marcati
+            <code>dangerous</code> restano spenti.
+          </p>
+
+          <h2>RBAC e permessi</h2>
+          <p>
+            k9s usa le credenziali del <code>kubeconfig</code>: vede e fa
+            esattamente ci&ograve; che l'utente o il ServiceAccount può fare.
+            Con le viste RBAC si controllano ruoli, ClusterRole e binding; la
+            ricerca inversa mostra cosa può fare un utente, un gruppo o un
+            ServiceAccount. Se un'azione manca o restituisce
+            <em>forbidden</em>, il problema &egrave; nei permessi, non in k9s.
+          </p>
+          <pre><code>kubectl auth can-i delete pods -n default
+kubectl auth whoami</code></pre>
+
+          <h2>Shell sui nodi</h2>
+          <p>
+            Con il feature gate <code>nodeShell</code> attivo compare
+            <kbd>s</kbd> anche nella vista dei nodi: k9s crea un pod sul nodo
+            scelto e apre una shell. L'immagine e i limiti si personalizzano in
+            <code>shellPod</code>:
+          </p>
+          <pre><code>k9s:
+  shellPod:
+    image: busybox:1.36
+    namespace: default
+    limits:
+      cpu: 100m
+      memory: 100Mi
+    tty: true</code></pre>
+          <div class="callout">
+            <strong>Attenzione:</strong> la shell sui nodi crea un pod con
+            accesso al nodo e pu&ograve; montare percorsi dell'host
+            (<code>hostPathVolume</code>). Va abilitata solo se serve e con le
+            dovute cautele.
+          </div>
+
+          <h2>Port-forward e FastForwards</h2>
+          <p>
+            <kbd>Shift-f</kbd> apre il dialogo del port-forward; <kbd>f</kbd>
+            mostra quelli attivi. Con le annotazioni si possono pre-selezionare
+            o avviare automaticamente le porte giuste:
+          </p>
+          <pre><code>metadata:
+  annotations:
+    k9scli.io/auto-port-forwards: zorg::5556
+    k9scli.io/port-forwards: bozo::9090:p1</code></pre>
+          <p>
+            Il formato &egrave; <code>container::[porta-locale:]porta-container</code>.
+            Per disabilitare il port-forward su websocket:
+            <code>KUBECTL_PORT_FORWARD_WEBSOCKETS=false</code>.
+          </p>
+
+          <h2>Log, dump e debug</h2>
+          <p>
+            <code>k9s info</code> indica dove finiscono log, dump dello schermo
+            e benchmark. Per un problema di avvio si pu&ograve; lanciare k9s in
+            debug e leggere il log:
+          </p>
+          <pre><code>k9s info
+k9s -l debug
+k9s --logFile /tmp/k9s.log
+tail -f /tmp/k9s.log</code></pre>
+          <p>
+            Su Windows il percorso del log compare in <code>k9s info</code>.
+            <code>K9S_LOGS_DIR</code> cambia la cartella dei log.
+          </p>
+
+          <h2>Prestazioni su cluster grandi</h2>
+          <p>
+            Con molti namespace e risorse conviene alzare
+            <code>apiServerTimeout</code> e <code>maxConnRetry</code>, e
+            lasciare <code>refreshRate</code> almeno a 2 secondi. La
+            <code>v0.51.0</code> ha migliorato il throughput delle chiamate e la
+            paginazione delle metriche; <code>liveViewAutoRefresh</code> resta
+            disattivato per impostazione predefinita.
+          </p>
+
+          <h2>Pulses, XRay, Popeye</h2>
+          <p>
+            <code>:pulses</code> d&agrave; una panoramica dello stato del
+            cluster, <code>:xray</code> mostra le relazioni tra risorse e
+            <code>:popeye</code> integra il cluster sanitizer Popeye. Sono viste
+            di lettura: aiutano a capire dove guardare prima di intervenire.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/k9s/screen_dp.png" width="1136" height="543"
+                 alt="Vista dei deployment in k9s con stato, repliche disponibili ed et&agrave;">
+            <figcaption>
+              Vista dei deployment in k9s. Fonte:
+              <a href="https://github.com/derailed/k9s" target="_blank" rel="noopener">derailed/k9s</a>,
+              licenza Apache 2.0. &middot;
+              <a href="../../assets/img/k9s/screen_dp.png" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Problemi comuni</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sintomo</th><th>Causa probabile</th><th>Rimedio</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Colori strani o caratteri illeggibili</td><td>Il terminale non &egrave; a 256 colori.</td><td>Imposta <code>TERM=xterm-256color</code> e riapri il terminale.</td></tr>
+                <tr><td>Nessuna risorsa o connessione fallita</td><td><code>kubeconfig</code> assente o contesto sbagliato.</td><td>Controlla <code>kubectl config current-context</code> e <code>kubectl get pods</code>.</td></tr>
+                <tr><td>Errore <em>forbidden</em></td><td>RBAC insufficiente per l'utente.</td><td>Verifica con <code>kubectl auth can-i</code> e correggi i ruoli.</td></tr>
+                <tr><td><kbd>e</kbd> non apre l'editor</td><td><code>EDITOR</code> e <code>KUBE_EDITOR</code> non impostati.</td><td>Esporta <code>KUBE_EDITOR</code> con l'editor preferito.</td></tr>
+                <tr><td>Metriche assenti</td><td><code>metrics-server</code> non installato o non raggiungibile.</td><td>Installa metrics-server e verifica con <code>kubectl top pods</code>.</td></tr>
+                <tr><td>Comandi di modifica disabilitati</td><td>Modalit&agrave; sola lettura attiva.</td><td>Rimuovi <code>--readonly</code> o <code>readOnly: true</code>.</td></tr>
+                <tr><td>Copia negli appunti non funziona</td><td>Nessuna utility di clipboard o terminale senza OSC52.</td><td>Imposta <code>K9S_CLIPBOARD</code> su <code>native</code> o <code>osc52</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Sicurezza</h2>
+          <ul>
+            <li>Il <code>kubeconfig</code> contiene credenziali: non condividerlo e non committarlo.</li>
+            <li>Usa il principio del minimo privilegio e, quando possibile, la sola lettura.</li>
+            <li>I plugin eseguono comandi arbitrari: installa solo quelli che capisci.</li>
+            <li>La shell sui nodi &egrave; potente: abilitala solo su cluster controllati.</li>
+          </ul>
+
+          <h2>Fonti</h2>
+          <ul>
+            <li><a href="https://k9scli.io/topics/commands/" target="_blank" rel="noopener">k9s Docs &mdash; Commands</a></li>
+            <li><a href="https://github.com/derailed/k9s#node-shell" target="_blank" rel="noopener">GitHub &mdash; Node Shell</a></li>
+            <li><a href="https://github.com/derailed/k9s#fastforwards" target="_blank" rel="noopener">GitHub &mdash; FastForwards</a></li>
+            <li><a href="https://github.com/derailed/k9s#logs-and-debug-logs" target="_blank" rel="noopener">GitHub &mdash; Logs and debug</a></li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione k9s</span>
+        <span class="footer-right">
+          <span>Versione documentata: <code>v0.51.0</code></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>
