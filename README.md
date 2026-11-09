@@ -4,9 +4,10 @@ Enciclopedia personale: documentazione e appunti, in ogni ambito.
 
 La gerarchia è **area → sezione → pagine**. Le prime due aree sono
 **Informatica** (che contiene le sezioni **OpenCode**, V2, versione `2.2.5`,
-**Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Kubernetes**,
-versione `1.37`, **k3s**, versione `1.37.2+k3s1`, e **k9s**, versione `0.51.0`, e
-**WSL**, versione `3.0.3`) e **Link** (collegamenti esterni).
+**Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Podman**, versione
+`6.1.4`, **Kubernetes**, versione `1.37`, **k3s**, versione `1.37.2+k3s1`,
+**k9s**, versione `0.51.0`, e **WSL**, versione `3.0.3`) e **Link**
+(collegamenti esterni).
 
 ## Struttura
 
@@ -19,6 +20,8 @@ adripedia/
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ docker/                 # sezione Docker
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
+│  ├─ podman/                 # sezione Podman
+│  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, configurazione, approfondimenti
 │  ├─ kubernetes/             # sezione Kubernetes
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti, CKA
 │  ├─ k3s/                    # sezione k3s
@@ -46,6 +49,7 @@ adripedia/
 │  └─ img/
 │     ├─ favicon.svg          # marchio "Globo A"
 │     ├─ docker/              # logo, diagramma e screenshot della sezione Docker
+│     ├─ podman/              # due diagrammi originali della sezione Podman
 │     ├─ k3s/                 # due diagrammi ufficiali dell'architettura k3s
 │     ├─ k9s/                 # tre screenshot ufficiali di k9s
 │     ├─ kubernetes/          # cinque diagrammi originali della sezione Kubernetes
@@ -84,9 +88,10 @@ Poi visita <http://localhost:8000>.
 
 ## Pagine a tab
 
-Le sezioni Git, Docker, Kubernetes e WSL usano una pagina unica con tab
+Le sezioni Git, Docker, Podman, Kubernetes e WSL usano una pagina unica con tab
 riutilizzabili. Anche le sezioni k3s e k9s usano lo stesso schema: k3s &egrave;
-completa con quattro tab, k9s con cinque.
+completa con quattro tab, k9s con cinque. Podman ne ha cinque: panoramica,
+installazione, comandi, configurazione e approfondimenti.
 
 ```html
 <div class="tabs" data-tabs>
@@ -106,7 +111,7 @@ supporta le frecce e Home/End e apre il tab indicato dall'hash (`#due`). Senza
 JavaScript tutti i pannelli restano visibili. Per aggiungere un tab basta un
 pulsante con `aria-controls` uguale all'`id` del pannello.
 
-Il tab **Comandi** delle pagine Git, Docker, Kubernetes e WSL ha in più una ricerca
+Il tab **Comandi** delle pagine Git, Docker, Podman, Kubernetes e WSL ha in più una ricerca
 (`#cmd-search-input`) che indicizza le righe delle tabelle e dei blocchi di
 codice del pannello: scrivendo si filtrano i comandi, con frecce e Invio
 oppure con il mouse si
@@ -187,8 +192,8 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
   la navigazione laterale non compare.
 - Le pagine a tab mostrano tutti i pannelli quando JavaScript è disattivato.
 - I contenuti sono in italiano e allineati alla documentazione ufficiale
-  OpenCode V2, Git 2.56.0, Docker 29.9.3, Kubernetes 1.37, k3s 1.37.2+k3s1,
-  k9s 0.51.0 e WSL 3.0.3.
+  OpenCode V2, Git 2.56.0, Docker 29.9.3, Podman 6.1.4, Kubernetes 1.37,
+  k3s 1.37.2+k3s1, k9s 0.51.0 e WSL 3.0.3.
 
 ## Immagini della sezione Docker
 
@@ -213,6 +218,20 @@ Il tab **Approfondimenti** usa tre diagrammi originali di Adripedia:
 I concetti sono ripresi dalla documentazione Docker; i disegni non usano
 immagini o marchi Docker. Le didascalie nelle pagine riportano fonte e, dove
 applicabile, licenza. Se sostituisci un'immagine, aggiorna anche la didascalia.
+
+## Immagini della sezione Podman
+
+I due diagrammi in `assets/img/podman/` sono originali di Adripedia e riprendono
+concetti dalla documentazione Podman:
+
+- `podman-daemonless.svg`: catena CLI, `conmon`, `crun` e processo del
+  container, con storage condiviso e socket API opzionale.
+- `podman-vs-docker.svg`: confronto tra la catena Docker con `dockerd` e quella
+  Podman senza daemon centrale.
+
+I disegni non usano immagini o marchi delle rispettive aziende. Le didascalie
+nelle pagine riportano la fonte concettuale; se sostituisci un'immagine, aggiorna
+anche la didascalia.
 
 ## Immagini della sezione WSL
 

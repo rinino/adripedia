@@ -1,0 +1,2263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Podman — Adripedia</title>
+  <meta name="description" content="Podman: guida completa al container engine daemonless. Panoramica, installazione su Linux, Windows e macOS, comandi con ricerca, configurazione, Quadlet, rete, rootless e confronto con Docker.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/podman/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Podman</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Podman</h1>
+      <p class="lead">
+        Podman &egrave; un motore per container che non ha bisogno di un daemon:
+        avvia i processi su richiesta, gira senza privilegi di root per
+        impostazione predefinita e sa gestire anche i pod. La guida copre
+        installazione, comandi, configurazione e le differenze reali rispetto a
+        Docker, senza dare per scontato che siano la stessa cosa.
+      </p>
+
+      <div class="callout">
+        <strong>Versione documentata:</strong> Podman <code>6.1.4</code>
+        (12 ottobre 2026) e Podman Desktop <code>1.30.5</code> (13 ottobre
+        2026). Podman &egrave; un progetto <strong>CNCF Sandbox</strong> dal
+        21 gennaio 2025, con licenza Apache 2.0; la release 6.2.0 &egrave;
+        disponibile come release candidate. Per il confronto completo con
+        l'altro motore resta disponibile la guida
+        <a href="../docker/index.html">Docker</a>.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei cinque tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida Podman">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-installazione" type="button" role="tab"
+                  aria-selected="false" aria-controls="installazione" tabindex="-1">
+            Installazione
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi
+          </button>
+          <button class="tab" id="tab-configurazione" type="button" role="tab"
+                  aria-selected="false" aria-controls="configurazione" tabindex="-1">
+            Configurazione
+          </button>
+          <button class="tab" id="tab-approfondimenti" type="button" role="tab"
+                  aria-selected="false" aria-controls="approfondimenti" tabindex="-1">
+            Approfondimenti
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <h2>Che cos'&egrave; Podman</h2>
+          <p>
+            Podman &egrave; un <strong>container engine OCI</strong> per Linux:
+            crea, avvia e gestisce container e pod, oltre a immagini, volumi e
+            reti. La sua interfaccia a riga di comando &egrave; volutamente
+            simile a quella di Docker, quindi chi arriva da Docker ritrova
+            comandi come <code>run</code>, <code>ps</code>, <code>pull</code>,
+            <code>build</code> e <code>compose</code>. Le immagini sono le
+            stesse immagini OCI: non esiste un formato &ldquo;Podman&rdquo; da
+            scegliere.
+          </p>
+          <p>
+            La differenza strutturale &egrave; che Podman &egrave;
+            <strong>daemonless</strong>. Non c'&egrave; un <code>dockerd</code>
+            sempre acceso: ogni comando &egrave; un processo che parte, fa il
+            suo lavoro e termina. Il container resta in esecuzione perch&eacute;
+            un piccolo supervisore, <code>conmon</code>, lo tiene agganciato e
+            ne raccoglie log e codice di uscita. In pi&ugrave;, Podman usa i
+            <strong>namespace utente</strong> per funzionare da utente normale:
+            non serve essere root per avviare container.
+          </p>
+          <p>
+            Podman nasce nel progetto <strong>libpod</strong> ed &egrave;
+            sviluppato insieme a Buildah e Skopeo. Non &egrave; un fork di
+            Docker: &egrave; un'implementazione indipendente degli standard
+            OCI, con un'attenzione particolare a Linux, a systemd e ai pod.
+            Dal gennaio 2025 il pacchetto <em>Podman Container Tools</em>
+            &egrave; un progetto CNCF Sandbox.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/podman/podman-daemonless.svg"
+                 width="1200" height="700"
+                 alt="Catena Podman: la CLI avvia conmon, che avvia crun, che lancia il processo del container; immagini condivise con Buildah e Skopeo e socket API opzionale">
+            <figcaption>
+              La catena di avvio di Podman: nessun daemon centrale, un
+              supervisore per container. Illustrazione originale Adripedia. &middot;
+              <a href="../../assets/img/podman/podman-daemonless.svg" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <h2>Perch&eacute; &ldquo;senza daemon&rdquo;</h2>
+          <p>
+            In Docker il client parla con <code>dockerd</code>, un servizio
+            centrale che resta in ascolto, gestisce immagini, reti e container e
+            di solito gira come root. In Podman il client non delega a un
+            servizio: esegue direttamente le operazioni e affida la
+            supervisione del container a <code>conmon</code>. Quando il comando
+            finisce, la CLI pu&ograve; uscire mentre il container continua a
+            girare.
+          </p>
+          <p>
+            Questo cambia alcune cose nella pratica quotidiana:
+          </p>
+          <ul>
+            <li><strong>Nessun singolo punto di guasto</strong> per i container gi&agrave; avviati: se aggiorni o riavvii il motore non c'&egrave; un servizio centrale che li travolge.</li>
+            <li><strong>Meno processi inattivi</strong>: senza container non c'&egrave; un daemon che consuma memoria e resta in ascolto.</li>
+            <li><strong>Rootless come impostazione predefinita</strong>: un utente normale pu&ograve; creare e gestire i propri container, con i propri UID mappati.</li>
+            <li><strong>Integrazione naturale con systemd</strong>: un container &egrave; un processo, quindi si pu&ograve; gestire con un'unit&agrave; systemd o con Quadlet.</li>
+            <li><strong>API e socket opzionali</strong>: chi ha bisogno dell'API Docker pu&ograve; attivare <code>podman.socket</code>, ma non &egrave; obbligatorio.</li>
+          </ul>
+          <p>
+            &ldquo;Senza daemon&rdquo; non significa &ldquo;senza processi di
+            servizio&rdquo;: <code>conmon</code> e il runtime OCI restano vivi
+            per tutto il tempo in cui il container gira. Significa che non
+            esiste un gestore centrale sempre acceso a cui tutti i client si
+            collegano.
+          </p>
+
+          <h2>I concetti essenziali</h2>
+          <p>
+            Chi arriva da Docker conosce gi&agrave; quasi tutto il vocabolario.
+            Le parole nuove, o usate in modo leggermente diverso, sono soprattutto
+            <strong>pod</strong> e <strong>Quadlet</strong>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Concetto</th><th>Che cos'&egrave;</th><th>Comando tipico</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Immagine</strong></td>
+                  <td>Archivio immutabile con file system e metadati, secondo lo standard OCI. Si scarica da un registry o si costruisce in locale.</td>
+                  <td><code>podman pull docker.io/library/nginx:alpine</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Container</strong></td>
+                  <td>Processo isolato avviato da un'immagine, con il proprio file system, rete, PID e limiti.</td>
+                  <td><code>podman run -d --name web -p 8080:80 nginx:alpine</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Pod</strong></td>
+                  <td>Gruppo di uno o pi&ugrave; container che condividono rete, UTS e IPC. &Egrave; l'unit&agrave; che Kubernetes conosce.</td>
+                  <td><code>podman pod create --name stack -p 8080:80</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Volume</strong></td>
+                  <td>Archivio persistente gestito da Podman, indipendente dal ciclo di vita del container.</td>
+                  <td><code>podman volume create dati</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Rete</strong></td>
+                  <td>Rete virtuale con driver bridge, macvlan o pasta; Podman 6 usa Netavark e aardvark-dns.</td>
+                  <td><code>podman network create backend</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Quadlet</strong></td>
+                  <td>Formato dichiarativo per trasformare file <code>.container</code>, <code>.volume</code> e simili in unit&agrave; systemd.</td>
+                  <td><code>systemctl --user start web.service</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Pod, non solo container</h2>
+          <p>
+            Un pod &egrave; un gruppo di container che condividono lo stesso
+            namespace di rete, lo stesso hostname e lo stesso namespace IPC.
+            Possono parlarsi tramite <code>localhost</code> e condividere porte
+            e indirizzi. &Egrave; lo stesso modello di Kubernetes, ma senza
+            scheduler, controller o pi&ugrave; nodi: Podman gestisce il pod su
+            una singola macchina.
+          </p>
+          <p>
+            Podman crea un container infrastrutturale che tiene vivi i namespace
+            condivisi; gli altri container si aggiungono con
+            <code>--pod</code>. Un pod &egrave; utile quando due processi
+            devono stare sulla stessa rete &mdash; per esempio un'applicazione e
+            un sidecar &mdash; o quando vuoi esportare la configurazione come
+            YAML Kubernetes.
+          </p>
+          <pre><code>podman pod create --name web -p 8080:80
+podman run -d --pod web --name nginx nginx:alpine
+podman run -d --pod web --name log sidecar:latest
+podman pod ps
+podman kube generate web -o web.yaml</code></pre>
+          <p>
+            Il pod non &egrave; un cluster Kubernetes: non distribuisce i carichi
+            su pi&ugrave; macchine, non riavvia da solo un container fallito
+            (quello lo fa systemd o Quadlet) e non offre il controllo di un
+            control plane. &Egrave; per&ograve; un ottimo ponte per provare un
+            manifest o per eseguire un piccolo stack locale.
+          </p>
+
+          <h2>L'ecosistema</h2>
+          <p>
+            Podman non lavora da solo. La suite di strumenti condivide formati e
+            storage delle immagini, e ogni pezzo ha un ruolo preciso.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Strumento</th><th>Ruolo</th><th>Esempio</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Podman</strong></td>
+                  <td>Esegue e gestisce container, pod, volumi e reti.</td>
+                  <td><code>podman run</code>, <code>podman pod</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Buildah</strong></td>
+                  <td>Costruisce immagini OCI, anche senza daemon e senza Containerfile completo.</td>
+                  <td><code>buildah bud -t app .</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Skopeo</strong></td>
+                  <td>Copia, ispeziona e sincronizza immagini tra registry e storage locale.</td>
+                  <td><code>skopeo inspect docker://nginx:alpine</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Podman Desktop</strong></td>
+                  <td>Interfaccia grafica per Podman, container, immagini, pod e Kubernetes locale.</td>
+                  <td>Installazione separata, multipiattaforma</td>
+                </tr>
+                <tr>
+                  <td><strong>Quadlet</strong></td>
+                  <td>Genera unit&agrave; systemd da file dichiarativi, senza scrivere a mano un servizio.</td>
+                  <td><code>web.container</code> &rarr; <code>web.service</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Compose</strong></td>
+                  <td>Wrapper verso <code>docker-compose</code> o <code>podman-compose</code> per i file Compose esistenti.</td>
+                  <td><code>podman compose up -d</code></td>
+                </tr>
+                <tr>
+                  <td><strong>kube play</strong></td>
+                  <td>Traduce YAML Kubernetes in pod e container locali.</td>
+                  <td><code>podman kube play deployment.yaml</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Docker vs Podman</h2>
+          <p>
+            Podman e Docker condividono immagini, registry e gran parte della
+            sintassi, ma non sono intercambiabili in ogni dettaglio. La tabella
+            seguente riassume le differenze che contano davvero quando si
+            sceglie uno dei due; non &egrave; una classifica e non esiste un
+            vincitore assoluto.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspetto</th><th>Docker</th><th>Podman</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Architettura</td>
+                  <td>Client &rarr; <code>dockerd</code> &rarr; containerd &rarr; runc.</td>
+                  <td>CLI &rarr; <code>conmon</code> &rarr; crun/runc, senza daemon centrale.</td>
+                </tr>
+                <tr>
+                  <td>Processo sempre acceso</td>
+                  <td>S&igrave;, il daemon.</td>
+                  <td>No; il socket API &egrave; opzionale.</td>
+                </tr>
+                <tr>
+                  <td>Rootless</td>
+                  <td>Supportato, ma da configurare; il daemon classico gira come root.</td>
+                  <td>Predefinito per l'utente normale, tramite user namespace.</td>
+                </tr>
+                <tr>
+                  <td>Immagini</td>
+                  <td>OCI.</td>
+                  <td>OCI, spesso le stesse immagini senza modifiche.</td>
+                </tr>
+                <tr>
+                  <td>Build</td>
+                  <td><code>docker build</code>, con BuildKit integrato.</td>
+                  <td><code>podman build</code> basato su Buildah.</td>
+                </tr>
+                <tr>
+                  <td>Compose</td>
+                  <td><code>docker compose</code> incluso in Docker Desktop/CLI.</td>
+                  <td><code>podman compose</code> &egrave; un wrapper: serve un provider esterno.</td>
+                </tr>
+                <tr>
+                  <td>Pod</td>
+                  <td>Non previsti come concetto nativo.</td>
+                  <td>Nativi: pi&ugrave; container con rete, IPC e UTS condivisi.</td>
+                </tr>
+                <tr>
+                  <td>Orchestrazione</td>
+                  <td>Docker Swarm (legacy) o Kubernetes.</td>
+                  <td>Nessun orchestratore integrato; si usa Kubernetes o systemd.</td>
+                </tr>
+                <tr>
+                  <td>API</td>
+                  <td>API Docker e socket <code>/var/run/docker.sock</code>.</td>
+                  <td>API compatibile Docker v1.40 e API libpod; socket attivabile con <code>podman.socket</code>.</td>
+                </tr>
+                <tr>
+                  <td>Interfaccia grafica</td>
+                  <td>Docker Desktop, con licenza propria.</td>
+                  <td>Podman Desktop, Apache 2.0, opzionale.</td>
+                </tr>
+                <tr>
+                  <td>systemd</td>
+                  <td>Integrazione manuale o tramite wrapper.</td>
+                  <td>Quadlet &egrave; il metodo consigliato; <code>generate systemd</code> &egrave; deprecato.</td>
+                </tr>
+                <tr>
+                  <td>Sicurezza predefinita</td>
+                  <td>Capability pi&ugrave; ampie; rootless opzionale.</td>
+                  <td>Capability pi&ugrave; ridotte, rootless e namespace utente.</td>
+                </tr>
+                <tr>
+                  <td>Piattaforme</td>
+                  <td>Linux, Windows 10/11, macOS Intel e Apple Silicon.</td>
+                  <td>Linux, Windows 11, macOS Apple Silicon; Podman 6 ha rimosso Windows 10 e Intel Mac.</td>
+                </tr>
+                <tr>
+                  <td>Licenza</td>
+                  <td>Docker Engine Apache 2.0; Docker Desktop con licenza commerciale.</td>
+                  <td>Apache 2.0, incluso Podman Desktop.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <figure class="figure">
+            <img src="../../assets/img/podman/podman-vs-docker.svg"
+                 width="1200" height="800"
+                 alt="Confronto tra la catena Docker con dockerd e la catena Podman con conmon; in basso le differenze su daemon, rootless e pod">
+            <figcaption>
+              Le due catene di avvio a confronto. Illustrazione originale
+              Adripedia. &middot;
+              <a href="../../assets/img/podman/podman-vs-docker.svg" target="_blank" rel="noopener">Apri a dimensione intera</a>.
+            </figcaption>
+          </figure>
+
+          <p>
+            La compatibilit&agrave; &egrave; concreta ma non totale. Podman accetta
+            molte opzioni di Docker, espone un'API compatibile e pu&ograve;
+            leggere i file Compose. Non tutto per&ograve; si comporta allo stesso
+            modo: la gestione dei volumi, i permessi degli UID, il percorso del
+            socket, il modo di far ripartire un container e l'assenza di un
+            daemon sono differenze che emergono appena si esce dai comandi
+            basilari. La sezione <a href="#migrazione">Migrazione da Docker</a>
+            raccoglie i punti da controllare.
+          </p>
+
+          <h2>Quando scegliere Podman</h2>
+          <p>
+            Podman &egrave; particolarmente adatto quando:
+          </p>
+          <ul>
+            <li>lavori su un <strong>server Linux</strong> e vuoi container senza un daemon root sempre attivo;</li>
+            <li>ti serve <strong>rootless</strong> per default, magari su una macchina condivisa o in un ambiente con vincoli di sicurezza;</li>
+            <li>vuoi gestire i container con <strong>systemd</strong>, tramite Quadlet, e farli partire al boot;</li>
+            <li>lavori con <strong>pod</strong> o vuoi passare rapidamente da un manifest Kubernetes a un test locale;</li>
+            <li>usi gi&agrave; l'ecosistema Red Hat/Fedora, dove Podman &egrave; la scelta predefinita;</li>
+            <li>vuoi evitare la licenza commerciale di Docker Desktop su Windows o macOS, accettando un'esperienza grafica diversa.</li>
+          </ul>
+          <p>
+            Docker resta pi&ugrave; comodo quando ti serve un'esperienza
+            &ldquo;tutto incluso&rdquo; su desktop, quando usi Docker Swarm o
+            strumenti che si aspettano il socket Docker senza configurazione,
+            quando lavori su Windows 10 o su un Mac Intel &mdash; piattaforme
+            non supportate da Podman 6 &mdash; o quando il team ha gi&agrave;
+            standardizzato build e Compose su Docker. In molti casi la scelta
+            non &egrave; tecnica: conta ci&ograve; che conoscono le persone che
+            devono mantenere l'ambiente.
+          </p>
+
+          <h2>Requisiti e versioni</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Ambiente</th><th>Requisiti</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Linux</td>
+                  <td>Kernel con namespace e cgroup v2; <code>passt</code> per la rete rootless; <code>nftables</code> per Podman 6.</td>
+                  <td>Le distribuzioni pi&ugrave; recenti includono tutto; su sistemi vecchi possono servire pacchetti aggiuntivi.</td>
+                </tr>
+                <tr>
+                  <td>Windows</td>
+                  <td>Windows 11, WSL 2.5.1 o successivo, virtualizzazione abilitata.</td>
+                  <td>Hyper-V &egrave; un'alternativa solo su Pro, Enterprise ed Education. Podman 6 non supporta Windows 10.</td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td>Apple Silicon.</td>
+                  <td>Podman 6 ha rimosso il supporto ai Mac Intel; il provider predefinito &egrave; <code>applehv</code>.</td>
+                </tr>
+                <tr>
+                  <td>Podman Desktop</td>
+                  <td>Windows 11, macOS Apple Silicon o Linux.</td>
+                  <td>&Egrave; un'interfaccia grafica separata: Podman funziona anche senza.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Le versioni di riferimento di questa guida sono Podman
+            <strong>6.1.4</strong> (12 ottobre 2026), Podman Desktop
+            <strong>1.30.5</strong> (13 ottobre 2026) e, per il confronto,
+            Docker <strong>29.9.3</strong>. Podman 6.1.4 include Buildah
+            1.45.2 e la storage library 1.64.2. La release 6.2.0 &egrave;
+            arrivata alla candidate 1 il 26 ottobre 2026: non &egrave; ancora
+            una stabile e non va usata come riferimento di produzione.
+          </p>
+
+          <div class="callout">
+            <strong>Come leggere la guida:</strong> il tab
+            <a href="#installazione">Installazione</a> porta da zero a un
+            container funzionante; <a href="#comandi">Comandi</a> &egrave; il
+            riferimento rapido con la ricerca; <a href="#configurazione">Configurazione</a>
+            spiega i file e Quadlet; <a href="#approfondimenti">Approfondimenti</a>
+            entra nel funzionamento di rootless, rete, storage e sicurezza.
+          </div>
+        </section>
+
+        <!-- ================================================================
+             Installazione
+             ================================================================ -->
+        <section class="tabpanel" id="installazione" role="tabpanel" aria-labelledby="tab-installazione" hidden>
+          <h2>Installare su Linux</h2>
+          <p>
+            Su Linux Podman si installa dai repository della distribuzione.
+            &Egrave; il metodo pi&ugrave; affidabile, perch&eacute; porta con s&eacute;
+            anche le dipendenze giuste: runtime OCI, <code>conmon</code>,
+            Netavark, <code>pasta</code> e i file di configurazione comuni.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Distribuzione</th><th>Comando</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fedora, RHEL 10</td>
+                  <td><code>sudo dnf install podman</code></td>
+                  <td>Podman &egrave; il motore predefinito nell'ecosistema Red Hat.</td>
+                </tr>
+                <tr>
+                  <td>Ubuntu 24.04 o successivo</td>
+                  <td><code>sudo apt update &amp;&amp; sudo apt install podman</code></td>
+                  <td>La versione del repository pu&ograve; essere pi&ugrave; vecchia della 6.x: controlla con <code>podman --version</code>.</td>
+                </tr>
+                <tr>
+                  <td>Debian 13 o successivo</td>
+                  <td><code>sudo apt update &amp;&amp; sudo apt install podman</code></td>
+                  <td>Su Debian pi&ugrave; vecchie potrebbero mancare pacchetti o funzionalit&agrave;.</td>
+                </tr>
+                <tr>
+                  <td>Arch Linux</td>
+                  <td><code>sudo pacman -S podman</code></td>
+                  <td>Il pacchetto segue rapidamente le release upstream.</td>
+                </tr>
+                <tr>
+                  <td>openSUSE Tumbleweed / Leap</td>
+                  <td><code>sudo zypper install podman</code></td>
+                  <td>Su Leap la versione dipende dalla release.</td>
+                </tr>
+                <tr>
+                  <td>Alpine Linux</td>
+                  <td><code>sudo apk add podman</code></td>
+                  <td>Verifica che il kernel e i moduli necessari siano disponibili.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Per il funzionamento rootless servono anche gli strumenti per i
+            subordinate UID/GID e un programma di rete per i namespace non
+            privilegiati. I nomi dei pacchetti cambiano:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Necessit&agrave;</th><th>Fedora / RHEL</th><th>Debian / Ubuntu</th><th>Arch</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mappatura UID/GID (<code>newuidmap</code>, <code>newgidmap</code>)</td>
+                  <td><code>shadow-utils</code></td>
+                  <td><code>uidmap</code></td>
+                  <td><code>shadow</code></td>
+                </tr>
+                <tr>
+                  <td>Rete rootless (<code>pasta</code>)</td>
+                  <td><code>passt</code></td>
+                  <td><code>passt</code></td>
+                  <td><code>passt</code></td>
+                </tr>
+                <tr>
+                  <td>Configurazioni e policy comuni</td>
+                  <td><code>containers-common</code></td>
+                  <td><code>containers-common</code></td>
+                  <td><code>containers-common</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La versione nei repository non &egrave; sempre l'ultima. Se ti serve
+            una funzionalit&agrave; introdotta in Podman 6, controlla la
+            versione della distro prima di installare; non usare script di
+            terze parti non verificati per &ldquo;aggiornare&rdquo; Podman su un
+            sistema gestito dal package manager.
+          </p>
+
+          <h2>Configurare l'utente rootless</h2>
+          <p>
+            Podman rootless non ha bisogno di root per girare, ma ha bisogno che
+            il sistema assegni all'utente un intervallo di UID e GID
+            subordinati. Questi intervalli finiscono in <code>/etc/subuid</code>
+            e <code>/etc/subgid</code>, nel formato
+            <code>utente:uid_iniziale:quantit&agrave;</code>. Senza di loro il
+            primo <code>podman run</code> fallisce con un errore di
+            <em>clone</em>.
+          </p>
+          <pre><code>grep "^$USER:" /etc/subuid /etc/subgid
+
+sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$USER"
+
+podman system migrate
+podman info --format '{{.Host.Security.Rootless}}'
+podman unshare cat /proc/self/uid_map</code></pre>
+          <p>
+            L'output atteso del primo comando &egrave; una riga del tipo
+            <code>alice:100000:65536</code> per entrambi i file. Se manca,
+            <code>usermod</code> la crea; dopo la modifica conviene uscire e
+            rientrare nella sessione. <code>podman system migrate</code> ferma i
+            container dell'utente e ricrea il processo di pausa con le nuove
+            mappature, quindi va eseguito quando non ci sono container da
+            preservare. Il comando <code>podman unshare</code> apre una shell
+            nel namespace utente e permette di vedere la mappatura effettiva.
+          </p>
+          <p>
+            Con rootless, lo storage vive nella home dell'utente:
+            <code>$HOME/.local/share/containers/storage</code> (oppure
+            <code>$XDG_DATA_HOME/containers/storage</code>), mentre i dati
+            temporanei stanno in <code>$XDG_RUNTIME_DIR/containers</code>. I
+            container avviati con <code>sudo podman</code> usano invece
+            <code>/var/lib/containers/storage</code> e non condividono immagini
+            e volumi con quelli rootless. Scegli un modo e resta coerente.
+          </p>
+          <p>
+            Se vuoi che i servizi utente &mdash; per esempio quelli creati con
+            Quadlet &mdash; partano anche senza login, abilita il lingering:
+          </p>
+          <pre><code>loginctl enable-linger "$USER"</code></pre>
+          <p>
+            Per poter usare porte privilegiate (&lt; 1024) da rootless, molte
+            distribuzioni moderne consentono di abbassare la soglia con
+            <code>net.ipv4.ip_unprivileged_port_start</code>. In alternativa si
+            pubblica una porta alta e si mette un proxy davanti. Evita di
+            alzare privilegi o di usare <code>--privileged</code> solo per
+            aggirare questo limite.
+          </p>
+
+          <h2>Installare su Windows 11</h2>
+          <p>
+            Podman su Windows non esegue container Windows: installa un client
+            nativo e una macchina Linux leggera, gestita con
+            <code>podman machine</code>. La macchina &egrave; basata su WSL 2
+            oppure su Hyper-V e ospita il motore Podman vero e proprio. Servono
+            Windows 11, la virtualizzazione abilitata e WSL 2.5.1 o successivo.
+          </p>
+          <div class="callout warn">
+            <strong>Windows 10 non &egrave; supportato da Podman 6.</strong>
+            Se sei su Windows 10, l'ultima serie compatibile &egrave; Podman 5.x;
+            in alternativa valuta un aggiornamento del sistema. Anche i Mac
+            Intel sono stati esclusi da Podman 6.
+          </div>
+          <p>
+            Il pacchetto si scarica dalla pagina delle release oppure con
+            <code>winget</code>. L'installer MSI supporta due ambiti:
+          </p>
+          <ul>
+            <li><strong>utente</strong> (predefinito): nessun privilegio di amministratore, file in <code>%LOCALAPPDATA%\Programs\Podman</code>;</li>
+            <li><strong>macchina</strong>: richiede privilegi di amministratore, file in <code>%PROGRAMFILES%\Podman</code>, PATH per tutti gli utenti.</li>
+          </ul>
+          <pre><code>wsl --version
+wsl --update
+
+winget install RedHat.Podman
+
+podman machine init
+podman machine start
+podman run --rm quay.io/podman/hello</code></pre>
+          <p>
+            Se WSL non &egrave; installato, esegui <code>wsl --install</code> da
+            un PowerShell amministratore e riavvia. L'installer di Podman non
+            installa pi&ugrave; WSL automaticamente. Dopo l'installazione apri un
+            terminale nuovo, in modo che il PATH aggiornato sia visibile.
+          </p>
+          <p>
+            Il provider predefinito &egrave; <code>wsl</code>. L'alternativa
+            <code>hyperv</code> &egrave; disponibile solo su Windows Pro,
+            Enterprise ed Education e richiede l'iscrizione al gruppo Hyper-V
+            Administrators; un amministratore pu&ograve; preparare l'ambiente
+            una volta con <code>podman system hyperv-prep</code>. I due provider
+            non possono avere macchine in esecuzione contemporaneamente.
+          </p>
+          <pre><code>podman machine init --provider wsl
+podman machine init --provider hyperv
+
+podman machine init --now
+podman machine init --now --cpus 4 --memory 8192 --disk-size 40</code></pre>
+          <p>
+            I valori predefiniti di una nuova macchina sono
+            <strong>1 CPU</strong>, <strong>2048 MB di RAM</strong> e
+            <strong>10 GB di disco</strong>; il nome predefinito &egrave;
+            <code>podman-machine-default</code>. Per modificare una macchina
+            gi&agrave; creata, fermala e usa <code>podman machine set</code>:
+          </p>
+          <pre><code>podman machine stop
+podman machine set --cpus 4 --memory 8192 --disk-size 40
+podman machine start
+
+podman machine list
+podman machine ssh
+podman machine stop</code></pre>
+          <p>
+            La macchina WSL usa un'immagine Fedora personalizzata, mentre il
+            provider Hyper-V usa Fedora CoreOS. Podman 6.1.0 ha introdotto
+            <code>force_port_listen</code>, impostato automaticamente sulle
+            nuove macchine WSL per il port forwarding dal sistema Windows;
+            Podman 6.1.4 corregge inoltre l'esecuzione sotto WSL 3.
+          </p>
+          <p>
+            Per un'interfaccia grafica puoi installare Podman Desktop:
+          </p>
+          <pre><code>winget install RedHat.Podman-Desktop</code></pre>
+          <p>
+            Podman Desktop &egrave; opzionale: mostra container, immagini, pod,
+            volumi e un Kubernetes locale, e pu&ograve; gestire la macchina
+            Podman. Non &egrave; necessario per usare la CLI.
+          </p>
+
+          <h2>Installare su macOS</h2>
+          <p>
+            Podman 6 supporta solo Mac con Apple Silicon. Su un Mac Intel puoi
+            usare Podman 5.x oppure un'altra soluzione. Con Homebrew:
+          </p>
+          <pre><code>brew install podman
+
+podman machine init
+podman machine start
+podman run --rm quay.io/podman/hello</code></pre>
+          <p>
+            Il provider predefinito su Apple Silicon &egrave;
+            <code>applehv</code>, basato sull'hypervisor di Apple. &Egrave;
+            disponibile anche <code>libkrun</code>, utile quando serve la
+            condivisione della GPU con la macchina. Anche qui valgono i valori
+            predefiniti di 1 CPU, 2048 MB e 10 GB, modificabili con
+            <code>podman machine set</code> dopo aver fermato la macchina.
+            Podman Desktop per macOS &egrave; distribuito come DMG.
+          </p>
+
+          <h2>Verificare che tutto funzioni</h2>
+          <pre><code>podman --version
+# podman version 6.1.4
+
+podman info --format '{{.Host.Security.Rootless}}'
+# true
+
+podman run --rm quay.io/podman/hello</code></pre>
+          <p>
+            L'ultimo comando scarica una piccola immagine e stampa un messaggio
+            di benvenuto, di solito <code>Podman is awesome!</code>. Se arriva
+            fino in fondo, il motore, lo storage e la rete funzionano. Su
+            Windows e macOS controlla anche che la macchina sia in esecuzione:
+          </p>
+          <pre><code>podman machine list
+podman machine inspect podman-machine-default</code></pre>
+          <p>
+            <code>podman info</code> &egrave; il comando da guardare quando
+            qualcosa non torna: mostra versione, runtime OCI, backend di rete,
+            storage, driver e mappature UID/GID.
+          </p>
+
+          <h2>Aggiornare Podman</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Ambiente</th><th>Comando</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fedora / RHEL</td>
+                  <td><code>sudo dnf upgrade podman</code></td>
+                  <td>Riavvia i container gestiti da systemd dopo l'aggiornamento.</td>
+                </tr>
+                <tr>
+                  <td>Debian / Ubuntu</td>
+                  <td><code>sudo apt update &amp;&amp; sudo apt upgrade podman</code></td>
+                  <td>Controlla la versione disponibile prima di un salto di major.</td>
+                </tr>
+                <tr>
+                  <td>Arch</td>
+                  <td><code>sudo pacman -Syu podman</code></td>
+                  <td>Un aggiornamento parziale del sistema non &egrave; supportato.</td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td><code>brew upgrade podman</code></td>
+                  <td>Aggiorna anche Podman Desktop separatamente.</td>
+                </tr>
+                <tr>
+                  <td>Windows</td>
+                  <td><code>winget upgrade RedHat.Podman</code></td>
+                  <td>In alternativa scarica il nuovo MSI dalla pagina delle release.</td>
+                </tr>
+                <tr>
+                  <td>Podman Desktop</td>
+                  <td><code>winget upgrade RedHat.Podman-Desktop</code></td>
+                  <td>Su macOS e Linux usa l'aggiornamento integrato o il pacchetto della distro.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Dopo un aggiornamento di major &egrave; prudente fermare i container,
+            eseguire <code>podman system migrate</code> e riavviare i servizi.
+            Su Windows e macOS, se la macchina &egrave; stata creata con una
+            versione precedente, controlla le note della release: alcune
+            modifiche al formato della VM possono richiedere di ricrearla.
+          </p>
+
+          <h2>Disinstallare</h2>
+          <p>
+            Su Linux rimuovi il pacchetto con il package manager della distro.
+            I dati non vengono cancellati automaticamente: se vuoi ripartire da
+            zero, rimuovi anche le directory di storage e configurazione.
+          </p>
+          <pre><code>sudo dnf remove podman
+sudo apt remove podman
+sudo pacman -Rns podman
+
+rm -rf "$HOME/.local/share/containers"
+rm -rf "$HOME/.config/containers"
+rm -rf "$XDG_RUNTIME_DIR/containers"</code></pre>
+          <div class="callout warn">
+            <strong>Attenzione:</strong> <code>rm -rf</code> sulle directory di
+            storage elimina immagini, container e volumi locali. Controlla il
+            percorso e fai un backup dei volumi che ti servono.
+          </div>
+          <p>
+            Su Windows disinstalla Podman dal pannello <em>App e funzionalit&agrave;</em>.
+            L'uninstaller non rimuove macchine e configurazioni: elimina prima
+            la macchina e poi le cartelle dati.
+          </p>
+          <pre><code>podman machine rm podman-machine-default
+
+# poi, se non servono pi&ugrave;
+Remove-Item -Recurse "$env:USERPROFILE\.local\share\containers\podman\machine"
+Remove-Item -Recurse "$env:APPDATA\containers"</code></pre>
+          <p>
+            Su macOS, dopo <code>brew uninstall podman</code>, rimuovi la
+            macchina con <code>podman machine rm</code> e, se vuoi, le stesse
+            directory <code>~/.local/share/containers</code> e
+            <code>~/.config/containers</code>.
+          </p>
+
+          <h2>Problemi comuni</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sintomo</th><th>Causa probabile</th><th>Soluzione</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>cannot clone: Operation not permitted</code></td>
+                  <td>Mancano o non sono validi gli intervalli in <code>/etc/subuid</code> e <code>/etc/subgid</code>.</td>
+                  <td>Configura i subordinate UID/GID, poi esegui <code>podman system migrate</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>pasta: command not found</code> o errori di rete rootless</td>
+                  <td>Il pacchetto <code>passt</code> non &egrave; installato.</td>
+                  <td>Installa <code>passt</code> con il package manager della distro.</td>
+                </tr>
+                <tr>
+                  <td><code>newuidmap: command not found</code></td>
+                  <td>Mancano gli helper del pacchetto <code>uidmap</code> / <code>shadow-utils</code>.</td>
+                  <td>Installa il pacchetto e verifica i permessi dei binari.</td>
+                </tr>
+                <tr>
+                  <td><code>permission denied</code> su un bind mount</td>
+                  <td>L'UID dell'utente non corrisponde a quello del processo nel container, oppure SELinux blocca il mount.</td>
+                  <td>Usa <code>--userns=keep-id</code>, aggiungi <code>:Z</code> al volume, controlla i permessi della directory.</td>
+                </tr>
+                <tr>
+                  <td><code>address already in use</code></td>
+                  <td>La porta &egrave; gi&agrave; occupata da un altro processo o container.</td>
+                  <td>Cambia la porta pubblicata o ferma il processo che la usa.</td>
+                </tr>
+                <tr>
+                  <td><code>Cannot connect to Podman socket</code></td>
+                  <td>Il socket non &egrave; attivo o la macchina non &egrave; in esecuzione.</td>
+                  <td><code>systemctl --user enable --now podman.socket</code> oppure <code>podman machine start</code>.</td>
+                </tr>
+                <tr>
+                  <td>Podman non parte su Windows</td>
+                  <td>WSL troppo vecchio, virtualizzazione disattivata o macchina in stato inconsistente.</td>
+                  <td>Aggiorna WSL a 2.5.1+, verifica la virtualizzazione, prova <code>wsl --shutdown</code> e ricrea la macchina.</td>
+                </tr>
+                <tr>
+                  <td>Errore su cgroup v1</td>
+                  <td>Podman 6 richiede cgroup v2.</td>
+                  <td>Abilita cgroup v2 nel bootloader o usa un sistema operativo pi&ugrave; recente.</td>
+                </tr>
+                <tr>
+                  <td>Errore su <code>iptables</code> o CNI</td>
+                  <td>Podman 6 usa nftables e Netavark, non iptables e CNI.</td>
+                  <td>Rimuovi configurazioni legacy e installa <code>nftables</code> e Netavark.</td>
+                </tr>
+                <tr>
+                  <td>Podman chiede quale registry usare per un nome breve</td>
+                  <td>Il nome dell'immagine non &egrave; completo e <code>registries.conf</code> non ha un default.</td>
+                  <td>Usa un riferimento completo come <code>docker.io/library/nginx:alpine</code> o configura <code>unqualified-search-registries</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             Comandi
+             ================================================================ -->
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: pod, kube play, machine, compose&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare le tabelle e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <h2>Aiuto, versioni e informazioni</h2>
+          <p>
+            Prima di cercare il comando giusto, vale la pena sapere dove
+            guardare. <code>podman --help</code> elenca i sottocomandi;
+            <code>podman &lt;comando&gt; --help</code> mostra le opzioni di quel
+            comando; <code>podman info</code> fotografa l'ambiente.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman --version</code></td><td>Versione del client</td><td>Utile per capire quale serie stai usando.</td></tr>
+                <tr><td><code>podman version --format json</code></td><td>Versioni di client, server e API</td><td>Con una macchina o un servizio remoto mostra anche il server.</td></tr>
+                <tr><td><code>podman info</code></td><td>Informazioni su host, storage, rete e sicurezza</td><td>Il primo comando da eseguire quando qualcosa non funziona.</td></tr>
+                <tr><td><code>podman info --format '{{.Host.Security.Rootless}}'</code></td><td>Indica se stai girando rootless</td><td>Restituisce <code>true</code> o <code>false</code>.</td></tr>
+                <tr><td><code>podman --help</code></td><td>Elenco dei comandi</td><td>Include anche i comandi meno usati.</td></tr>
+                <tr><td><code>podman run --help</code></td><td>Opzioni di <code>run</code></td><td>Sostituisci <code>run</code> con il comando che ti interessa.</td></tr>
+                <tr><td><code>podman system connection list</code></td><td>Connessioni remote configurate</td><td>Utile su Windows/macOS e verso server via SSH.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Immagini</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman pull docker.io/library/nginx:alpine</code></td><td>Scarica un'immagine</td><td>Il riferimento completo evita ambiguit&agrave; sui nomi brevi.</td></tr>
+                <tr><td><code>podman images</code></td><td>Elenca le immagini locali</td><td>Alias: <code>podman image ls</code>.</td></tr>
+                <tr><td><code>podman search nginx</code></td><td>Cerca immagini nei registry configurati</td><td>Il comportamento dipende da <code>registries.conf</code>.</td></tr>
+                <tr><td><code>podman inspect nginx:alpine</code></td><td>Metadati completi dell'immagine</td><td>Con <code>--format</code> estrai un solo campo.</td></tr>
+                <tr><td><code>podman history nginx:alpine</code></td><td>Mostra i layer e i comandi che li hanno creati</td><td>Utile per capire da dove arriva un'immagine.</td></tr>
+                <tr><td><code>podman tag nginx:alpine locale/nginx:test</code></td><td>Aggiunge un tag</td><td>Non crea una copia dei layer.</td></tr>
+                <tr><td><code>podman push locale/nginx:test</code></td><td>Pubblica un'immagine su un registry</td><td>Serve <code>podman login</code> se il registry &egrave; privato.</td></tr>
+                <tr><td><code>podman rmi nginx:alpine</code></td><td>Rimuove un'immagine</td><td>Non funziona se un container la sta usando.</td></tr>
+                <tr><td><code>podman image prune</code></td><td>Rimuove le immagini non usate</td><td><code>-a</code> include quelle senza container.</td></tr>
+                <tr><td><code>podman save -o nginx.tar nginx:alpine</code></td><td>Esporta un'immagine in archivio</td><td>Per spostarla su un host senza registry.</td></tr>
+                <tr><td><code>podman load -i nginx.tar</code></td><td>Importa un archivio</td><td>Compatibile con il formato Docker.</td></tr>
+                <tr><td><code>podman manifest create app:multi</code></td><td>Crea una manifest list</td><td>Per immagini multi-architettura.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman pull docker.io/library/nginx:alpine
+podman images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}"
+podman inspect nginx:alpine --format '{{.Architecture}}/{{.Os}}'
+podman rmi nginx:alpine</code></pre>
+
+          <h2>Container</h2>
+          <p>
+            Il ciclo di vita &egrave; lo stesso di Docker: creare, avviare,
+            fermare, ispezionare e rimuovere. La differenza &egrave; che non
+            c'&egrave; un daemon a ricordarsi di tutto: lo stato vive nello
+            storage locale e in <code>conmon</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman run -d --name web -p 8080:80 nginx:alpine</code></td><td>Avvia un container in background</td><td><code>-d</code> stacca il terminale.</td></tr>
+                <tr><td><code>podman run --rm -it alpine sh</code></td><td>Avvia una shell interattiva usa e getta</td><td><code>--rm</code> elimina il container all'uscita.</td></tr>
+                <tr><td><code>podman ps</code></td><td>Container in esecuzione</td><td><code>-a</code> include quelli fermati.</td></tr>
+                <tr><td><code>podman start web</code></td><td>Avvia un container esistente</td><td>Diverso da <code>run</code>, che ne crea uno nuovo.</td></tr>
+                <tr><td><code>podman stop web</code></td><td>Ferma un container</td><td><code>-t</code> imposta i secondi di attesa.</td></tr>
+                <tr><td><code>podman restart web</code></td><td>Riavvia un container</td><td>Mantiene lo stesso file system.</td></tr>
+                <tr><td><code>podman rm web</code></td><td>Rimuove un container fermo</td><td><code>-f</code> forza anche se &egrave; in esecuzione.</td></tr>
+                <tr><td><code>podman exec -it web sh</code></td><td>Apre una shell nel container</td><td>Richiede che il container sia in esecuzione.</td></tr>
+                <tr><td><code>podman logs -f web</code></td><td>Segue i log</td><td><code>--tail 100</code> limita le righe iniziali.</td></tr>
+                <tr><td><code>podman inspect web</code></td><td>Configurazione e stato completi</td><td>Con <code>--format</code> estrai un campo.</td></tr>
+                <tr><td><code>podman stats</code></td><td>CPU, memoria e rete in tempo reale</td><td>Come <code>top</code>, ma per i container.</td></tr>
+                <tr><td><code>podman top web</code></td><td>Processi del container</td><td>Mostra PID host, utente e comando.</td></tr>
+                <tr><td><code>podman port web</code></td><td>Mappatura delle porte</td><td>Utile quando non ricordi cosa hai pubblicato.</td></tr>
+                <tr><td><code>podman cp web:/etc/nginx/nginx.conf ./nginx.conf</code></td><td>Copia file da o verso il container</td><td>Anche nella forma inversa <code>./file web:/path</code>.</td></tr>
+                <tr><td><code>podman pause web</code></td><td>Sospende i processi</td><td>Si riprende con <code>podman unpause web</code>.</td></tr>
+                <tr><td><code>podman wait web</code></td><td>Attende la fine e stampa l'exit code</td><td>Utile negli script.</td></tr>
+                <tr><td><code>podman update --memory 512m web</code></td><td>Aggiorna i limiti a runtime</td><td>Non tutte le risorse sono modificabili.</td></tr>
+                <tr><td><code>podman commit web locale/web:snapshot</code></td><td>Crea un'immagine dallo stato del container</td><td>Da usare con cautela: congela anche file temporanei.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman run -d --name web -p 8080:80 nginx:alpine
+podman ps
+podman logs -f web
+podman exec -it web sh -c 'nginx -v'
+podman stop web
+podman rm web</code></pre>
+
+          <h2>Pod</h2>
+          <p>
+            I pod sono la differenza pi&ugrave; visibile rispetto a Docker. Un
+            pod raggruppa container che condividono rete, UTS e IPC; i container
+            si aggiungono con <code>--pod</code>. Podman crea un container
+            infrastrutturale per tenere vivi i namespace.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman pod create --name stack -p 8080:80</code></td><td>Crea un pod con una porta pubblicata</td><td>La porta si pubblica sul pod, non sul singolo container.</td></tr>
+                <tr><td><code>podman pod ps</code></td><td>Elenca i pod</td><td><code>-a</code> include quelli fermati.</td></tr>
+                <tr><td><code>podman pod inspect stack</code></td><td>Dettagli e container del pod</td><td>Mostra anche i namespace condivisi.</td></tr>
+                <tr><td><code>podman run -d --pod stack --name app app:latest</code></td><td>Aggiunge un container al pod</td><td>Il container usa la rete del pod.</td></tr>
+                <tr><td><code>podman pod start stack</code></td><td>Avvia tutti i container del pod</td><td>Anche <code>stop</code>, <code>restart</code>, <code>rm</code>.</td></tr>
+                <tr><td><code>podman pod top stack</code></td><td>Processi del pod</td><td>Utile per vedere l'infrastruttura.</td></tr>
+                <tr><td><code>podman pod stats stack</code></td><td>Metriche del pod</td><td>Aggrega i container.</td></tr>
+                <tr><td><code>podman kube generate stack -o stack.yaml</code></td><td>Esporta il pod come YAML Kubernetes</td><td>Alias storico: <code>podman generate kube</code>, deprecato.</td></tr>
+                <tr><td><code>podman kube play stack.yaml</code></td><td>Crea pod e container da YAML</td><td>Supporta anche Deployment, PVC, ConfigMap, Secret, DaemonSet e Job.</td></tr>
+                <tr><td><code>podman kube down stack.yaml</code></td><td>Rimuove ci&ograve; che il file ha creato</td><td>Usa lo stesso YAML del play.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman pod create --name web -p 8080:80
+podman run -d --pod web --name nginx nginx:alpine
+podman pod ps
+podman kube generate web -o web.yaml
+podman kube play --replace web.yaml
+podman kube down web.yaml</code></pre>
+
+          <h2>Volumi</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman volume create dati</code></td><td>Crea un volume nominato</td><td>Il nome &egrave; stabile, il contenuto resta.</td></tr>
+                <tr><td><code>podman volume ls</code></td><td>Elenca i volumi</td><td>Alias: <code>podman volume list</code>.</td></tr>
+                <tr><td><code>podman volume inspect dati</code></td><td>Percorso e metadati</td><td>Mostra il <em>mountpoint</em> sul host.</td></tr>
+                <tr><td><code>podman run -d -v dati:/usr/share/nginx/html:Z nginx:alpine</code></td><td>Monta un volume</td><td><code>:Z</code> applica il label SELinux corretto.</td></tr>
+                <tr><td><code>podman run --mount type=bind,src=$PWD,dst=/app,ro app</code></td><td>Bind mount in sola lettura</td><td>Forma esplicita, comoda negli script.</td></tr>
+                <tr><td><code>podman volume rm dati</code></td><td>Rimuove un volume</td><td>Fallisce se &egrave; in uso.</td></tr>
+                <tr><td><code>podman volume prune</code></td><td>Rimuove i volumi anonimi non usati</td><td>In Podman 6 <code>--all</code> include anche i nominati.</td></tr>
+                <tr><td><code>podman volume export dati -o dati.tar</code></td><td>Esporta il contenuto</td><td>Utile per backup e migrazioni.</td></tr>
+                <tr><td><code>podman volume import dati dati.tar</code></td><td>Importa un archivio</td><td>Il volume deve esistere.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman volume create dati
+podman run -d --name web -v dati:/usr/share/nginx/html:Z -p 8080:80 nginx:alpine
+podman volume inspect dati
+podman volume export dati -o dati.tar</code></pre>
+
+          <h2>Reti</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman network ls</code></td><td>Elenca le reti</td><td>La rete <code>podman</code> &egrave; quella predefinita rootful.</td></tr>
+                <tr><td><code>podman network create backend</code></td><td>Crea una rete bridge</td><td>Podman sceglie una subnet libera dal pool configurato.</td></tr>
+                <tr><td><code>podman network inspect backend</code></td><td>Subnet, gateway e container collegati</td><td>Utile per capire gli indirizzi.</td></tr>
+                <tr><td><code>podman run -d --network backend --name db postgres:17</code></td><td>Collega un container a una rete</td><td>I container sulla stessa rete si risolvono per nome.</td></tr>
+                <tr><td><code>podman run --network backend --ip 10.89.0.10 app</code></td><td>Assegna un IP statico</td><td>L'IP deve essere nella subnet della rete.</td></tr>
+                <tr><td><code>podman run -p 127.0.0.1:8080:80 nginx</code></td><td>Pubblica una porta solo su localhost</td><td>Meno esposta rispetto a <code>0.0.0.0</code>.</td></tr>
+                <tr><td><code>podman network connect backend web</code></td><td>Collega un container esistente</td><td>Anche <code>disconnect</code>.</td></tr>
+                <tr><td><code>podman network rm backend</code></td><td>Rimuove una rete</td><td>Podman 6.1 aggiunge <code>--ignore</code>.</td></tr>
+                <tr><td><code>podman network prune</code></td><td>Rimuove le reti non usate</td><td>Controlla prima con <code>ls</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman network create backend
+podman run -d --network backend --name db postgres:17
+podman run -d --network backend --name api -p 8080:8080 app:latest
+podman network inspect backend</code></pre>
+
+          <h2>Build</h2>
+          <p>
+            <code>podman build</code> usa Buildah e accetta un Containerfile o
+            un Dockerfile. Non serve un daemon di build: la build &egrave; un
+            processo locale, e pu&ograve; girare rootless.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman build -t app:1.0 .</code></td><td>Costruisce un'immagine</td><td>Cerca <code>Containerfile</code> o <code>Dockerfile</code> nella directory.</td></tr>
+                <tr><td><code>podman build -f Containerfile.prod -t app:prod .</code></td><td>Usa un file specifico</td><td>Il contesto resta la directory indicata.</td></tr>
+                <tr><td><code>podman build --no-cache -t app:clean .</code></td><td>Ignora la cache dei layer</td><td>Utile per verificare una build da zero.</td></tr>
+                <tr><td><code>podman build --build-arg VERSION=1.2 -t app .</code></td><td>Passa un argomento</td><td>Deve essere dichiarato con <code>ARG</code>.</td></tr>
+                <tr><td><code>podman build --platform linux/amd64,linux/arm64 -t app:multi .</code></td><td>Build multi-architettura</td><td>Richiede emulazione o build su piattaforme native.</td></tr>
+                <tr><td><code>podman build --layers -t app .</code></td><td>Abilita la cache tra build</td><td>Comportamento predefinito nelle versioni recenti.</td></tr>
+                <tr><td><code>podman build --squash -t app:flat .</code></td><td>Unisce i layer</td><td>Riduce i layer ma perde la cronologia.</td></tr>
+                <tr><td><code>podman push app:1.0 quay.io/utente/app:1.0</code></td><td>Pubblica l'immagine</td><td>Serve autenticazione.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>FROM docker.io/library/node:24-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM docker.io/library/nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80</code></pre>
+          <pre><code>podman build -t web:1.0 .
+podman run --rm -p 8080:80 web:1.0
+podman tag web:1.0 quay.io/utente/web:1.0
+podman push quay.io/utente/web:1.0</code></pre>
+
+          <h2>Compose</h2>
+          <p>
+            <code>podman compose</code> non &egrave; un'implementazione interna:
+            &egrave; un wrapper che chiama <code>docker-compose</code> o
+            <code>podman-compose</code> e li fa parlare con il socket Podman.
+            Se <code>docker-compose</code> &egrave; installato, ha la precedenza.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman compose up -d</code></td><td>Avvia lo stack</td><td>Legge <code>compose.yaml</code> o <code>docker-compose.yml</code>.</td></tr>
+                <tr><td><code>podman compose ps</code></td><td>Stato dei servizi</td><td>Passa il comando al provider esterno.</td></tr>
+                <tr><td><code>podman compose logs -f web</code></td><td>Segue i log di un servizio</td><td>Come con Docker Compose.</td></tr>
+                <tr><td><code>podman compose exec web sh</code></td><td>Esegue un comando nel servizio</td><td>Il container deve essere attivo.</td></tr>
+                <tr><td><code>podman compose down -v</code></td><td>Ferma e rimuove lo stack</td><td><code>-v</code> elimina anche i volumi dichiarati.</td></tr>
+                <tr><td><code>podman compose config</code></td><td>Mostra la configurazione risolta</td><td>Utile per verificare variabili e path.</td></tr>
+                <tr><td><code>podman compose --help</code></td><td>Opzioni del provider</td><td>Dipende da quale provider &egrave; installato.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman compose up -d
+podman compose ps
+podman compose logs -f
+podman compose down -v</code></pre>
+          <p>
+            Se il comando non trova un provider, installa
+            <code>docker-compose</code> o <code>podman-compose</code>, oppure
+            imposta <code>compose_providers</code> in
+            <code>containers.conf</code>. La variabile
+            <code>PODMAN_COMPOSE_PROVIDER</code> permette di sceglierlo per una
+            singola esecuzione.
+          </p>
+
+          <h2>Systemd e Quadlet</h2>
+          <p>
+            <code>podman generate systemd</code> &egrave; deprecato ma non
+            rimosso; il metodo consigliato &egrave; <strong>Quadlet</strong>,
+            che genera unit&agrave; systemd da file dichiarativi. Un file
+            <code>web.container</code> produce un servizio
+            <code>web.service</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>systemctl --user daemon-reload</code></td><td>Rilegge i Quadlet dell'utente</td><td>Necessario dopo aver creato o modificato un file.</td></tr>
+                <tr><td><code>systemctl --user start web.service</code></td><td>Avvia il servizio generato</td><td>Il nome deriva dal file <code>web.container</code>.</td></tr>
+                <tr><td><code>systemctl --user enable --now web.service</code></td><td>Abilita e avvia subito</td><td>Per l'avvio automatico al login o al boot con lingering.</td></tr>
+                <tr><td><code>systemctl --user status web.service</code></td><td>Stato e log recenti</td><td>Utile per capire perch&eacute; non parte.</td></tr>
+                <tr><td><code>systemd-analyze --user verify web.service</code></td><td>Verifica l'unit&agrave; generata</td><td>Controlla sintassi e dipendenze.</td></tr>
+                <tr><td><code>loginctl enable-linger "$USER"</code></td><td>Mantiene i servizi utente attivi senza login</td><td>Necessario per l'avvio al boot.</td></tr>
+                <tr><td><code>podman generate systemd --new --name web</code></td><td>Genera un'unit&agrave; systemd</td><td>Deprecato: preferisci Quadlet.</td></tr>
+                <tr><td><code>podman auto-update</code></td><td>Aggiorna i container con policy di auto-update</td><td>Funziona per container gestiti da systemd.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>mkdir -p "$HOME/.config/containers/systemd"
+# crea web.container nella directory appena indicata
+
+systemctl --user daemon-reload
+systemctl --user enable --now web.service
+systemctl --user status web.service</code></pre>
+
+          <h2>Secret e healthcheck</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman secret create db_password ./password.txt</code></td><td>Crea un secret da file</td><td>Il contenuto non finisce nell'immagine.</td></tr>
+                <tr><td><code>printf 's3cr3t' | podman secret create db_password -</code></td><td>Crea un secret da stdin</td><td>Evita di lasciare il valore nella history.</td></tr>
+                <tr><td><code>podman secret ls</code></td><td>Elenca i secret</td><td>Non mostra il contenuto.</td></tr>
+                <tr><td><code>podman secret inspect db_password</code></td><td>Metadati del secret</td><td>Per il contenuto serve il driver.</td></tr>
+                <tr><td><code>podman run --secret db_password,type=mount app</code></td><td>Monta il secret nel container</td><td>Di solito in <code>/run/secrets/</code>.</td></tr>
+                <tr><td><code>podman secret rm db_password</code></td><td>Rimuove il secret</td><td>Non aggiorna i container gi&agrave; creati.</td></tr>
+                <tr><td><code>podman healthcheck run web</code></td><td>Esegue il controllo di salute</td><td>Richiede un healthcheck definito.</td></tr>
+                <tr><td><code>podman run --health-cmd 'curl -f http://localhost/ || exit 1' nginx</code></td><td>Definisce un healthcheck</td><td>Lo stato appare in <code>podman ps</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>printf 's3cr3t' | podman secret create db_password -
+podman run -d --name db --secret db_password postgres:17
+podman secret ls
+podman healthcheck run db</code></pre>
+
+          <h2>Kubernetes YAML</h2>
+          <p>
+            <code>podman kube play</code> ricrea pod, container e volumi da un
+            file Kubernetes. I tipi supportati sono Pod, Deployment,
+            PersistentVolumeClaim, ConfigMap, Secret, DaemonSet e Job. Non
+            &egrave; un cluster: &egrave; un modo per eseguire un manifest su una
+            singola macchina.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman kube play app.yaml</code></td><td>Crea risorse dal manifest</td><td>La restart policy predefinita &egrave; <code>always</code>.</td></tr>
+                <tr><td><code>podman kube play --replace app.yaml</code></td><td>Ricrea le risorse esistenti</td><td>Elimina e ricrea i pod creati dal file.</td></tr>
+                <tr><td><code>podman kube play --down app.yaml</code></td><td>Rimuove ci&ograve; che il manifest ha creato</td><td>Alias: <code>podman kube down app.yaml</code>.</td></tr>
+                <tr><td><code>podman kube generate web -o web.yaml</code></td><td>Esporta un pod come YAML</td><td>Il file pu&ograve; essere riusato con <code>kube play</code>.</td></tr>
+                <tr><td><code>podman kube generate --service web</code></td><td>Genera anche un Service</td><td>Utile per esporre il pod.</td></tr>
+                <tr><td><code>podman kube play https://example.com/app.yaml</code></td><td>Legge il manifest da URL</td><td>Accetta anche <code>-</code> per stdin.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman kube generate web -o web.yaml
+podman kube play --replace web.yaml
+podman kube down web.yaml</code></pre>
+
+          <h2>Podman machine</h2>
+          <p>
+            Su Windows e macOS i comandi <code>podman machine</code> gestiscono
+            la VM Linux che ospita il motore. Su Linux esistono ma servono solo
+            se vuoi una macchina separata; nella maggior parte dei casi non
+            vengono usati.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman machine init</code></td><td>Crea la macchina predefinita</td><td>Nome: <code>podman-machine-default</code>.</td></tr>
+                <tr><td><code>podman machine init --now</code></td><td>Crea e avvia subito</td><td>Comodo al primo setup.</td></tr>
+                <tr><td><code>podman machine start</code></td><td>Avvia la macchina</td><td>Su Windows richiede WSL o Hyper-V funzionanti.</td></tr>
+                <tr><td><code>podman machine stop</code></td><td>Ferma la macchina</td><td>I container si fermano con lei.</td></tr>
+                <tr><td><code>podman machine restart</code></td><td>Riavvia la macchina</td><td>Introdotto in Podman 6.1.</td></tr>
+                <tr><td><code>podman machine list</code></td><td>Elenca le macchine</td><td>Mostra stato e provider.</td></tr>
+                <tr><td><code>podman machine inspect podman-machine-default</code></td><td>Dettagli della macchina</td><td>CPU, memoria, disco e provider.</td></tr>
+                <tr><td><code>podman machine set --cpus 4 --memory 8192</code></td><td>Modifica le risorse</td><td>La macchina deve essere ferma.</td></tr>
+                <tr><td><code>podman machine ssh</code></td><td>Apre una shell nella VM</td><td>Utile per modificare i file di configurazione interni.</td></tr>
+                <tr><td><code>podman machine rm</code></td><td>Elimina la macchina</td><td>Elimina anche i dati al suo interno: fai attenzione.</td></tr>
+                <tr><td><code>podman machine os update</code></td><td>Aggiorna il sistema della VM</td><td>Non supportato con il provider <code>wsl</code>.</td></tr>
+                <tr><td><code>podman system hyperv-prep</code></td><td>Prepara l'host Hyper-V</td><td>Da eseguire una volta come amministratore.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Sistema, eventi e pulizia</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>podman system df</code></td><td>Spazio usato da immagini, container e volumi</td><td>Mostra anche lo spazio recuperabile.</td></tr>
+                <tr><td><code>podman system prune</code></td><td>Rimuove container, reti e immagini non usati</td><td>Leggi bene l'anteprima prima di confermare.</td></tr>
+                <tr><td><code>podman system prune -a --volumes</code></td><td>Pulizia pi&ugrave; aggressiva</td><td>Include immagini e volumi non usati.</td></tr>
+                <tr><td><code>podman system reset</code></td><td>Riporta Podman allo stato iniziale</td><td>Elimina immagini, container, volumi e reti: operazione distruttiva.</td></tr>
+                <tr><td><code>podman system migrate</code></td><td>Migra lo storage e ricrea il processo di pausa</td><td>Dopo modifiche a subuid/subgid o a un aggiornamento importante.</td></tr>
+                <tr><td><code>podman events</code></td><td>Flusso di eventi in tempo reale</td><td>Utile per capire cosa succede al motore.</td></tr>
+                <tr><td><code>podman events --format json</code></td><td>Eventi in JSON</td><td>Comodo per script e log strutturati.</td></tr>
+                <tr><td><code>podman system service</code></td><td>Avvia manualmente l'API</td><td>Di solito si usa <code>podman.socket</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn">
+            <strong><code>podman system reset</code> non &egrave; una pulizia
+            leggera.</strong> Cancella lo storage locale del motore. Usalo solo
+            quando vuoi davvero ripartire da zero e hai un backup dei volumi.
+          </div>
+
+          <h2>Compatibilit&agrave; Docker</h2>
+          <p>
+            Podman pu&ograve; esporre un'API compatibile con Docker v1.40 e
+            accettare la maggior parte dei comandi Docker. Il pacchetto
+            <code>podman-docker</code> crea un comando <code>docker</code> che
+            rimanda a Podman; in alternativa si usa un alias.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>alias docker=podman</code></td><td>Usa Podman al posto di Docker</td><td>Solo nella shell corrente; meglio un file di profilo.</td></tr>
+                <tr><td><code>podman system service --time=0 unix:///run/user/$UID/podman/podman.sock</code></td><td>Avvia l'API manualmente</td><td>Di solito &egrave; systemd ad attivare il socket.</td></tr>
+                <tr><td><code>export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock</code></td><td>Punta i client Docker al socket Podman</td><td>Utile per test e strumenti compatibili.</td></tr>
+                <tr><td><code>podman compose up -d</code></td><td>Esegue un file Compose</td><td>Richiede un provider esterno.</td></tr>
+                <tr><td><code>podman run --privileged ...</code></td><td>Container privilegiato</td><td>Accettato per compatibilit&agrave;, ma da evitare quando possibile.</td></tr>
+                <tr><td><code>podman inspect --format '{{.State.Status}}' web</code></td><td>Formato compatibile Docker</td><td>Molti campi di <code>inspect</code> sono allineati.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>export DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
+curl --unix-socket "$XDG_RUNTIME_DIR/podman/podman.sock" http://localhost/version
+podman compose up -d</code></pre>
+
+          <h2>Diagnostica rapida</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Situazione</th><th>Comando</th><th>Perch&eacute;</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Un container non parte</td><td><code>podman logs web</code></td><td>Mostra l'errore del processo principale.</td></tr>
+                <tr><td>Non capisco la configurazione applicata</td><td><code>podman inspect web</code></td><td>Espone env, mount, rete e limiti effettivi.</td></tr>
+                <tr><td>La porta non risponde</td><td><code>podman port web</code></td><td>Verifica la mappatura reale.</td></tr>
+                <tr><td>Il container consuma troppo</td><td><code>podman stats</code></td><td>CPU, memoria, rete e I/O in tempo reale.</td></tr>
+                <tr><td>Un processo &egrave; bloccato</td><td><code>podman top web</code></td><td>Mostra PID e comandi mappati sul host.</td></tr>
+                <tr><td>Lo storage &egrave; pieno</td><td><code>podman system df</code></td><td>Indica dove si trova lo spazio.</td></tr>
+                <tr><td>La rete non risolve i nomi</td><td><code>podman network inspect backend</code></td><td>Controlla subnet, gateway e container collegati.</td></tr>
+                <tr><td>La macchina non risponde</td><td><code>podman machine list</code></td><td>Verifica che sia in esecuzione.</td></tr>
+                <tr><td>Un aggiornamento ha rotto qualcosa</td><td><code>podman info</code></td><td>Confronta runtime, backend e versioni.</td></tr>
+                <tr><td>Serve il dettaglio di un comando</td><td><code>podman run --help</code></td><td>La documentazione locale &egrave; sempre allineata alla versione installata.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             Configurazione
+             ================================================================ -->
+        <section class="tabpanel" id="configurazione" role="tabpanel" aria-labelledby="tab-configurazione" hidden>
+          <h2>Dove stanno i file</h2>
+          <p>
+            Podman legge file TOML condivisi con Buildah e Skopeo. I valori
+            vengono caricati in ordine: i file letti pi&ugrave; tardi
+            sovrascrivono quelli letti prima. Le directory <code>.d</code>
+            aggiungono altri file in ordine alfabetico e devono contenere solo
+            file <code>.conf</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>File o directory</th><th>Ambito</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>/usr/share/containers/containers.conf</code></td><td>Predefiniti della distribuzione</td><td>Di norma non va modificato a mano.</td></tr>
+                <tr><td><code>/etc/containers/containers.conf</code></td><td>Tutti gli utenti</td><td>Configurazione globale dell'amministratore.</td></tr>
+                <tr><td><code>/etc/containers/containers.conf.d/*.conf</code></td><td>Tutti gli utenti</td><td>Drop-in in ordine alfabetico.</td></tr>
+                <tr><td><code>/etc/containers/containers.rootless.conf</code></td><td>Solo rootless</td><td>Globale per tutti gli utenti non root.</td></tr>
+                <tr><td><code>/etc/containers/containers.rootless.d/*.conf</code></td><td>Solo rootless</td><td>Drop-in; esiste anche la variante per UID.</td></tr>
+                <tr><td><code>$XDG_CONFIG_HOME/containers/containers.conf</code></td><td>Singolo utente</td><td>Se <code>XDG_CONFIG_HOME</code> non &egrave; impostata: <code>$HOME/.config</code>.</td></tr>
+                <tr><td><code>$XDG_CONFIG_HOME/containers/containers.conf.d/*.conf</code></td><td>Singolo utente</td><td>Drop-in personali.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Due variabili speciali cambiano il gioco:
+            <code>CONTAINERS_CONF</code> fa ignorare tutti i file di sistema e
+            utente e carica solo il percorso indicato;
+            <code>CONTAINERS_CONF_OVERRIDE</code> viene caricata per ultima,
+            anche quando <code>CONTAINERS_CONF</code> &egrave; impostata. Sono
+            utili per test e ambienti isolati, meno per la configurazione
+            quotidiana.
+          </p>
+          <div class="callout">
+            <strong>Su Windows e macOS</strong> Podman gira dentro la macchina
+            Linux: i file che contano sono quelli della VM. Per modificarli usa
+            <code>podman machine ssh</code> e lavora dentro la macchina, non
+            nella home di Windows o macOS.
+          </div>
+
+          <h2>containers.conf</h2>
+          <p>
+            &Egrave; il file principale. Contiene sezioni come
+            <code>[containers]</code>, <code>[engine]</code>,
+            <code>[network]</code>, <code>[machine]</code> e
+            <code>[secrets]</code>. Un esempio ragionevole per una macchina di
+            sviluppo:
+          </p>
+          <pre><code>[engine]
+compose_providers = ["docker-compose", "podman-compose"]
+compose_warning_logs = false
+
+[network]
+default_network = "podman"
+default_subnet = "10.88.0.0/16"
+default_rootless_network_cmd = "pasta"
+
+[machine]
+cpus = 2
+memory = 4096
+disk_size = 20</code></pre>
+          <p>
+            I valori predefiniti da conoscere sono:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Chiave</th><th>Predefinito</th><th>Effetto</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>[machine] cpus</code></td><td><code>1</code></td><td>CPU assegnate a una nuova macchina.</td></tr>
+                <tr><td><code>[machine] memory</code></td><td><code>2048</code></td><td>Memoria in MB per una nuova macchina.</td></tr>
+                <tr><td><code>[machine] disk_size</code></td><td><code>10</code></td><td>Dimensione del disco in GB.</td></tr>
+                <tr><td><code>[network] default_network</code></td><td><code>podman</code></td><td>Rete usata dalla modalit&agrave; bridge rootful.</td></tr>
+                <tr><td><code>[network] default_subnet</code></td><td><code>10.88.0.0/16</code></td><td>Subnet della rete predefinita.</td></tr>
+                <tr><td><code>[network] default_rootless_network_cmd</code></td><td><code>pasta</code></td><td>Programma di rete per i container rootless.</td></tr>
+                <tr><td><code>[engine] compose_providers</code></td><td><code>[]</code></td><td>Provider cercati da <code>podman compose</code>; se vuoto usa i due predefiniti.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Non modificare <code>default_subnet</code> mentre ci sono container
+            attivi sulla rete predefinita: le regole e le interfacce potrebbero
+            restare incoerenti. Dopo una modifica pu&ograve; servire un riavvio
+            dei container o un <code>podman system migrate</code>.
+          </p>
+
+          <h2>registries.conf</h2>
+          <p>
+            <code>registries.conf</code> decide quali registry vengono
+            interrogati, come si risolvono i nomi brevi e quali mirror usare.
+            Il file utente, se esiste, ha la precedenza:
+            <code>$HOME/.config/containers/registries.conf</code>; altrimenti si
+            usa <code>/etc/containers/registries.conf</code>.
+          </p>
+          <pre><code>unqualified-search-registries = ["docker.io", "quay.io"]
+
+[[registry]]
+prefix = "docker.io"
+location = "docker.io"
+insecure = false
+
+[[registry.mirror]]
+location = "mirror.example.com"</code></pre>
+          <p>
+            Senza <code>unqualified-search-registries</code>, un comando come
+            <code>podman pull nginx</code> pu&ograve; chiedere quale registry
+            usare. La soluzione pi&ugrave; esplicita &egrave; scrivere il
+            riferimento completo, per esempio
+            <code>docker.io/library/nginx:alpine</code>. I mirror sono utili in
+            ambienti con registry locale o con collegamenti lenti; per un
+            registry interno non certificato si usa <code>insecure = true</code>
+            solo se sai quello che stai facendo.
+          </p>
+
+          <h2>storage.conf</h2>
+          <p>
+            <code>storage.conf</code> controlla dove e come vengono salvati
+            layer, immagini e volumi. Il driver predefinito &egrave;
+            <code>overlay</code> quando il kernel e il file system lo
+            supportano; in rootless si pu&ograve; ricadere su
+            <code>fuse-overlayfs</code> o <code>vfs</code>.
+          </p>
+          <pre><code>[storage]
+driver = "overlay"
+graphroot = "/var/lib/containers/storage"
+rootless_storage_path = "$HOME/.local/share/containers/storage"</code></pre>
+          <p>
+            Per vedere il driver e i percorsi effettivi:
+          </p>
+          <pre><code>podman info --format '{{.Store.GraphDriverName}}'
+podman info --format '{{.Store.GraphRoot}}'
+podman system df</code></pre>
+          <p>
+            Lo storage delle immagini &egrave; condiviso con Buildah e Skopeo,
+            ma non con i container in esecuzione. Evita di mettere lo storage su
+            NFS: la documentazione di <code>containers-storage</code> sconsiglia
+            esplicitamente questa configurazione. Se cambi
+            <code>graphroot</code> su un sistema con SELinux, aggiorna anche i
+            label del nuovo percorso.
+          </p>
+
+          <h2>Autenticazione ai registry</h2>
+          <p>
+            <code>podman login</code> salva le credenziali in
+            <code>$XDG_RUNTIME_DIR/containers/auth.json</code>; se non trova un
+            file Podman, pu&ograve; usare <code>$HOME/.docker/config.json</code>.
+            Per un file dedicato si usa <code>--authfile</code>.
+          </p>
+          <pre><code>podman login quay.io
+podman login --get-login quay.io
+
+podman login --authfile ./auth.json docker.io
+podman pull --authfile ./auth.json docker.io/private/app:1.0
+
+podman logout quay.io</code></pre>
+          <p>
+            Se il registry usa un credential helper, Podman lo rispetta tramite
+            la configurazione di <code>containers-auth.json</code>. In CI conviene
+            passare il file di autenticazione come segreto e non stamparlo nei
+            log; <code>podman login --password-stdin</code> evita che la
+            password finisca nella history della shell.
+          </p>
+
+          <h2>Quadlet</h2>
+          <p>
+            Quadlet &egrave; un generatore systemd: legge file con estensioni
+            <code>.container</code>, <code>.volume</code>, <code>.network</code>,
+            <code>.pod</code>, <code>.kube</code>, <code>.build</code>,
+            <code>.image</code> e <code>.artifact</code>, e crea le unit&agrave;
+            corrispondenti. Un file <code>web.container</code> diventa
+            <code>web.service</code>. &Egrave; il modo consigliato per avviare
+            container al boot senza scrivere unit&agrave; a mano.
+          </p>
+          <p>
+            I percorsi rootless sono
+            <code>$XDG_CONFIG_HOME/containers/systemd/</code> (di solito
+            <code>~/.config/containers/systemd/</code>),
+            <code>$XDG_RUNTIME_DIR/containers/systemd/</code> e le directory
+            di sistema per tutti gli utenti. I percorsi rootful sono
+            <code>/etc/containers/systemd/</code>,
+            <code>/run/containers/systemd/</code> e
+            <code>/usr/share/containers/systemd/</code>.
+          </p>
+          <pre><code>[Unit]
+Description=Web statico con Nginx
+After=network-online.target
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=web
+PublishPort=8080:80
+Volume=web-data:/usr/share/nginx/html:ro,Z
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target</code></pre>
+          <p>
+            Salva il file come
+            <code>~/.config/containers/systemd/web.container</code>, poi:
+          </p>
+          <pre><code>systemctl --user daemon-reload
+systemctl --user enable --now web.service
+systemctl --user status web.service
+journalctl --user -u web.service -f</code></pre>
+          <p>
+            Per un servizio rootful il file va in
+            <code>/etc/containers/systemd/</code> e si usa
+            <code>systemctl</code> senza <code>--user</code>, con
+            <code>WantedBy=multi-user.target</code>. Se il servizio deve partire
+            senza che l'utente sia loggato, serve
+            <code>loginctl enable-linger "$USER"</code>. Dopo ogni modifica al
+            file esegui <code>daemon-reload</code>: il generatore non si accorge
+            da solo delle modifiche.
+          </p>
+
+          <h2>podman.socket</h2>
+          <p>
+            Il socket &egrave; opzionale: serve solo agli strumenti che parlano
+            con l'API Docker o con l'API Podman. Si attiva con systemd e resta
+            in ascolto solo quando richiesto.
+          </p>
+          <pre><code># rootless
+systemctl --user enable --now podman.socket
+
+# rootful
+sudo systemctl enable --now podman.socket
+
+# percorso rootless
+echo "$XDG_RUNTIME_DIR/podman/podman.sock"
+
+# percorso rootful
+# /run/podman/podman.sock
+
+curl --unix-socket "$XDG_RUNTIME_DIR/podman/podman.sock" http://localhost/version</code></pre>
+          <p>
+            L'API compatibile espone Docker v1.40; l'API nativa libpod &egrave;
+            pi&ugrave; ampia e specifica di Podman. Attenzione: chi pu&ograve;
+            accedere al socket pu&ograve; eseguire operazioni con i privilegi
+            dell'utente che lo possiede, incluse azioni distruttive. Non
+            esporre il socket su TCP senza TLS e senza una rete fiduciaria.
+          </p>
+
+          <h2>Auto-update</h2>
+          <p>
+            L'auto-update confronta l'immagine locale con quella del registry e,
+            se cambia, riavvia l'unit&agrave; systemd che esegue il container.
+            Funziona solo per container gestiti da systemd, quindi in pratica
+            con Quadlet o con unit&agrave; generate.
+          </p>
+          <pre><code>podman run -d --name web \
+  --label io.containers.autoupdate=registry \
+  -p 8080:80 \
+  docker.io/library/nginx:alpine
+
+podman auto-update --dry-run
+podman auto-update</code></pre>
+          <p>
+            Le policy sono <code>registry</code> e <code>local</code>.
+            <code>registry</code> richiede un riferimento completamente
+            qualificato, perch&eacute; deve sapere quale immagine controllare.
+            <code>local</code> confronta il digest del container con quello
+            dell'immagine locale. Podman include un timer systemd che esegue
+            l'aggiornamento ogni giorno a mezzanotte; pu&ograve; essere attivato
+            con:
+          </p>
+          <pre><code>systemctl --user enable --now podman-auto-update.timer
+
+# rootful
+sudo systemctl enable --now podman-auto-update.timer</code></pre>
+          <p>
+            In alternativa, per un controllo esplicito, imposta
+            <code>AutoUpdate=registry</code> nel file Quadlet e lancia
+            <code>podman auto-update</code> da un timer tuo.
+          </p>
+
+          <h2>Variabili d'ambiente</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Variabile</th><th>Effetto</th><th>Quando usarla</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>CONTAINERS_CONF</code></td><td>Carica solo il file indicato, ignorando sistema e utente.</td><td>Test isolati e ambienti riproducibili.</td></tr>
+                <tr><td><code>CONTAINERS_CONF_OVERRIDE</code></td><td>File caricato per ultimo.</td><td>Override temporaneo senza toccare la configurazione.</td></tr>
+                <tr><td><code>CONTAINERS_REGISTRIES_CONF</code></td><td>Percorso alternativo per <code>registries.conf</code>.</td><td>Registry locali o pipeline.</td></tr>
+                <tr><td><code>CONTAINERS_STORAGE_CONF</code></td><td>Percorso alternativo per <code>storage.conf</code>.</td><td>Storage separato per test.</td></tr>
+                <tr><td><code>CONTAINERS_MACHINE_PROVIDER</code></td><td>Sceglie <code>wsl</code> o <code>hyperv</code> su Windows.</td><td>Quando non vuoi modificare il file di configurazione.</td></tr>
+                <tr><td><code>DOCKER_HOST</code></td><td>Indica il socket API a client compatibili Docker.</td><td>Strumenti che parlano con Docker.</td></tr>
+                <tr><td><code>XDG_RUNTIME_DIR</code></td><td>Directory dei socket e dei dati temporanei dell'utente.</td><td>Definita dalla sessione; non forzarla senza motivo.</td></tr>
+                <tr><td><code>XDG_CONFIG_HOME</code></td><td>Base per la configurazione utente.</td><td>Se vuoi spostare <code>~/.config</code>.</td></tr>
+                <tr><td><code>PODMAN_COMPOSE_PROVIDER</code></td><td>Sceglie il provider per <code>podman compose</code>.</td><td>Una singola esecuzione con un provider diverso.</td></tr>
+                <tr><td><code>TMPDIR</code></td><td>Directory temporanea usata da build e pull.</td><td>Quando <code>/tmp</code> &egrave; piccolo.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Esempio completo</h2>
+          <p>
+            Mettiamo insieme Quadlet, volume, rete e auto-update per un piccolo
+            servizio che parte al boot e si aggiorna da solo. Il file seguente
+            va in <code>~/.config/containers/systemd/web.container</code>.
+          </p>
+          <pre><code>[Unit]
+Description=Web con Nginx
+After=network-online.target
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=web
+PublishPort=8080:80
+Volume=web-data:/usr/share/nginx/html:ro,Z
+Network=web.network
+AutoUpdate=registry
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target</code></pre>
+          <p>
+            Il file <code>web.network</code> nella stessa directory definisce la
+            rete:
+          </p>
+          <pre><code>[Network]
+Subnet=10.89.10.0/24
+Gateway=10.89.10.1</code></pre>
+          <p>
+            Poi abilita il servizio e il timer:
+          </p>
+          <pre><code>systemctl --user daemon-reload
+systemctl --user enable --now web.service
+systemctl --user enable --now podman-auto-update.timer
+
+podman ps
+curl http://localhost:8080</code></pre>
+        </section>
+
+        <!-- ================================================================
+             Approfondimenti
+             ================================================================ -->
+        <section class="tabpanel" id="approfondimenti" role="tabpanel" aria-labelledby="tab-approfondimenti" hidden>
+          <nav class="section-index" aria-labelledby="section-index-title">
+            <p class="section-index-title" id="section-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#architettura">Architettura daemonless</a></li>
+              <li><a href="#rootless">Rootless e user namespace</a></li>
+              <li><a href="#rete">Rete: Netavark e pasta</a></li>
+              <li><a href="#storage">Storage e volumi</a></li>
+              <li><a href="#pod-kubernetes">Pod e Kubernetes</a></li>
+              <li><a href="#sicurezza">Sicurezza</a></li>
+              <li><a href="#migrazione">Migrazione da Docker</a></li>
+              <li><a href="#breaking-changes">Breaking changes di Podman 6</a></li>
+              <li><a href="#faq">Domande frequenti</a></li>
+            </ol>
+          </nav>
+
+          <h2 id="architettura">Architettura daemonless</h2>
+          <p>
+            In Docker il client invia una richiesta a <code>dockerd</code>, che
+            resta in esecuzione e coordina container, immagini, reti e volumi.
+            In Podman non c'&egrave; un equivalente di <code>dockerd</code>: il
+            comando che digiti &egrave; il processo che prepara e avvia il
+            container. Quando il comando termina, il container pu&ograve;
+            continuare a vivere grazie a <code>conmon</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Componente</th><th>Ruolo</th><th>Vita</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>podman</code></td>
+                  <td>CLI e motore: interpreta il comando, prepara storage, rete e configurazione.</td>
+                  <td>Il tempo dell'operazione.</td>
+                </tr>
+                <tr>
+                  <td><code>conmon</code></td>
+                  <td>Supervisore del container: gestisce stdin/stdout, log, segnali e codice di uscita.</td>
+                  <td>Finch&eacute; il container &egrave; vivo; uno per container.</td>
+                </tr>
+                <tr>
+                  <td><code>crun</code> o <code>runc</code></td>
+                  <td>Runtime OCI: crea namespace, cgroup, mount e avvia il processo.</td>
+                  <td>Il tempo dell'avvio; poi il processo &egrave; figlio di <code>conmon</code>.</td>
+                </tr>
+                <tr>
+                  <td>Processo del container</td>
+                  <td>Il carico applicativo, di solito PID 1 nel proprio namespace.</td>
+                  <td>Finch&eacute; l'applicazione resta in esecuzione.</td>
+                </tr>
+                <tr>
+                  <td><code>podman.socket</code></td>
+                  <td>API on demand tramite systemd, per client Docker o Podman.</td>
+                  <td>Solo se attivato e solo durante le richieste.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La catena precisa &egrave;: la CLI prepara l'ambiente, chiede a
+            <code>conmon</code> di avviare il runtime, il runtime crea
+            l'isolamento e lancia il processo. <code>conmon</code> resta come
+            supervisore e raccoglie l'output. Se il processo principale esce,
+            <code>conmon</code> registra l'exit code e termina; Podman non deve
+            essere in esecuzione per saperlo, perch&eacute; lo stato &egrave;
+            nello storage e nei metadati.
+          </p>
+          <p>
+            Questo modello ha conseguenze concrete:
+          </p>
+          <ul>
+            <li><strong>Aggiornare Podman non riavvia i container</strong> gi&agrave; avviati: non c'&egrave; un daemon da sostituire.</li>
+            <li><strong>Ogni container ha il suo supervisore</strong>: non c'&egrave; un unico processo che, se cade, porta gi&ugrave; tutto.</li>
+            <li><strong>I log vanno al driver configurato</strong>: <code>journald</code> sui sistemi con systemd, <code>k8s-file</code> altrove, oppure <code>none</code>.</li>
+            <li><strong>L'API &egrave; opzionale</strong>: senza socket non c'&egrave; un endpoint HTTP, e va benissimo cos&igrave;.</li>
+            <li><strong>Il debug &egrave; pi&ugrave; diretto</strong>: <code>podman --log-level=debug run ...</code> mostra la sequenza delle operazioni.</li>
+          </ul>
+          <p>
+            Il prezzo &egrave; che alcune funzioni tipiche di un daemon centrale
+            &mdash; un registro unico di eventi, un'API sempre disponibile, una
+            cache condivisa &mdash; vanno gestite diversamente. Podman offre
+            comunque <code>podman events</code>, il socket on demand e uno
+            storage condiviso, ma non sono equivalenti a un servizio sempre
+            acceso.
+          </p>
+
+          <h2 id="rootless">Rootless e user namespace</h2>
+          <p>
+            Rootless &egrave; la modalit&agrave; predefinita di Podman. L'utente
+            normale non diventa root: il kernel crea un <strong>user
+            namespace</strong> in cui l'UID dell'utente viene mappato a 0
+            all'interno del container, e un intervallo di UID subordinati viene
+            mappato agli altri UID. Per questo il processo pu&ograve; essere
+            &ldquo;root&rdquo; nel container senza esserlo sull'host.
+          </p>
+          <p>
+            La mappatura si basa su <code>/etc/subuid</code> e
+            <code>/etc/subgid</code>. Una riga
+            <code>alice:100000:65536</code> significa che l'utente
+            <code>alice</code> pu&ograve; usare gli UID da 100000 a 165535 per i
+            propri namespace. Gli helper <code>newuidmap</code> e
+            <code>newgidmap</code>, forniti dal pacchetto <code>uidmap</code> o
+            <code>shadow-utils</code>, applicano la mappatura.
+          </p>
+          <pre><code>cat /etc/subuid
+cat /etc/subgid
+
+podman unshare cat /proc/self/uid_map
+podman unshare cat /proc/self/gid_map
+
+podman run --rm alpine id
+# uid=0(root) gid=0(root) groups=0(root),65534(nobody)</code></pre>
+          <p>
+            Dentro il container <code>id</code> mostra <code>uid=0</code>, ma
+            sull'host quel processo appartiene all'utente che ha avviato
+            Podman. I file creati sul host tramite un bind mount appartengono a
+            quell'utente, non a root. Se l'applicazione deve scrivere in una
+            directory montata, spesso serve <code>--userns=keep-id</code> per
+            mantenere lo stesso UID dentro e fuori, oppure un volume nominato
+            con i permessi corretti.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspetto</th><th>Rootless</th><th>Rootful (<code>sudo podman</code>)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Privilegi sul host</td><td>Utente normale, user namespace.</td><td>Root completo.</td></tr>
+                <tr><td>Storage</td><td><code>$HOME/.local/share/containers/storage</code></td><td><code>/var/lib/containers/storage</code></td></tr>
+                <tr><td>Rete predefinita</td><td><code>pasta</code>, senza IP del container sul host.</td><td>Bridge <code>podman</code> su <code>10.88.0.0/16</code>.</td></tr>
+                <tr><td>Porte &lt; 1024</td><td>Dipende da <code>net.ipv4.ip_unprivileged_port_start</code>.</td><td>Consentite.</td></tr>
+                <tr><td>Mount e dispositivi</td><td>Limitati dal namespace; alcuni mount non sono possibili.</td><td>Pi&ugrave; flessibile, ma pi&ugrave; rischioso.</td></tr>
+                <tr><td>Isolamento</td><td>Migliore per difetto: un bug nel container non &egrave; root sul host.</td><td>Il container &egrave; root sul host, con tutte le conseguenze.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Rootless non &egrave; una barriera magica: il kernel &egrave;
+            condiviso e una vulnerabilit&agrave; grave pu&ograve; comunque
+            avere effetto. Riduce per&ograve; la superficie d'attacco e limita i
+            danni di un errore di configurazione. Per questo la documentazione
+            Podman consiglia rootless come punto di partenza e rootful solo
+            quando serve davvero.
+          </p>
+          <p>
+            Alcuni limiti pratici da conoscere:
+          </p>
+          <ul>
+            <li>non puoi montare arbitrariamente file system o usare tutti i dispositivi;</li>
+            <li>alcune immagini che si aspettano root e scrivono in <code>/etc</code> possono fallire;</li>
+            <li>il ping e le porte basse richiedono configurazione aggiuntiva;</li>
+            <li>i volumi condivisi con altri utenti possono avere UID diversi da quelli attesi;</li>
+            <li><code>--privileged</code> dentro un namespace utente non equivale a root sul host, ma resta pericoloso.</li>
+          </ul>
+
+          <h2 id="rete">Rete: Netavark e pasta</h2>
+          <p>
+            Podman 6 usa <strong>Netavark</strong> come backend di rete e
+            <strong>aardvark-dns</strong> per la risoluzione dei nomi. Ha
+            rimosso CNI, iptables e slirp4netns: le regole firewall passano da
+            <strong>nftables</strong> e la rete rootless usa
+            <strong>pasta</strong>.
+          </p>
+          <p>
+            In modalit&agrave; rootful la rete predefinita si chiama
+            <code>podman</code> e usa la subnet <code>10.88.0.0/16</code>. I
+            container collegati ricevono un IP e possono risolversi per nome
+            grazie a aardvark-dns. In rootless il comportamento predefinito
+            &egrave; diverso: pasta crea un namespace di rete senza assegnare
+            un IP visibile al container, e le porte pubblicate vengono gestite
+            dal processo di port forwarding.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Scenario</th><th>Backend</th><th>Indirizzo del container</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rootful, rete predefinita</td><td>Netavark bridge</td><td><code>10.88.0.0/16</code></td><td>DNS per nome, NAT in uscita.</td></tr>
+                <tr><td>Rootful, rete creata</td><td>Netavark bridge</td><td>Subnet dal pool <code>10.89.0.0/24</code> in su</td><td>Si pu&ograve; scegliere la subnet con <code>--subnet</code>.</td></tr>
+                <tr><td>Rootless, predefinito</td><td>pasta</td><td>Nessun IP visibile sul host</td><td>Le porte pubblicate funzionano; il container non &egrave; raggiungibile per IP.</td></tr>
+                <tr><td>Rootless, bridge esplicito</td><td>Netavark + pasta</td><td>IP interno alla rete</td><td>Serve <code>--network</code>; il port forwarding resta necessario.</td></tr>
+                <tr><td>Macvlan</td><td>Netavark macvlan</td><td>IP dalla rete fisica</td><td>Il container appare come un host sulla LAN.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code>podman network create --subnet 10.89.50.0/24 backend
+podman run -d --network backend --name db postgres:17
+podman run -d --network backend --name api -p 8080:8080 app:latest
+podman network inspect backend
+
+podman run --rm --network backend alpine getent hosts db</code></pre>
+          <p>
+            Il pool predefinito per <code>podman network create</code> parte da
+            <code>10.89.0.0/16</code> e assegna subnet <code>/24</code> libere;
+            la configurazione &egrave; in <code>[network] default_subnet_pools</code>.
+            Se la tua rete aziendale usa gi&agrave; <code>10.88.0.0/16</code> o
+            <code>10.89.0.0/16</code>, cambia la subnet prima di creare i
+            container.
+          </p>
+          <p>
+            Il port forwarding rootless merita una nota: Podman usa
+            <code>rootlessport</code> per inoltrare le porte dal host al
+            namespace. In Podman 6 &egrave; disponibile anche un forwarder
+            basato su pasta, ancora sperimentale, che preserva l'IP sorgente del
+            client. Su WSL serve <code>force_port_listen</code>, impostato
+            automaticamente sulle nuove macchine Windows; senza di esso il
+            forwarding dal sistema Windows pu&ograve; non funzionare.
+          </p>
+
+          <h2 id="storage">Storage e volumi</h2>
+          <p>
+            Le immagini sono layer di file system sovrapposti; i container
+            aggiungono un layer scrivibile. Il driver predefinito &egrave;
+            <code>overlay</code>, che sfrutta le funzionalit&agrave; del file
+            system. In rootless, se il kernel non consente overlay dentro un
+            user namespace, Podman pu&ograve; usare <code>fuse-overlayfs</code>
+            o, come ultima risorsa, <code>vfs</code>, che &egrave; pi&ugrave;
+            lento e occupa pi&ugrave; spazio.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Dove vive</th><th>Persistenza</th><th>Uso tipico</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Layer immagine</td><td>Storage del motore</td><td>Finch&eacute; l'immagine esiste</td><td>Base condivisa tra container.</td></tr>
+                <tr><td>Layer scrivibile del container</td><td>Storage del motore</td><td>Finch&eacute; il container esiste</td><td>Modifiche temporanee; si perde con <code>rm</code>.</td></tr>
+                <tr><td>Volume nominato</td><td><code>.../containers/storage/volumes</code></td><td>S&igrave;, indipendente dal container</td><td>Dati di database, upload, cache persistente.</td></tr>
+                <tr><td>Bind mount</td><td>Una directory del host</td><td>S&igrave;, gestita dall'utente</td><td>Sviluppo, file di configurazione, codice.</td></tr>
+                <tr><td>Tmpfs</td><td>Memoria</td><td>No</td><td>Dati temporanei e sensibili.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Un volume nominato &egrave; la scelta giusta per i dati che devono
+            sopravvivere al container. Un bind mount &egrave; comodo in
+            sviluppo, ma lega il container a un percorso specifico del host. Su
+            SELinux, un bind mount in scrittura ha spesso bisogno del suffisso
+            <code>:z</code> (condiviso) o <code>:Z</code> (privato); senza
+            label, il processo pu&ograve; ricevere <code>permission denied</code>
+            anche se i permessi POSIX sembrano corretti.
+          </p>
+          <pre><code>podman volume create db-data
+podman run -d --name db \
+  -v db-data:/var/lib/postgresql/data:Z \
+  -e POSTGRES_PASSWORD=example \
+  postgres:17
+
+podman volume inspect db-data
+podman system df
+podman volume export db-data -o db-data.tar</code></pre>
+          <p>
+            Lo storage delle immagini &egrave; condiviso con Buildah e Skopeo:
+            un'immagine costruita con Buildah &egrave; visibile a Podman senza
+            copie intermedie. I container in esecuzione, per&ograve;, non
+            condividono lo stesso storage tra rootless e rootful: sono due mondi
+            separati. Anche i volumi seguono questa separazione.
+          </p>
+          <p>
+            Per controllare lo spazio e capire cosa consuma:
+          </p>
+          <pre><code>podman system df -v
+podman ps -a --size
+podman images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}"
+podman volume ls</code></pre>
+          <p>
+            In Podman 6 <code>podman volume prune</code> elimina solo i volumi
+            anonimi non usati, per allinearsi a Docker; per includere anche i
+            volumi nominati serve <code>--all</code>. La modifica &egrave;
+            pensata per evitare cancellazioni accidentali, ma va conosciuta
+            prima di scrivere script di pulizia.
+          </p>
+
+          <h2 id="pod-kubernetes">Pod e Kubernetes</h2>
+          <p>
+            Un pod Podman &egrave; un gruppo di container che condividono i
+            namespace di rete, UTS e IPC. Podman crea un container
+            infrastrutturale che mantiene vivi questi namespace; gli altri
+            container si uniscono al pod con <code>--pod</code>. Di default i
+            container dello stesso pod si vedono su <code>localhost</code> e
+            condividono hostname e porte.
+          </p>
+          <p>
+            Il modello &egrave; lo stesso di Kubernetes, ma l'implementazione
+            &egrave; locale e volutamente semplice. Non ci sono scheduler,
+            controller, kubelet, API server o pi&ugrave; nodi. Podman non
+            sostituisce un cluster: serve a testare un pod, a eseguire un
+            manifest su una macchina o a preparare un artefatto da portare in
+            Kubernetes.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Funzione</th><th>Podman</th><th>Kubernetes</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Pod</td><td>S&igrave;, su una macchina.</td><td>S&igrave;, su un cluster.</td></tr>
+                <tr><td>Scheduler</td><td>No.</td><td>S&igrave;.</td></tr>
+                <tr><td>Replica e self-healing</td><td>No, salvo systemd/Quadlet.</td><td>S&igrave;, tramite controller.</td></tr>
+                <tr><td>Service e Ingress</td><td>Non gestiti come risorse del cluster.</td><td>S&igrave;.</td></tr>
+                <tr><td>YAML</td><td><code>kube play</code> supporta un sottoinsieme di tipi.</td><td>Tutte le API Kubernetes.</td></tr>
+                <tr><td>Multi-nodo</td><td>No.</td><td>S&igrave;.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>podman kube play</code> supporta Pod, Deployment,
+            PersistentVolumeClaim, ConfigMap, Secret, DaemonSet e Job. La
+            restart policy predefinita &egrave; <code>always</code>; i volumi
+            supportati includono <em>hostPath</em>, <em>emptyDir</em>,
+            <em>configMap</em>, <em>persistentVolumeClaim</em> e <em>image</em>.
+            Non &egrave; il posto giusto per testare un operatore o una
+            NetworkPolicy: per quello serve un cluster vero, per esempio k3s.
+          </p>
+          <pre><code>podman kube generate web -o web.yaml
+podman kube play --replace web.yaml
+podman pod ps
+podman kube down web.yaml</code></pre>
+          <p>
+            Il comando <code>podman generate kube</code> &egrave; deprecato in
+            favore di <code>podman kube generate</code>. Se hai script
+            vecchi, funzionano ancora, ma conviene aggiornarli. Il YAML generato
+            &egrave; un buon punto di partenza per un manifest Kubernetes, ma va
+            rivisto: risorse, volumi e policy pensate per una singola macchina
+            possono non avere senso in un cluster.
+          </p>
+
+          <h2 id="sicurezza">Sicurezza</h2>
+          <p>
+            Podman parte da impostazioni pi&ugrave; conservative di Docker, ma
+            nessun motore di container &egrave; sicuro per definizione. La
+            sicurezza dipende da come configuri il container, dall'immagine che
+            esegui e da ci&ograve; che monti al suo interno.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Difesa</th><th>Effetto</th><th>Come si usa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rootless</td><td>Il container non &egrave; root sul host.</td><td>Esegui Podman come utente normale, senza <code>sudo</code>.</td></tr>
+                <tr><td>User namespace</td><td>Mappa UID e GID in un intervallo dedicato.</td><td>Predefinito in rootless; <code>--userns=keep-id</code> per i bind mount.</td></tr>
+                <tr><td>Capability ridotte</td><td>Meno operazioni privilegiate disponibili.</td><td>Predefinito; <code>--cap-drop=ALL</code> e <code>--cap-add</code> mirato.</td></tr>
+                <tr><td>Seccomp</td><td>Filtra le chiamate di sistema.</td><td>Profilo predefinito; personalizzabile con <code>--security-opt seccomp=...</code>.</td></tr>
+                <tr><td>SELinux / AppArmor</td><td>Limita l'accesso a file e risorse.</td><td>Label <code>:z</code>/<code>:Z</code>; profili AppArmor.</td></tr>
+                <tr><td>Read-only</td><td>File system del container non modificabile.</td><td><code>--read-only</code> e <code>--tmpfs /tmp</code>.</td></tr>
+                <tr><td>No new privileges</td><td>Impedisce l'escalation tramite setuid.</td><td><code>--security-opt no-new-privileges</code>.</td></tr>
+                <tr><td>Secret</td><td>Credenziali fuori dall'immagine e dai log.</td><td><code>podman secret create</code> e <code>--secret</code>.</td></tr>
+                <tr><td>Isolamento di rete</td><td>Podman 6 lo abilita per impostazione predefinita.</td><td>Migliora la compatibilit&agrave; con Docker e riduce l'esposizione.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Le capability predefinite di Podman sono un sottoinsieme di quelle
+            di Docker: mancano, tra le altre, <code>AUDIT_WRITE</code>,
+            <code>MKNOD</code> e <code>NET_RAW</code>. Questo riduce il potere
+            di un processo compromesso, ma pu&ograve; rompere applicazioni che
+            si aspettano di poter cambiare l'ora, creare dispositivi o usare
+            socket raw. Aggiungi solo ci&ograve; che serve, con
+            <code>--cap-add</code>, invece di usare <code>--privileged</code>.
+          </p>
+          <pre><code>podman run --rm \
+  --read-only \
+  --tmpfs /tmp \
+  --cap-drop=ALL \
+  --security-opt no-new-privileges \
+  alpine sh -c 'id &amp;&amp; echo ok'</code></pre>
+          <p>
+            Un punto spesso trascurato &egrave; il socket API: chi lo controlla
+            pu&ograve; fare tutto ci&ograve; che pu&ograve; fare l'utente che lo
+            possiede, incluse operazioni distruttive. Non montare
+            <code>/var/run/docker.sock</code> o il socket Podman dentro un
+            container senza una ragione forte. Se devi farlo, considera un proxy
+            che limiti le chiamate e non esporre il socket in rete.
+          </p>
+          <p>
+            Infine, la sicurezza dell'immagine conta quanto quella del motore.
+            Usa immagini ufficiali o firmate, fissa i tag o i digest, aggiorna le
+            dipendenze e non eseguire processi come root quando l'applicazione
+            non ne ha bisogno. Podman fornisce gli strumenti, non una garanzia
+            automatica.
+          </p>
+
+          <h2 id="migrazione">Migrazione da Docker</h2>
+          <p>
+            La migrazione &egrave; spesso pi&ugrave; semplice di quanto sembri,
+            perch&eacute; immagini e Dockerfile restano validi. I problemi
+            arrivano da ci&ograve; che sta intorno: volumi, socket, Compose,
+            systemd e permessi degli UID. Ecco un percorso ordinato.
+          </p>
+          <ol>
+            <li><strong>Inventario:</strong> elenca immagini, container, volumi, reti e file Compose che usi davvero.</li>
+            <li><strong>Installazione:</strong> installa Podman e verifica rootless con <code>podman info</code>.</li>
+            <li><strong>Immagini:</strong> scarica le stesse immagini con riferimenti completi; evita i nomi brevi ambigui.</li>
+            <li><strong>Volumi:</strong> ricrea i volumi e copia i dati; non montare direttamente lo storage Docker.</li>
+            <li><strong>Compose:</strong> prova <code>podman compose up -d</code> con un provider installato; correggi path e dipendenze.</li>
+            <li><strong>Socket:</strong> se uno strumento parla con Docker, attiva <code>podman.socket</code> e imposta <code>DOCKER_HOST</code>.</li>
+            <li><strong>Avvio automatico:</strong> sostituisci le restart policy con Quadlet e unit&agrave; systemd.</li>
+            <li><strong>Test:</strong> verifica log, porte, permessi dei volumi e comportamento dopo un reboot.</li>
+          </ol>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Docker</th><th>Podman</th><th>Nota</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>docker run</code></td><td><code>podman run</code></td><td>La maggior parte delle opzioni &egrave; compatibile.</td></tr>
+                <tr><td><code>docker ps -a</code></td><td><code>podman ps -a</code></td><td>Output simile, non identico.</td></tr>
+                <tr><td><code>docker build</code></td><td><code>podman build</code></td><td>Buildah al posto di BuildKit; alcune feature non esistono.</td></tr>
+                <tr><td><code>docker compose</code></td><td><code>podman compose</code></td><td>Serve <code>docker-compose</code> o <code>podman-compose</code>.</td></tr>
+                <tr><td><code>docker volume</code></td><td><code>podman volume</code></td><td>I dati vanno copiati, non puntati allo storage Docker.</td></tr>
+                <tr><td><code>docker network</code></td><td><code>podman network</code></td><td>Netavark al posto del driver Docker.</td></tr>
+                <tr><td><code>docker.sock</code></td><td><code>podman.sock</code></td><td>Percorso diverso; <code>DOCKER_HOST</code> aiuta.</td></tr>
+                <tr><td><code>--restart=always</code></td><td>Quadlet + <code>Restart=always</code></td><td>Pi&ugrave; solido e integrabile con systemd.</td></tr>
+                <tr><td><code>docker system prune</code></td><td><code>podman system prune</code></td><td>Controlla sempre cosa viene rimosso.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Per copiare un volume Docker in uno Podman, il modo pi&ugrave;
+            sicuro &egrave; passare per un archivio:
+          </p>
+          <pre><code># con Docker: esporta il contenuto
+docker run --rm -v nome_volume:/from -v "$PWD":/to alpine \
+  sh -c 'cd /from &amp;&amp; tar czf /to/volume.tar.gz .'
+
+# con Podman: crea il volume e importa
+podman volume create nome_volume
+podman run --rm -v nome_volume:/to -v "$PWD":/from:Z alpine \
+  sh -c 'cd /to &amp;&amp; tar xzf /from/volume.tar.gz'</code></pre>
+          <p>
+            Le trappole pi&ugrave; comuni sono: UID diversi tra rootless e
+            rootful, path assoluti che cambiano tra Windows e Linux, socket
+            Docker montato dentro un container, immagini con nomi brevi risolte
+            da registry diversi, e Compose che si aspetta funzioni non
+            supportate dal provider. Affrontale una alla volta, con
+            <code>podman compose config</code> e <code>podman inspect</code>.
+          </p>
+
+          <h2 id="breaking-changes">Breaking changes di Podman 6</h2>
+          <p>
+            Podman 6 &egrave; una major con cambiamenti importanti. Se arrivi
+            dalla serie 5.x, leggi questa tabella prima di aggiornare un ambiente
+            di produzione.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Rimosso o cambiato</th><th>Sostituto o nuovo comportamento</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Windows 10</td><td>Serve Windows 11 o successivo.</td></tr>
+                <tr><td>Mac Intel</td><td>Serve Apple Silicon; i Mac Intel restano su Podman 5.x.</td></tr>
+                <tr><td>cgroups v1</td><td>Serve cgroup v2.</td></tr>
+                <tr><td>iptables</td><td>nftables.</td></tr>
+                <tr><td>CNI</td><td>Netavark.</td></tr>
+                <tr><td>slirp4netns</td><td>pasta; rimosso anche <code>--network-cmd-path</code>.</td></tr>
+                <tr><td>BoltDB</td><td>SQLite; Podman tenta la migrazione automatica all'avvio.</td></tr>
+                <tr><td>Parsing dei file di configurazione</td><td>Riscritto: verifica i tuoi <code>containers.conf</code> e i drop-in.</td></tr>
+                <tr><td>Isolamento di rete disabilitato</td><td>Ora &egrave; abilitato per impostazione predefinita.</td></tr>
+                <tr><td><code>podman volume prune</code> su tutti i volumi</td><td>Ora elimina solo gli anonimi; <code>--all</code> ripristina il comportamento precedente.</td></tr>
+                <tr><td>Filtri multipli di <code>volume list</code> in OR</td><td>Ora sono combinati in AND.</td></tr>
+                <tr><td><code>podman commit</code> senza pausa</td><td>Ora mette in pausa il container; <code>--pause=false</code> per il vecchio comportamento.</td></tr>
+                <tr><td><code>podman machine list --all-providers</code></td><td>Rimosso: i comandi vedono le macchine di tutti i provider.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Podman 6.0 richiede Buildah 1.44.0, Skopeo 1.23, Netavark e Aardvark
+            2.0.0 e la common library 0.68.0. La serie 6.1 aggiorna Buildah alla
+            1.45.x e la storage library alla 1.64.x. Non mescolare pacchetti di
+            versioni diverse: &egrave; una delle cause pi&ugrave; frequenti di
+            errori strani dopo un aggiornamento parziale.
+          </p>
+          <p>
+            La 6.1 ha aggiunto <code>podman volume rename</code>,
+            <code>podman machine restart</code>, <code>podman network rm --ignore</code>,
+            i retry su <code>podman manifest push</code> e
+            <code>force_port_listen</code> per WSL. La 6.1.4 corregge
+            l'esecuzione sotto WSL 3. La 6.2.0 &egrave; in release candidate:
+            non usarla come base per la documentazione di produzione finch&eacute;
+            non diventa stabile.
+          </p>
+
+          <h2 id="faq">Domande frequenti</h2>
+
+          <h3>Podman &egrave; un fork di Docker?</h3>
+          <p>
+            No. &Egrave; un'implementazione indipendente degli standard OCI,
+            sviluppata nel progetto libpod. Condivide immagini, registry e parte
+            della CLI, ma non deriva dal codice di Docker.
+          </p>
+
+          <h3>Posso usare le stesse immagini Docker?</h3>
+          <p>
+            S&igrave;, nella maggior parte dei casi. Le immagini OCI sono le
+            stesse; cambiano il runtime, la rete e alcuni dettagli di
+            configurazione. Un'immagine che si aspetta privilegi o percorsi
+            specifici pu&ograve; richiedere adattamenti.
+          </p>
+
+          <h3>Serve Docker Desktop su Windows o macOS?</h3>
+          <p>
+            No. Podman usa una macchina Linux gestita da
+            <code>podman machine</code>. Podman Desktop &egrave; un'interfaccia
+            grafica opzionale, non un requisito.
+          </p>
+
+          <h3>Posso usare <code>docker compose</code> con Podman?</h3>
+          <p>
+            S&igrave;, tramite <code>podman compose</code>, che chiama un
+            provider esterno come <code>docker-compose</code> o
+            <code>podman-compose</code>. Se il provider non &egrave; installato,
+            il comando non funziona.
+          </p>
+
+          <h3>Perch&eacute; da rootless non vedo l'IP del container?</h3>
+          <p>
+            Perch&eacute; la modalit&agrave; predefinita rootless usa pasta, che
+            non assegna un IP visibile sul host. Le porte pubblicate
+            funzionano; per un IP interno serve una rete bridge esplicita, con i
+            suoi limiti.
+          </p>
+
+          <h3>Come faccio partire un container al boot?</h3>
+          <p>
+            Con Quadlet: crea un file <code>.container</code> in
+            <code>~/.config/containers/systemd/</code>, esegui
+            <code>systemctl --user daemon-reload</code>, abilita il servizio e
+            attiva <code>loginctl enable-linger "$USER"</code>. Per un servizio
+            di sistema usa <code>/etc/containers/systemd/</code> e
+            <code>systemctl</code> senza <code>--user</code>.
+          </p>
+
+          <h3>Podman &egrave; pi&ugrave; sicuro di Docker?</h3>
+          <p>
+            Ha impostazioni predefinite pi&ugrave; conservative &mdash; rootless,
+            capability ridotte, isolamento di rete &mdash; ma non &egrave;
+            automaticamente sicuro. Dipende dall'immagine, dai privilegi, dai
+            mount e dalla configurazione. La domanda giusta &egrave; quale
+            modello di minaccia stai affrontando.
+          </p>
+
+          <h3>Posso eseguire container Windows?</h3>
+          <p>
+            No. Podman su Windows esegue container Linux dentro una macchina
+            WSL 2 o Hyper-V. Per container Windows nativi serve un'altra
+            soluzione.
+          </p>
+
+          <h3>Come faccio a usare il socket Docker con Podman?</h3>
+          <p>
+            Attiva <code>podman.socket</code> con systemd, imposta
+            <code>DOCKER_HOST</code> sul percorso del socket e verifica che il
+            client parli con l'API compatibile. Su rootless il percorso &egrave;
+            <code>$XDG_RUNTIME_DIR/podman/podman.sock</code>; su rootful
+            <code>/run/podman/podman.sock</code>.
+          </p>
+
+          <h3>Dove trovo la documentazione aggiornata?</h3>
+          <p>
+            La documentazione ufficiale &egrave; su
+            <a href="https://docs.podman.io/" target="_blank" rel="noopener">docs.podman.io</a>;
+            il sito del progetto &egrave;
+            <a href="https://podman.io/" target="_blank" rel="noopener">podman.io</a>.
+            Per i dettagli di una versione installata, i comandi
+            <code>podman --help</code> e <code>podman &lt;comando&gt; --help</code>
+            sono spesso pi&ugrave; precisi di un articolo scritto mesi prima.
+          </p>
+
+          <div class="callout">
+            <strong>Una nota di metodo:</strong> Podman si muove in fretta e le
+            major introducono cambiamenti netti. Quando un comando non
+            funziona, controlla prima <code>podman --version</code> e
+            <code>podman info</code>: la maggior parte delle differenze con
+            Docker parte da l&igrave;.
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

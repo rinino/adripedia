@@ -74,6 +74,16 @@
               ]
             },
             {
+              text: "Podman",
+              children: [
+                { text: "Panoramica", href: "informatica/podman/index.html#panoramica" },
+                { text: "Installazione", href: "informatica/podman/index.html#installazione" },
+                { text: "Comandi", href: "informatica/podman/index.html#comandi" },
+                { text: "Configurazione", href: "informatica/podman/index.html#configurazione" },
+                { text: "Approfondimenti", href: "informatica/podman/index.html#approfondimenti" }
+              ]
+            },
+            {
               text: "Kubernetes",
               children: [
                 { text: "Panoramica", href: "informatica/kubernetes/index.html#panoramica" },

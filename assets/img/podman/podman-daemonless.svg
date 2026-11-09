@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-labelledby="title desc">
+  <title id="title">Architettura daemonless di Podman</title>
+  <desc id="desc">La CLI podman avvia conmon, che a sua volta avvia crun: crun crea namespace e cgroup e lancia il processo del container. Non esiste un daemon centrale sempre acceso; le immagini e i volumi sono condivisi con Buildah e Skopeo, mentre il socket per l'API Docker resta opzionale.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .body { font: 400 18px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .box-title { font: 600 22px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .box-sub { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .chip { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .mono { font: 600 15px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="698" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">ARCHITETTURA</text>
+  <text x="56" y="100" class="title">Podman, senza daemon</text>
+  <text x="56" y="128" class="small">La CLI avvia il container e si ritira: nessun processo centrale resta in ascolto.</text>
+
+  <!-- Passaggio 1 -->
+  <rect x="56" y="164" width="236" height="160" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="80" y="196" class="label">CLI</text>
+  <text x="80" y="226" class="box-title">podman run</text>
+  <text x="80" y="258" class="box-sub">fork + exec</text>
+  <text x="80" y="282" class="box-sub">poi la CLI esce</text>
+  <text x="80" y="306" class="tiny">nessun servizio da gestire</text>
+
+  <!-- Passaggio 2 -->
+  <rect x="334" y="164" width="236" height="160" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="358" y="196" class="label">SUPERVISORE</text>
+  <text x="358" y="226" class="box-title">conmon</text>
+  <text x="358" y="258" class="box-sub">uno per container</text>
+  <text x="358" y="282" class="box-sub">stdin, stdout, log</text>
+  <text x="358" y="306" class="tiny">registra anche l'exit code</text>
+
+  <!-- Passaggio 3 -->
+  <rect x="612" y="164" width="220" height="160" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="636" y="196" class="label">RUNTIME OCI</text>
+  <text x="636" y="226" class="box-title">crun</text>
+  <text x="636" y="258" class="box-sub">namespace, cgroup</text>
+  <text x="636" y="282" class="box-sub">mount e seccomp</text>
+  <text x="636" y="306" class="tiny">runc è l'alternativa</text>
+
+  <!-- Passaggio 4 -->
+  <rect x="874" y="164" width="270" height="160" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="898" y="196" class="label">PROCESSO</text>
+  <text x="898" y="226" class="box-title">nginx</text>
+  <text x="898" y="258" class="box-sub">PID 1 nel suo namespace</text>
+  <text x="898" y="282" class="box-sub">gira anche senza CLI</text>
+  <text x="898" y="306" class="tiny">isolato dal resto dell'host</text>
+
+  <line x1="294" y1="244" x2="330" y2="244" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="572" y1="244" x2="608" y2="244" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="834" y1="244" x2="870" y2="244" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <text x="56" y="360" class="body">La CLI non resta in ascolto: conmon supervisiona il container e lo tiene vivo.</text>
+
+  <!-- Storage -->
+  <rect x="56" y="392" width="540" height="128" rx="16" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="424" class="box-title">Immagini e volumi</text>
+  <text x="80" y="450" class="box-sub">storage condiviso con Buildah e Skopeo, non con i container</text>
+  <rect x="80" y="468" width="128" height="32" rx="8" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="94" y="489" class="chip">Buildah &#183; build</text>
+  <rect x="220" y="468" width="142" height="32" rx="8" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="234" y="489" class="chip">Skopeo &#183; copia</text>
+  <rect x="374" y="468" width="198" height="32" rx="8" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="388" y="489" class="chip">Podman &#183; esecuzione</text>
+
+  <!-- API -->
+  <rect x="624" y="392" width="520" height="128" rx="16" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="648" y="424" class="box-title">API compatibile Docker</text>
+  <text x="648" y="450" class="box-sub">il socket si attiva solo quando un client lo richiede</text>
+  <text x="648" y="480" class="mono">unix:///run/podman/podman.sock</text>
+  <text x="648" y="504" class="tiny">rootless: $XDG_RUNTIME_DIR/podman/podman.sock</text>
+
+  <!-- Kernel -->
+  <rect x="56" y="552" width="1088" height="80" rx="16" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="584" class="box-title">Kernel Linux dell'host</text>
+  <text x="80" y="610" class="small">namespace, cgroup v2, nftables, seccomp, SELinux o AppArmor</text>
+  <text x="1116" y="596" class="mono" text-anchor="end">condiviso</text>
+
+  <text x="56" y="664" class="small">Un container non è una VM: è un processo isolato sopra il kernel dell'host.</text>
+  <text x="56" y="686" class="tiny">Illustrazione Adripedia &#183; concetti dalla documentazione Podman.</text>
+</svg>

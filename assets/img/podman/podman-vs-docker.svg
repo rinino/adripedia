@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-labelledby="title desc">
+  <title id="title">Docker e Podman a confronto</title>
+  <desc id="desc">Docker usa un daemon centrale, dockerd, che gira come root e resta sempre in ascolto. Podman avvia ogni container tramite conmon e crun senza un daemon centrale, gira rootless per impostazione predefinita e supporta i pod con namespace condivisi.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .panel-title { font: 700 24px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .panel-sub { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .flow-title { font: 600 19px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .flow-sub { font: 400 14px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .chip { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #1f6fb2; }
+      .stat-label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1px; }
+      .stat-value { font: 400 16px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .mono { font: 600 15px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="798" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">CONFRONTO</text>
+  <text x="56" y="100" class="title">Due modi di avviare un container</text>
+  <text x="56" y="128" class="small">Le stesse immagini OCI, ma una catena di processi diversa.</text>
+
+  <!-- Docker -->
+  <rect x="56" y="150" width="520" height="470" rx="20" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="88" y="188" class="panel-title">Docker</text>
+  <text x="88" y="212" class="panel-sub">un daemon centrale, di solito come root</text>
+
+  <rect x="96" y="228" width="440" height="56" rx="12" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="118" y="252" class="flow-title">docker CLI</text>
+  <text x="118" y="272" class="flow-sub">client</text>
+  <text x="514" y="252" class="flow-sub" text-anchor="end">comandi</text>
+
+  <rect x="96" y="302" width="440" height="56" rx="12" fill="#fdf0e8" stroke="#e8c4ad"/>
+  <text x="118" y="326" class="flow-title">dockerd</text>
+  <text x="118" y="346" class="flow-sub">daemon sempre in ascolto, root</text>
+  <text x="514" y="326" class="flow-sub" text-anchor="end">API + build</text>
+
+  <rect x="96" y="376" width="440" height="56" rx="12" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="118" y="400" class="flow-title">containerd</text>
+  <text x="118" y="420" class="flow-sub">gestione del ciclo di vita</text>
+  <text x="514" y="400" class="flow-sub" text-anchor="end">immagini</text>
+
+  <rect x="96" y="450" width="440" height="56" rx="12" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="118" y="474" class="flow-title">runc</text>
+  <text x="118" y="494" class="flow-sub">runtime OCI</text>
+  <text x="514" y="474" class="flow-sub" text-anchor="end">namespace</text>
+
+  <rect x="96" y="524" width="440" height="56" rx="12" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="118" y="548" class="flow-title">processi del container</text>
+  <text x="118" y="568" class="flow-sub">PID 1 e figli</text>
+  <text x="514" y="548" class="flow-sub" text-anchor="end">isolati</text>
+
+  <line x1="316" y1="284" x2="316" y2="300" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="316" y1="358" x2="316" y2="374" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="316" y1="432" x2="316" y2="448" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="316" y1="506" x2="316" y2="522" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Podman -->
+  <rect x="624" y="150" width="520" height="470" rx="20" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="656" y="188" class="panel-title">Podman</text>
+  <text x="656" y="212" class="panel-sub">nessun daemon centrale: ogni container ha il suo supervisore</text>
+  <rect x="1032" y="166" width="92" height="30" rx="15" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="1078" y="186" class="chip" text-anchor="middle">rootless</text>
+
+  <rect x="664" y="228" width="440" height="56" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="686" y="252" class="flow-title">podman CLI</text>
+  <text x="686" y="272" class="flow-sub">client che avvia e poi esce</text>
+  <text x="1082" y="252" class="flow-sub" text-anchor="end">comandi</text>
+
+  <rect x="664" y="302" width="440" height="56" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="686" y="326" class="flow-title">conmon</text>
+  <text x="686" y="346" class="flow-sub">un supervisore per container</text>
+  <text x="1082" y="326" class="flow-sub" text-anchor="end">log + exit code</text>
+
+  <rect x="664" y="376" width="440" height="56" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="686" y="400" class="flow-title">crun</text>
+  <text x="686" y="420" class="flow-sub">runtime OCI</text>
+  <text x="1082" y="400" class="flow-sub" text-anchor="end">namespace</text>
+
+  <rect x="664" y="450" width="440" height="56" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="686" y="474" class="flow-title">processi del container</text>
+  <text x="686" y="494" class="flow-sub">PID 1 e figli</text>
+  <text x="1082" y="474" class="flow-sub" text-anchor="end">isolati</text>
+
+  <rect x="664" y="524" width="440" height="56" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="686" y="548" class="flow-title">pod</text>
+  <text x="686" y="568" class="flow-sub">più container condividono rete, IPC e UTS</text>
+  <text x="1082" y="548" class="flow-sub" text-anchor="end">opzionale</text>
+
+  <line x1="884" y1="284" x2="884" y2="300" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="884" y1="358" x2="884" y2="374" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="884" y1="432" x2="884" y2="448" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="884" y1="506" x2="884" y2="522" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Sintesi -->
+  <rect x="56" y="644" width="1088" height="76" rx="16" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+  <text x="88" y="672" class="stat-label">DAEMON SEMPRE ACCESO</text>
+  <text x="88" y="696" class="stat-value">Docker <tspan class="mono">sì</tspan> &#183; Podman <tspan class="mono">no</tspan></text>
+  <line x1="424" y1="660" x2="424" y2="704" stroke="#e2e1dd" stroke-width="1.5"/>
+  <text x="456" y="672" class="stat-label">ROOTLESS</text>
+  <text x="456" y="696" class="stat-value">Docker <tspan class="mono">opzionale</tspan> &#183; Podman <tspan class="mono">default</tspan></text>
+  <line x1="824" y1="660" x2="824" y2="704" stroke="#e2e1dd" stroke-width="1.5"/>
+  <text x="856" y="672" class="stat-label">POD</text>
+  <text x="856" y="696" class="stat-value">Docker <tspan class="mono">no</tspan> &#183; Podman <tspan class="mono">sì</tspan></text>
+
+  <text x="56" y="756" class="small">Docker punta su un servizio centrale; Podman su processi avviati su richiesta.</text>
+  <text x="56" y="778" class="tiny">Illustrazione Adripedia &#183; concetti dalla documentazione Docker e Podman.</text>
+</svg>
