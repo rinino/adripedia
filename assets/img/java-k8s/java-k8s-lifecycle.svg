@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-labelledby="title desc">
+  <title id="title">Ciclo di vita di un Pod Java su Kubernetes</title>
+  <desc id="desc">Un Pod Java passa da startupProbe a readinessProbe, riceve traffico dal Service, continua con la livenessProbe e alla fine riceve SIGTERM. La preStop lascia tempo alla rimozione dagli endpoint, Spring Boot smette di accettare richieste e chiude il contesto entro il terminationGracePeriodSeconds.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .box-title { font: 600 21px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .box-sub { font: 400 14px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .chip { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #1f6fb2; }
+      .mono { font: 600 15px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+      .phase { font: 700 14px "Segoe UI", Arial, sans-serif; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="718" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">CICLO DI VITA</text>
+  <text x="56" y="100" class="title">Startup, traffico, spegnimento</text>
+  <text x="56" y="128" class="small">Le tre probe non sono intercambiabili. Ognuna risponde a una domanda diversa.</text>
+
+  <!-- Fase 1 -->
+  <rect x="56" y="164" width="248" height="248" rx="18" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="196" class="phase">1 · AVVIO</text>
+  <text x="80" y="228" class="box-title">startupProbe</text>
+  <text x="80" y="254" class="box-sub">La JVM parte, Spring crea il</text>
+  <text x="80" y="274" class="box-sub">contesto, Tomcat apre la porta.</text>
+  <text x="80" y="304" class="chip">/actuator/health/liveness</text>
+  <text x="80" y="332" class="tiny">Finché non passa, kubelet</text>
+  <text x="80" y="350" class="tiny">non esegue liveness né</text>
+  <text x="80" y="366" class="tiny">readiness: serve per app</text>
+  <text x="80" y="382" class="tiny">lente, senza timeout lunghi.</text>
+
+  <line x1="304" y1="270" x2="344" y2="270" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Fase 2 -->
+  <rect x="350" y="164" width="248" height="248" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="374" y="196" class="phase">2 · PRONTO</text>
+  <text x="374" y="228" class="box-title">readinessProbe</text>
+  <text x="374" y="254" class="box-sub">Il Pod entra negli endpoint del</text>
+  <text x="374" y="274" class="box-sub">Service e riceve traffico.</text>
+  <text x="374" y="304" class="chip">/actuator/health/readiness</text>
+  <text x="374" y="332" class="tiny">Se fallisce, il Pod viene tolto</text>
+  <text x="374" y="350" class="tiny">dal bilanciatore ma non ucciso.</text>
+  <text x="374" y="366" class="tiny">Qui possono entrare le dipendenze</text>
+  <text x="374" y="382" class="tiny">esterne, con cautela.</text>
+
+  <line x1="598" y1="270" x2="638" y2="270" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Fase 3 -->
+  <rect x="644" y="164" width="248" height="248" rx="18" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="668" y="196" class="phase">3 · IN SERVIZIO</text>
+  <text x="668" y="228" class="box-title">livenessProbe</text>
+  <text x="668" y="254" class="box-sub">Se fallisce, kubelet riavvia</text>
+  <text x="668" y="274" class="box-sub">il container.</text>
+  <text x="668" y="304" class="chip">/actuator/health/liveness</text>
+  <text x="668" y="332" class="tiny">Deve controllare solo lo stato</text>
+  <text x="668" y="350" class="tiny">interno della JVM: non il database,</text>
+  <text x="668" y="366" class="tiny">non la cache, non un servizio</text>
+  <text x="668" y="382" class="tiny">esterno che può recuperare.</text>
+
+  <line x1="892" y1="270" x2="932" y2="270" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Fase 4 -->
+  <rect x="938" y="164" width="206" height="248" rx="18" fill="#fdf2f0" stroke="#e8c4bd" stroke-width="2"/>
+  <text x="962" y="196" class="phase" style="fill:#c0392b;">4 · USCITA</text>
+  <text x="962" y="228" class="box-title">SIGTERM</text>
+  <text x="962" y="254" class="box-sub">Il Pod esce dagli endpoint,</text>
+  <text x="962" y="274" class="box-sub">poi arriva il segnale.</text>
+  <text x="962" y="304" class="chip">preStop: sleep 5</text>
+  <text x="962" y="332" class="tiny">Spring smette di accettare</text>
+  <text x="962" y="350" class="tiny">richieste e chiude il contesto</text>
+  <text x="962" y="366" class="tiny">entro il grace period.</text>
+  <text x="962" y="386" class="mono">exit 0</text>
+
+  <!-- Barra del tempo -->
+  <text x="56" y="444" class="label">TEMPO</text>
+  <line x1="56" y1="464" x2="1144" y2="464" stroke="#d8d7d3" stroke-width="3"/>
+
+  <rect x="56" y="482" width="320" height="24" rx="12" fill="#e2e1dd"/>
+  <text x="68" y="499" class="tiny">startup + JIT + Spring context</text>
+
+  <rect x="376" y="482" width="588" height="24" rx="12" fill="#b9d7f2"/>
+  <text x="388" y="499" class="tiny">Pod Ready: traffico dal Service</text>
+
+  <rect x="964" y="482" width="180" height="24" rx="12" fill="#e8c4bd"/>
+  <text x="976" y="499" class="tiny">draining + shutdown</text>
+
+  <text x="56" y="540" class="tiny">terminationGracePeriodSeconds: 45</text>
+  <text x="376" y="540" class="tiny">preStop 5 s + Spring graceful 20 s + margine</text>
+  <text x="964" y="540" class="tiny">SIGKILL se il tempo finisce</text>
+
+  <!-- Box in basso -->
+  <rect x="56" y="572" width="520" height="120" rx="16" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="602" class="box-title">Regola d'oro</text>
+  <text x="80" y="628" class="box-sub">La liveness non deve mai dipendere da ciò che può</text>
+  <text x="80" y="648" class="box-sub">guarire da solo. Altrimenti un database lento</text>
+  <text x="80" y="668" class="box-sub">diventa un riavvio a catena di tutti i Pod Java.</text>
+
+  <rect x="600" y="572" width="544" height="120" rx="16" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="624" y="602" class="box-title">Ordine di spegnimento</text>
+  <text x="624" y="628" class="box-sub">1. Il Pod esce dagli endpoint · 2. preStop · 3. SIGTERM</text>
+  <text x="624" y="648" class="box-sub">4. Spring chiude le connessioni · 5. il container esce</text>
+  <text x="624" y="668" class="box-sub">Se il tempo finisce, Kubernetes manda SIGKILL.</text>
+</svg>

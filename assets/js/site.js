@@ -104,6 +104,16 @@
               ]
             },
             {
+              text: "Java su Kubernetes",
+              children: [
+                { text: "Panoramica", href: "informatica/java-kubernetes/index.html#panoramica" },
+                { text: "Versioni e JVM", href: "informatica/java-kubernetes/index.html#versioni" },
+                { text: "Memoria e GC", href: "informatica/java-kubernetes/index.html#memoria" },
+                { text: "Kubernetes e Spring Boot", href: "informatica/java-kubernetes/index.html#kubernetes" },
+                { text: "Comandi e diagnostica", href: "informatica/java-kubernetes/index.html#comandi" }
+              ]
+            },
+            {
               text: "k3s",
               children: [
                 { text: "Panoramica", href: "informatica/k3s/index.html#panoramica" },

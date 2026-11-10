@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Java su Kubernetes — Adripedia</title>
+  <meta name="description" content="Java e Spring Boot su Kubernetes: versioni LTS, sizing della memoria, garbage collector, virtual threads, Dockerfile, Deployment, probe, graceful shutdown, sicurezza e diagnostica.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/java-kubernetes/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Java su Kubernetes</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Java su Kubernetes</h1>
+      <p class="lead">
+        Portare una REST API Java o Spring Boot su Kubernetes non &egrave; solo
+        &ldquo;mettere il jar in un&rsquo;immagine&rdquo;. La JVM legge i limiti
+        del container, dimensiona heap e garbage collector, parte con calma e
+        va spenta senza tagliare le richieste in corso. Questa guida mette in
+        fila le decisioni che contano: versione, memoria, GC, probe e
+        diagnostica.
+      </p>
+
+      <div class="callout">
+        <strong>Versioni documentate:</strong> Java <code>25</code> LTS come
+        scelta consigliata per le nuove applicazioni REST, con Java
+        <code>21</code> LTS ancora ottimo e Java <code>17</code> LTS in
+        manutenzione. Java <code>27</code> (15 settembre 2026) &egrave; la
+        release pi&ugrave; recente ma non &egrave; LTS. Lato framework:
+        <strong>Spring Boot 4.1.2</strong> (22 ottobre 2026), compatibile da
+        Java 17 a Java 27. Contesto Kubernetes: versione 1.37, come nella
+        <a href="../kubernetes/index.html">guida Kubernetes</a>.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei cinque tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida Java su Kubernetes">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-versioni" type="button" role="tab"
+                  aria-selected="false" aria-controls="versioni" tabindex="-1">
+            Versioni e JVM
+          </button>
+          <button class="tab" id="tab-memoria" type="button" role="tab"
+                  aria-selected="false" aria-controls="memoria" tabindex="-1">
+            Memoria e GC
+          </button>
+          <button class="tab" id="tab-kubernetes" type="button" role="tab"
+                  aria-selected="false" aria-controls="kubernetes" tabindex="-1">
+            Kubernetes e Spring Boot
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi e diagnostica
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <div class="callout feature">
+            <p class="callout-tag">In evidenza</p>
+            <h2 id="modello">Il modello mentale in quattro numeri</h2>
+            <p>
+              Per una REST API Spring Boot di dimensioni normali, il punto di
+              partenza ragionevole &egrave;: <strong>1&ndash;2 CPU</strong> e
+              <strong>1&ndash;2 GiB</strong> per Pod, heap al
+              <strong>70&ndash;75%</strong> del limite, <strong>requests uguali
+              ai limits</strong>. Da l&igrave; si misura, non si indovina.
+            </p>
+            <p class="callout-links">
+              <a href="#trappola">La trappola classica</a> &middot;
+              <a href="#requisiti">Requisiti</a> &middot;
+              <a href="#mappa">Mappa della guida</a>
+            </p>
+          </div>
+
+          <h2>Perch&eacute; Java su Kubernetes &egrave; diverso</h2>
+          <p>
+            Su una macchina virtuale la JVM &egrave; spesso l&rsquo;unico
+            inquilino: vede tutta la RAM, usa tutti i core e nessuno la uccide
+            se il processo cresce. In un container le regole cambiano. Il
+            kernel applica un limite di memoria al processo completo, non al
+            solo heap. La CPU &egrave; una quota, non un numero di core fisici.
+            Il file system pu&ograve; essere di sola lettura. Il Pod nasce,
+            riceve traffico e muore molte volte, mentre la JVM vorrebbe
+            scaldarsi con calma.
+          </p>
+          <p>
+            La JVM moderna sa leggere i limiti del container, ma solo se i
+            limiti esistono e se la versione &egrave; abbastanza recente. Da
+            l&igrave; in poi tutte le scelte si tengono: la percentuale di heap,
+            il garbage collector, il numero di thread, le probe e il tempo di
+            spegnimento. Un valore sbagliato non rompe la compilazione: si
+            manifesta in produzione come <code>OOMKilled</code>, latenza a
+            singhiozzo o un rollout che restituisce 503.
+          </p>
+          <p>
+            Questa guida parla di <strong>applicazioni REST</strong>: processi
+            che restano in piedi, servono richieste brevi e devono rispondere
+            con latenza prevedibile. I batch hanno esigenze diverse &mdash;
+            throughput, checkpoint, esecuzioni lunghe &mdash; e meritano una
+            trattazione separata.
+          </p>
+
+          <h2>Cosa cambia rispetto a una VM</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspetto</th><th>Macchina virtuale</th><th>Pod Kubernetes</th><th>Conseguenza per la JVM</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Memoria</td><td>RAM della VM, spesso tutta disponibile</td><td><code>resources.limits.memory</code> per container</td><td>L&rsquo;heap deve lasciare spazio a metaspace, stack, code cache e buffer.</td></tr>
+                <tr><td>CPU</td><td>Core fisici o vCPU</td><td>Quota e periodo cgroup, con throttling</td><td>Il numero di processori effettivi cambia il parallelism del GC e dei pool.</td></tr>
+                <tr><td>Disco</td><td>Rootfs scrivibile e persistente</td><td>Layer immutabile, spesso read-only</td><td>Log su stdout, dump e file temporanei su un volume scrivibile.</td></tr>
+                <tr><td>Rete</td><td>IP e hostname stabili</td><td>IP del Pod effimero, DNS del Service</td><td>Le dipendenze si raggiungono per nome, non per indirizzo.</td></tr>
+                <tr><td>Vita</td><td>Mesi, con manutenzione pianificata</td><td>Rollout, eviction, riavvii</td><td>Startup e shutdown fanno parte del contratto, non sono casi limite.</td></tr>
+                <tr><td>Log</td><td>File locali, rotazione a cura del sistema</td><td><code>stdout</code>/<code>stderr</code> raccolti dal runtime</td><td>Il GC log va su stdout, non in un file dentro il container.</td></tr>
+                <tr><td>Configurazione</td><td>File e variabili d&rsquo;ambiente</td><td>ConfigMap, Secret, volumi</td><td>Le modifiche non sono sempre live: spesso serve un restart.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Il confine &egrave; il cgroup</h2>
+          <p>
+            La JVM non legge &ldquo;la memoria del Pod&rdquo;: legge il limite
+            del cgroup a cui appartiene il processo. Se il limite c&rsquo;&egrave;,
+            usa quello per calcolare l&rsquo;heap massimo; se manca, vede la
+            memoria del nodo. Su un nodo da 64 GiB un container senza limiti
+            pu&ograve; ricevere una JVM che pianifica un heap enorme, e il
+            kernel la uccide alla prima crescita seria. Il flag
+            <code>-XX:+UseContainerSupport</code> &egrave; attivo per default
+            sulle versioni moderne: non va aggiunto, e soprattutto non va
+            disattivato.
+          </p>
+          <p>
+            Il default di <code>-XX:MaxRAMPercentage</code> &egrave;
+            <strong>25%</strong>. &Egrave; un valore prudente per la JVM, ma
+            quasi mai quello che vuole un&rsquo;applicazione Spring Boot, che
+            di solito pu&ograve; usare il 70&ndash;75% del limite lasciando il
+            resto al non-heap. La percentuale si applica al limite del cgroup,
+            non alle requests: le requests servono a Kubernetes per schedulare
+            e a te per capire quanto margine hai, non alla JVM per dimensionarsi.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/java-k8s/java-k8s-memory.svg"
+                 width="1200" height="760"
+                 alt="Schema della memoria di una JVM dentro un Pod Kubernetes: limite di 1 GiB, heap al 75 per cento, spazio non-heap per metaspace, code cache, stack dei thread e buffer diretti. Se l'heap occupa tutto il limite, il container viene terminato con OOMKilled.">
+            <figcaption>
+              Il limite del container vale per tutto il processo. L&rsquo;heap
+              &egrave; solo la parte pi&ugrave; visibile: metaspace, code cache,
+              stack dei thread, buffer diretti e strutture del GC vivono nello
+              stesso budget. Illustrazione Adripedia, concetti dalla
+              documentazione HotSpot e Kubernetes.
+            </figcaption>
+          </figure>
+
+          <h2 id="trappola">La trappola classica: heap uguale al limite</h2>
+          <p>
+            &Egrave; l&rsquo;errore pi&ugrave; comune, ed &egrave; comprensibile:
+            si imposta <code>-Xmx1g</code> perché il Pod ha
+            <code>limits.memory: 1Gi</code>. Sembra coerente. In realt&agrave;
+            l&rsquo;heap pu&ograve; arrivare a 1 GiB, ma il processo usa anche
+            tutto il resto: a un certo punto il kernel non ha pi&ugrave; memoria
+            da dare e termina il container con <code>SIGKILL</code>. Kubernetes
+            lo mostra come <code>OOMKilled</code>, exit code
+            <strong>137</strong>. Non c&rsquo;&egrave; heap dump, non c&rsquo;&egrave;
+            un&rsquo;eccezione Java, spesso non c&rsquo;&egrave; nemmeno un log:
+            il processo non ha avuto il tempo di scriverlo.
+          </p>
+          <pre><code># Da non fare: l'heap occupa tutto il container
+resources:
+  limits:
+    memory: 1Gi
+env:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-Xmx1g"
+
+# Meglio: percentuale sul limite, con margine per il non-heap
+env:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"</code></pre>
+          <p>
+            <code>-XX:+ExitOnOutOfMemoryError</code> non evita l&rsquo;errore,
+            ma cambia il modo in cui lo si scopre: quando la JVM lancia un
+            <code>OutOfMemoryError</code> che lei stessa ha generato, esce con
+            codice <strong>3</strong> e lascia un messaggio
+            <code>Terminating due to java.lang.OutOfMemoryError</code>. &Egrave;
+            molto meglio di un processo mezzo vivo che risponde 200 alle probe
+            e 500 alle richieste. Non copre per&ograve; tutti i casi: un
+            esaurimento di memoria diretta o l&rsquo;impossibilit&agrave; di
+            creare un thread nativo possono non passare da quel percorso.
+          </p>
+
+          <h2 id="requisiti">Quanto dare a un Pod Java</h2>
+          <p>
+            Non esiste un numero universale, ma esistono ordini di grandezza
+            utili. Una REST API Spring Boot con Tomcat, Jackson, Hibernate e
+            un pool JDBC ha bisogno di pi&ugrave; memoria di un
+            &ldquo;hello world&rdquo;. Sotto 1 GiB si entra nella zona in cui
+            il non-heap mangia il margine e i sintomi diventano difficili da
+            distinguere da un memory leak.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Profilo</th><th>CPU (request = limit)</th><th>Memoria</th><th>Heap indicativo</th><th>Quando ha senso</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Minimo di laboratorio</td><td><code>500m</code></td><td><code>512Mi</code></td><td><code>~350Mi</code></td><td>Solo demo o servizi minuscoli, senza Hibernate e con pochi thread.</td></tr>
+                <tr><td>REST piccola</td><td><code>1</code></td><td><code>1Gi</code></td><td><code>~700Mi</code></td><td>Un&rsquo;API con poche dipendenze, traffico modesto, 2&ndash;3 repliche.</td></tr>
+                <tr><td>REST standard</td><td><code>2</code></td><td><code>2Gi</code></td><td><code>~1.5Gi</code></td><td>Spring Boot con JPA, cache locale, pool JDBC e carichi variabili.</td></tr>
+                <tr><td>Servizio esigente</td><td><code>4</code></td><td><code>4&ndash;8Gi</code></td><td><code>3&ndash;6Gi</code></td><td>Molte classi, molti thread, payload grandi o latenza stretta.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La CPU conta quanto la memoria. Con un limite di
+            <code>500m</code> la JVM vede meno di un core effettivo, il GC ha
+            pochi thread e lo startup si allunga. Un Pod Java con
+            <code>1</code> CPU &egrave; accettabile per un servizio piccolo; per
+            un&rsquo;applicazione Spring Boot completa, <code>2</code> CPU
+            rendono la vita pi&ugrave; prevedibile. Se il limite CPU &egrave;
+            troppo basso, il container viene throttled e ogni picco di GC si
+            trasforma in latenza.
+          </p>
+
+          <h2 id="mappa">Mappa della guida</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tab</th><th>Cosa risolve</th><th>Da leggere se&hellip;</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><a href="#versioni">Versioni e JVM</a></td><td>Java 8, 17, 21, 25 e 27; Spring Boot; immagini e vendor.</td><td>Devi scegliere la combinazione da mettere in produzione o migrare un&rsquo;app esistente.</td></tr>
+                <tr><td><a href="#memoria">Memoria e GC</a></td><td>Heap, non-heap, G1, ZGC, virtual threads e flag di osservabilit&agrave;.</td><td>Hai gi&agrave; un Pod e vuoi evitare OOMKilled o pause imprevedibili.</td></tr>
+                <tr><td><a href="#kubernetes">Kubernetes e Spring Boot</a></td><td>Dockerfile, Deployment, probe, graceful shutdown, sicurezza e scalabilit&agrave;.</td><td>Devi scrivere o rivedere i manifest.</td></tr>
+                <tr><td><a href="#comandi">Comandi e diagnostica</a></td><td>Comandi JVM e kubectl, tabelle sintomo/causa, FAQ.</td><td>Qualcosa non funziona e serve una pista concreta.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <strong>Una nota di metodo:</strong> i numeri di questa guida sono
+            punti di partenza, non dogmi. La sequenza giusta &egrave; sempre la
+            stessa: misura il consumo reale con NMT e le metriche, confronta
+            heap e RSS, poi regola. Un flag copiato senza misurare &egrave; solo
+            una supposizione con la sintassi giusta.
+          </div>
+        </section>
+
+        <section class="tabpanel" id="versioni" role="tabpanel" aria-labelledby="tab-versioni" hidden>
+          <nav class="section-index" aria-labelledby="versioni-index-title">
+            <p class="section-index-title" id="versioni-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#cadenza">Come funziona il calendario Java</a></li>
+              <li><a href="#matrice-java">Java 8, 17, 21, 25 e 27</a></li>
+              <li><a href="#matrice-boot">Spring Boot compatibile</a></li>
+              <li><a href="#scegliere">Quale combinazione scegliere</a></li>
+              <li><a href="#installare">Installare e verificare</a></li>
+              <li><a href="#immagini">Immagini container</a></li>
+              <li><a href="#vendor">Vendor, licenze e aggiornamenti</a></li>
+            </ol>
+          </nav>
+
+          <h2 id="cadenza">Come funziona il calendario Java</h2>
+          <p>
+            Dal 2017 Java segue un ritmo di <strong>due release all&rsquo;anno</strong>,
+            a marzo e a settembre. Ogni due anni una di queste release &egrave;
+            <strong>LTS</strong> (Long-Term Support): Java 17 nel 2021, Java 21
+            nel 2023, Java 25 nel 2025. Le altre &mdash; 18, 19, 20, 22, 23,
+            24, 26, 27 &mdash; sono release <em>non-LTS</em>: utili per provare
+            le novit&agrave;, non la scelta predefinita per un servizio che deve
+            restare in produzione per anni.
+          </p>
+          <p>
+            &ldquo;LTS&rdquo; non significa per&ograve; &ldquo;supportata per
+            sempre da chiunque&rdquo;. Ogni vendor &mdash; Oracle, Eclipse
+            Adoptium, Amazon Corretto, BellSoft Liberica, Microsoft, Red Hat
+            &mdash; ha la sua finestra di supporto e le sue condizioni. La
+            versione LTS dice quando il progetto OpenJDK considera stabile una
+            linea; il vendor dice fino a quando ricevi patch di sicurezza per il
+            binario che stai usando.
+          </p>
+
+          <h2 id="matrice-java">Java 8, 17, 21, 25 e 27</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Versione</th><th>Uscita</th><th>Tipo</th><th>Container e cgroup</th><th>GC e novit&agrave;</th><th>Spring Boot</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Java 8</strong></td>
+                  <td>2014</td>
+                  <td>LTS legacy</td>
+                  <td>Cgroup v2 solo da <strong>8u372+</strong>; container support da 8u191+.</td>
+                  <td>Default Serial o Parallel secondo l&rsquo;ergonomia; G1 disponibile con <code>-XX:+UseG1GC</code>. Niente virtual threads, niente moduli.</td>
+                  <td>Solo 2.7.x; 2.7.18 &egrave; l&rsquo;ultima e non riceve pi&ugrave; patch OSS.</td>
+                </tr>
+                <tr>
+                  <td><strong>Java 11</strong></td>
+                  <td>2018</td>
+                  <td>LTS</td>
+                  <td>Cgroup v2 da <strong>11.0.16+</strong>.</td>
+                  <td>G1 default; niente virtual threads.</td>
+                  <td>Solo 2.7.x: Spring Boot 3 richiede Java 17.</td>
+                </tr>
+                <tr>
+                  <td><strong>Java 17</strong></td>
+                  <td>2021</td>
+                  <td>LTS</td>
+                  <td>Cgroup v1 e v2 supportati.</td>
+                  <td>G1 default; ZGC e Shenandoah disponibili; record e sealed class.</td>
+                  <td>Baseline di Spring Boot 3.x e 4.x.</td>
+                </tr>
+                <tr>
+                  <td><strong>Java 21</strong></td>
+                  <td>2023</td>
+                  <td>LTS</td>
+                  <td>Cgroup v1 e v2.</td>
+                  <td>Virtual threads; ZGC generazionale <em>opt-in</em>; pattern matching for switch; sequenced collections.</td>
+                  <td>Spring Boot 3.2+; ottimo con 3.5 e 4.x.</td>
+                </tr>
+                <tr>
+                  <td><strong>Java 25</strong></td>
+                  <td>settembre 2025</td>
+                  <td>LTS, consigliata</td>
+                  <td>Cgroup v1 e v2.</td>
+                  <td>ZGC generazionale default; compact object headers opt-in; virtual thread pinning risolto da JDK 24 (JEP 491).</td>
+                  <td>Spring Boot 3.5 e 4.x.</td>
+                </tr>
+                <tr>
+                  <td><strong>Java 26</strong></td>
+                  <td>marzo 2026</td>
+                  <td>Non-LTS</td>
+                  <td>Cgroup v1 e v2.</td>
+                  <td>G1 ancora default; <code>ZGenerational</code> scade e non viene pi&ugrave; riconosciuto.</td>
+                  <td>Spring Boot 4.0/4.1, ma non &egrave; una scelta da produzione.</td>
+                </tr>
+                <tr>
+                  <td><strong>Java 27</strong></td>
+                  <td>15 settembre 2026</td>
+                  <td>Non-LTS, ultima</td>
+                  <td>Cgroup v1 e v2.</td>
+                  <td>G1 default in <em>tutti</em> gli ambienti (JEP 523); compact object headers default (JEP 534); ZGC solo generazionale.</td>
+                  <td>Spring Boot 4.1.2 dichiara supporto fino a Java 27.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Due dettagli che cambiano il modo di configurare la JVM. Primo: su
+            Java 8 il garbage collector predefinito dipende dall&rsquo;ergonomia
+            &mdash; <strong>Serial</strong> su macchine client-class,
+            <strong>Parallel</strong> su quelle server-class &mdash; e non
+            &egrave; G1; per una REST con heap piccolo e latenza richiesta
+            bisogna sceglierlo esplicitamente. Secondo: da Java 24 ZGC funziona solo in
+            modalit&agrave; generazionale, e da Java 26 l&rsquo;opzione
+            <code>ZGenerational</code> &egrave; scaduta. Su Java 21 invece va
+            aggiunta esplicitamente se si vuole la modalit&agrave; generazionale.
+          </p>
+
+          <h2 id="matrice-boot">Spring Boot compatibile</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Spring Boot</th><th>Java</th><th>Framework</th><th>Supporto OSS</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>2.7.18</strong></td><td>8&ndash;21</td><td>Spring Framework 5.3</td><td>Terminato il 30 giugno 2023</td><td>Ultima linea con Java 8. Solo per migrazioni, non per nuovi progetti.</td></tr>
+                <tr><td><strong>3.5.16</strong></td><td>17&ndash;25</td><td>Spring Framework 6.2</td><td>Terminato il 30 giugno 2026</td><td>Ultima linea 3.x; chi &egrave; fermo qui deve pianificare il passaggio a 4.x.</td></tr>
+                <tr><td><strong>4.0.9</strong></td><td>17&ndash;25</td><td>Spring Framework 7.0</td><td>Fino al 31 dicembre 2026</td><td>Jakarta EE 11, Servlet 6.1, Tomcat 11 o Jetty 12.1. Undertow non &egrave; supportato.</td></tr>
+                <tr><td><strong>4.1.2</strong></td><td>17&ndash;27</td><td>Spring Framework 7.0</td><td>Fino al 31 luglio 2027</td><td>Linea corrente (22 ottobre 2026). Spring Boot 4.2 &egrave; atteso il 19 novembre 2026.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La matrice va letta in due direzioni. Spring Boot 4.1 richiede
+            almeno Java 17 e arriva fino a Java 27: non obbliga a usare
+            l&rsquo;ultima release, ma d&agrave; il permesso di farlo. Le
+            librerie di terze parti possono avere requisiti pi&ugrave; stretti:
+            la compatibilit&agrave; del framework non &egrave; la
+            compatibilit&agrave; di tutto l&rsquo;albero delle dipendenze.
+            Prima di un salto di versione, controlla driver JDBC, agenti
+            APM, Lombok, MapStruct, bytecode tool e plugin di build.
+          </p>
+
+          <h2 id="scegliere">Quale combinazione scegliere</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Scenario</th><th>Scelta consigliata</th><th>Perch&eacute;</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Nuova REST API</td><td><strong>Java 25 LTS + Spring Boot 4.1.x</strong></td><td>LTS, supporto lungo, virtual threads maturi, ZGC generazionale e compact headers disponibili.</td></tr>
+                <tr><td>Applicazione gi&agrave; su Java 21</td><td><strong>Java 21 LTS + Spring Boot 4.1.x</strong></td><td>Nessun salto obbligatorio: Java 21 &egrave; supportato. Aggiorna il framework, poi valuta Java 25 con calma.</td></tr>
+                <tr><td>Applicazione su Java 17</td><td><strong>Java 17 + Spring Boot 4.1.x</strong>, poi Java 21/25</td><td>Funziona, ma Java 17 &egrave; la baseline: il guadagno maggiore arriva da virtual threads e GC pi&ugrave; recenti.</td></tr>
+                <tr><td>Applicazione su Java 8</td><td><strong>Piano di migrazione</strong> a 17, poi 21/25</td><td>Spring Boot 2.7 &egrave; fuori supporto OSS. Restare su Java 8 &egrave; un debito di sicurezza, non una scelta neutra.</td></tr>
+                <tr><td>Applicazione su Java 11</td><td><strong>Java 17 o 21</strong> prima di Spring Boot 3</td><td>Spring Boot 3 e 4 non supportano Java 11. La migrazione a 17 &egrave; il primo passo obbligato.</td></tr>
+                <tr><td>Valutazione di Java 27</td><td><strong>Solo in staging</strong></td><td>Non &egrave; LTS. Spring Boot 4.1.2 lo supporta, ma la prossima LTS &egrave; Java 29.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Se devi scegliere oggi e non hai vincoli particolari, la risposta
+            breve &egrave; <strong>Java 25 + Spring Boot 4.1.x</strong>. Se hai
+            un&rsquo;applicazione che funziona su Java 21, non c&rsquo;&egrave;
+            fretta: aggiorna il framework, misura e programma il salto. Se sei
+            su Java 8, il problema non &egrave; quale flag di GC usare: &egrave;
+            quanto prima uscire da una linea senza patch.
+          </p>
+
+          <h2 id="installare">Installare e verificare</h2>
+          <p>
+            La verifica viene prima dell&rsquo;installazione: assicurati che il
+            binario che eseguir&agrave; in container sia quello giusto e che
+            <code>JAVA_HOME</code> non punti a una vecchia JDK. Su Windows,
+            Linux e macOS i comandi di controllo sono gli stessi.
+          </p>
+          <pre><code>java -version
+javac -version
+echo $JAVA_HOME
+
+# Cosa vede la JVM: memoria, CPU, cgroup
+java -XshowSettings:system -version
+
+# Heap, GC e flag effettivi
+java -XshowSettings:vm -version</code></pre>
+          <p>
+            Su JDK 17 e successivi <code>-XshowSettings:system</code> mostra il
+            provider cgroup, la memoria limite e la CPU effettiva. Su JDK 8 e 11
+            il flag pu&ograve; non essere disponibile: in quel caso usa
+            <code>-XshowSettings:all -version</code> e controlla comunque la
+            versione della patch, perché prima di 8u372/11.0.16 il cgroup v2
+            non viene riconosciuto.
+          </p>
+          <p>
+            Con <strong>SDKMAN!</strong> si installano pi&ugrave; versioni senza
+            toccare i pacchetti di sistema:
+          </p>
+          <pre><code>sdk list java
+sdk install java 25.0.x-tem    # sostituisci con l'ultima patch Temurin mostrata
+sdk default java 25.0.x-tem
+sdk list java | grep installed</code></pre>
+          <p>
+            Su Debian e Ubuntu il pacchetto dei repository ufficiali dipende
+            dalla release della distribuzione: per avere Java 25 su una LTS che
+            non lo include, usa il repository Adoptium o SDKMAN. Su RHEL e
+            derivate i pacchetti OpenJDK sono nella famiglia
+            <code>java-21-openjdk</code>; installa la variante
+            <code>-headless</code> sui server senza interfaccia grafica. Su
+            Windows, <code>winget search EclipseAdoptium</code> mostra i
+            pacchetti Temurin disponibili.
+          </p>
+          <pre><code># RHEL / Fedora / Rocky (esempio con Java 21)
+sudo dnf install java-21-openjdk-headless
+
+# Debian / Ubuntu, dopo aver aggiunto il repository Adoptium
+sudo apt install temurin-25-jdk
+
+# Windows
+winget search EclipseAdoptium
+winget install EclipseAdoptium.Temurin.25.JDK</code></pre>
+
+          <h2 id="immagini">Immagini container</h2>
+          <p>
+            In produzione serve un <strong>JRE</strong>, non un JDK: compiler,
+            <code>jlink</code> e strumenti di sviluppo occupano spazio e
+            superficie d&rsquo;attacco. Le immagini Temurin sono un buon default
+            per la maggior parte dei casi; Corretto e Liberica sono alternative
+            valide; le distroless riducono ulteriormente il contenuto ma
+            tolgono anche la shell e alcuni strumenti di diagnostica.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Immagine</th><th>Base</th><th>Quando usarla</th><th>Attenzione</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>eclipse-temurin:25-jre</code></td><td>Ubuntu</td><td>Default per una REST Spring Boot.</td><td>Ha shell e strumenti: comoda per diagnosticare, meno minimale.</td></tr>
+                <tr><td><code>eclipse-temurin:25-jre-alpine</code></td><td>Alpine / musl</td><td>Quando conta la dimensione.</td><td>Alcune librerie native e agenti possono richiedere glibc.</td></tr>
+                <tr><td><code>eclipse-temurin:21-jre</code></td><td>Ubuntu</td><td>Applicazioni gi&agrave; su Java 21.</td><td>Nessun problema: &egrave; una LTS supportata.</td></tr>
+                <tr><td><code>eclipse-temurin:17-jre</code></td><td>Ubuntu</td><td>Manutenzione di applicazioni esistenti.</td><td>Pianifica l&rsquo;aggiornamento a 21 o 25.</td></tr>
+                <tr><td><code>eclipse-temurin:8-jre</code></td><td>Ubuntu / Alpine</td><td>Solo eredit&agrave; da migrare.</td><td>Verifica la patch: cgroup v2 richiede 8u372+.</td></tr>
+                <tr><td><code>registry.access.redhat.com/ubi9/openjdk-21-runtime</code></td><td>UBI 9</td><td>Ambienti Red Hat / OpenShift.</td><td>Ha script di avvio e default JVM propri; leggi la documentazione.</td></tr>
+                <tr><td>Distroless Java</td><td>Debian minimale</td><td>Massima riduzione della superficie.</td><td>Niente shell: usa <code>kubectl debug</code> e la variante <code>debug</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Fissa il tag a una versione precisa o, meglio, a un digest. Evita
+            <code>latest</code>: un rebuild non controllato pu&ograve; cambiare
+            JDK, patch di sicurezza e comportamento del GC nello stesso giorno.
+            Se l&rsquo;immagine la costruisci tu, aggiungi un
+            <code>RUN java -version</code> in build: la versione finisce nei
+            log della pipeline e non devi indovinarla guardando il registry.
+          </p>
+          <pre><code>FROM eclipse-temurin:25-jre
+WORKDIR /app
+COPY build/libs/orders-api.jar app.jar
+RUN java -version
+USER 10001
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]</code></pre>
+
+          <h2 id="vendor">Vendor, licenze e aggiornamenti</h2>
+          <p>
+            Tutti i vendor che distribuiscono OpenJDK condividono lo stesso
+            codice di base, ma non lo stesso supporto. Oracle JDK richiede una
+            licenza per l&rsquo;uso commerciale in produzione; Oracle OpenJDK,
+            Temurin, Corretto, Liberica e Microsoft Build of OpenJDK sono
+            distribuzioni con licenza GPLv2 + Classpath Exception. Red Hat
+            supporta le proprie build all&rsquo;interno dell&rsquo;abbonamento
+            RHEL.
+          </p>
+          <p>
+            La regola pratica: scegli un vendor, verifica la sua finestra di
+            supporto per la LTS che usi e aggiorna le patch con regolarit&agrave;.
+            Una Java 25.0.0 di settembre 2025 non &egrave; la stessa cosa di una
+            25.0.5 di ottobre 2026: tra le due ci sono correzioni di sicurezza
+            e di stabilit&agrave;. Non serve inseguire ogni release non-LTS;
+            serve non restare fermi sulla patch iniziale di una LTS.
+          </p>
+          <div class="callout">
+            <strong>Da ricordare:</strong> la versione del linguaggio e quella
+            del runtime sono due decisioni diverse. Puoi compilare con
+            <code>--release 21</code> e girare su Java 25, oppure compilare con
+            Java 25 e girare su Java 25. Non puoi far girare su Java 21 un jar
+            compilato per Java 25. In container la regola &egrave;: il runtime
+            deve essere almeno la versione del bytecode.
+          </div>
+        </section>
+
+        <section class="tabpanel" id="memoria" role="tabpanel" aria-labelledby="tab-memoria" hidden>
+          <nav class="section-index" aria-labelledby="memoria-index-title">
+            <p class="section-index-title" id="memoria-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#cgroup">La JVM e il limite del container</a></li>
+              <li><a href="#sizing">Quanto heap, quanta riserva</a></li>
+              <li><a href="#nonheap">Cosa c&rsquo;&egrave; oltre l&rsquo;heap</a></li>
+              <li><a href="#gc">Quale garbage collector</a></li>
+              <li><a href="#g1">G1 in pratica</a></li>
+              <li><a href="#zgc">ZGC e Shenandoah</a></li>
+              <li><a href="#virtual-threads">Virtual threads</a></li>
+              <li><a href="#flag">I flag di partenza</a></li>
+              <li><a href="#osservare">Osservare memoria e GC</a></li>
+            </ol>
+          </nav>
+
+          <h2 id="cgroup">La JVM e il limite del container</h2>
+          <p>
+            La JVM calcola l&rsquo;heap massimo a partire dalla memoria che
+            riesce a vedere. Se il container ha un limite cgroup, quel limite
+            &egrave; il numero che conta; se non c&rsquo;&egrave;, la JVM usa la
+            memoria del nodo. Il flag che governa la percentuale &egrave;
+            <code>-XX:MaxRAMPercentage</code>, con default <strong>25%</strong>
+            del limite. Un&rsquo;applicazione Spring Boot che lascia il default
+            su un Pod da 1 GiB si ritrova con un heap massimo di circa 256 MiB:
+            spesso troppo poco, e il sintomo &egrave; un
+            <code>OutOfMemoryError: Java heap space</code> mentre nel container
+            ci sarebbe ancora spazio.
+          </p>
+          <p>
+            Al contrario, un heap troppo vicino al limite lascia scoperto il
+            non-heap e porta all&rsquo;<code>OOMKilled</code> del kernel. La
+            zona utile &egrave; <strong>70&ndash;75%</strong> del limite, con
+            una riserva del 25&ndash;30% per tutto il resto. Su 1 GiB conviene
+            stare intorno al 70%; su 2 GiB e oltre il 75% &egrave; spesso
+            ragionevole, perché la parte non-heap non cresce in proporzione
+            all&rsquo;heap.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Limite memoria</th><th>Heap al 70%</th><th>Heap al 75%</th><th>Riserva non-heap al 75%</th><th>Commento</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>512Mi</code></td><td>~358Mi</td><td>~384Mi</td><td>~128Mi</td><td>Zona stretta: solo servizi molto piccoli e pochi thread.</td></tr>
+                <tr><td><code>1Gi</code></td><td>~717Mi</td><td>~768Mi</td><td>~256Mi</td><td>Il 70% &egrave; pi&ugrave; prudente con Spring Boot e JPA.</td></tr>
+                <tr><td><code>2Gi</code></td><td>~1.4Gi</td><td>~1.5Gi</td><td>~512Mi</td><td>Buon punto di partenza per una REST completa.</td></tr>
+                <tr><td><code>4Gi</code></td><td>~2.8Gi</td><td>~3Gi</td><td>~1Gi</td><td>Margine comodo per metaspace, thread e buffer.</td></tr>
+                <tr><td><code>8Gi</code></td><td>~5.6Gi</td><td>~6Gi</td><td>~2Gi</td><td>Solo se l&rsquo;applicazione ha davvero bisogno di tanto heap.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La percentuale non &egrave; l&rsquo;unico modo. <code>-Xmx</code>
+            imposta un valore assoluto e ha la precedenza su
+            <code>MaxRAMPercentage</code>; <code>-XX:MaxRAM</code> cambia il
+            valore di memoria che la JVM considera disponibile. Il consiglio
+            &egrave; scegliere <em>un</em> meccanismo: o la percentuale, che si
+            adatta quando cambi il limite, o <code>-Xmx</code>, che &egrave;
+            prevedibile ma va aggiornato a mano. Mescolarli &egrave; il modo
+            pi&ugrave; rapido per ottenere un heap diverso da quello che credi.
+          </p>
+          <pre><code># Verifica il limite visto dalla JVM (dentro il container)
+java -XshowSettings:system -version
+
+# Output atteso, in sintesi:
+#   Provider: cgroupv2
+#   Effective CPU Count: 2
+#   Memory Limit: 1.00G
+
+# Se compare la memoria del nodo, il limite non c'è o non viene letto.</code></pre>
+
+          <h2 id="sizing">Quanto heap, quanta riserva</h2>
+          <p>
+            Il calcolo utile non &egrave; &ldquo;heap = limite&rdquo;, ma
+            &ldquo;heap = limite &minus; tutto il resto&rdquo;. Il
+            <em>tutto il resto</em> non &egrave; una costante: dipende dal
+            numero di classi caricate, dai thread, dai buffer diretti, dagli
+            agenti e dal GC. Per questo la prima misura va fatta, non scelta.
+            Un punto di partenza per una REST Spring Boot:
+          </p>
+          <ul>
+            <li><strong>1 GiB</strong>: <code>-XX:MaxRAMPercentage=70.0</code>, heap massimo intorno a 717 MiB.</li>
+            <li><strong>2 GiB</strong>: <code>-XX:MaxRAMPercentage=75.0</code>, heap massimo intorno a 1.5 GiB.</li>
+            <li><strong>4 GiB e oltre</strong>: <code>75.0</code>, ma controlla il non-heap reale prima di salire.</li>
+          </ul>
+          <p>
+            <code>-XX:InitialRAMPercentage</code> decide quanto heap viene
+            riservato all&rsquo;avvio. Il default &egrave; basso; impostarlo al
+            50% riduce le crescite iniziali, ma non serve a garantire la
+            latenza. <code>-XX:+AlwaysPreTouch</code> tocca tutte le pagine
+            all&rsquo;avvio: rende il consumo pi&ugrave; prevedibile, ma allunga
+            lo startup e impegna subito la memoria. In Kubernetes, dove il Pod
+            nasce e muore spesso, raramente conviene.
+          </p>
+          <div class="callout">
+            <strong>Non usare la memoria del Pod come unit&agrave; di misura
+            dell&rsquo;heap.</strong> Usa il <em>RSS</em> del processo:
+            <code>heap usato + metaspace + code cache + stack committed +
+            buffer diretti + strutture del GC + JVM interna</code>. Se l&rsquo;RSS
+            si avvicina al limite mentre l&rsquo;heap &egrave; al 60%, il
+            problema non &egrave; l&rsquo;heap.
+          </div>
+
+          <h2 id="nonheap">Cosa c&rsquo;&egrave; oltre l&rsquo;heap</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Area</th><th>Cosa contiene</th><th>Ordine di grandezza</th><th>Come cresce</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Metaspace</td><td>Metadati delle classi, bytecode, costanti</td><td>64&ndash;150 MiB per Spring Boot</td><td>Con le classi caricate; può arrivare a centinaia di MiB con molti jar.</td></tr>
+                <tr><td>Code cache</td><td>Codice macchina generato da JIT</td><td>50&ndash;100 MiB</td><td>Con il riscaldamento; si stabilizza dopo i picchi iniziali.</td></tr>
+                <tr><td>Stack dei thread</td><td>Stack di ogni thread di piattaforma</td><td>~1 MiB riservato per thread</td><td>Con il numero di thread; il commit reale dipende dalla profondità.</td></tr>
+                <tr><td>Buffer diretti</td><td><code>ByteBuffer.allocateDirect</code>, Netty, TLS</td><td>Decine di MiB</td><td>Con payload grandi e connessioni; <code>MaxDirectMemorySize</code> può limitarli.</td></tr>
+                <tr><td>Strutture del GC</td><td>Remembered set, card table, mark bitmap</td><td>5&ndash;10% dell&rsquo;heap</td><td>Con la dimensione dell&rsquo;heap e la sua frammentazione.</td></tr>
+                <tr><td>JVM interna</td><td>Thread interni, symbol table, code metadata, ZIP</td><td>Decine di MiB</td><td>Con classi, jar e thread.</td></tr>
+                <tr><td>Agenti e native</td><td>APM, profiler, librerie JNI</td><td>Variabile</td><td>Dipende dall&rsquo;agente: va misurato, non ignorato.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            I thread meritano una nota. Un pool Tomcat da 200 thread con stack
+            da 1 MiB riserva circa 200 MiB di spazio virtuale; non tutto
+            diventa RSS, ma sotto carico una parte s&igrave;. Se aggiungi un
+            pool JDBC, thread di scheduler, executor e agenti, il conto sale.
+            Con i virtual threads la storia cambia: gli stack crescono
+            nell&rsquo;heap e il numero di thread di piattaforma resta basso.
+          </p>
+
+          <h2 id="gc">Quale garbage collector</h2>
+          <p>
+            Per una REST API la domanda non &egrave; &ldquo;qual &egrave; il GC
+            migliore&rdquo;, ma &ldquo;quale compromesso tra pausa, throughput
+            e CPU&rdquo;. G1 &egrave; il default dalla JDK 9 nelle macchine
+            server e va benissimo nella maggior parte dei casi. ZGC serve quando
+            la latenza &egrave; il requisito dominante e c&rsquo;&egrave;
+            hardware da dedicargli. Parallel e Serial hanno senso in scenari
+            diversi, non in una REST con latenza stretta.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>GC</th><th>Pause tipiche</th><th>Heap</th><th>CPU</th><th>Quando usarlo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Serial</strong></td><td>Lunghe, stop-the-world</td><td>Molto piccolo</td><td>Minima</td><td>Container minuscoli, un solo core, servizi non critici.</td></tr>
+                <tr><td><strong>Parallel</strong></td><td>Lunghe, stop-the-world</td><td>Medio</td><td>Alta</td><td>Batch e throughput; non per REST con latenza.</td></tr>
+                <tr><td><strong>G1</strong></td><td>~200 ms (target)</td><td>1&ndash;32 GiB</td><td>Media</td><td>Default consigliato per REST Spring Boot.</td></tr>
+                <tr><td><strong>ZGC generazionale</strong></td><td>&lt; 1 ms</td><td>Grande, 16 GiB+</td><td>Alta</td><td>Latenza stretta, heap grandi, CPU disponibile.</td></tr>
+                <tr><td><strong>Shenandoah</strong></td><td>Basse</td><td>Medio-grande</td><td>Media</td><td>Alternativa low-pause su build OpenJDK che lo includono.</td></tr>
+                <tr><td><strong>Epsilon</strong></td><td>Nessuna</td><td>Qualsiasi</td><td>Minima</td><td>Solo test di allocazione e benchmark; non raccoglie nulla.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Il default cambia con la versione. Su Java 8 dipende
+            dall&rsquo;ergonomia: Serial o Parallel, mai G1. Da Java 9 G1
+            &egrave; il default nelle macchine server; da Java 27 G1
+            &egrave; il default in <em>tutti</em> gli ambienti, anche quelli
+            piccoli (JEP 523). Serial resta disponibile con
+            <code>-XX:+UseSerialGC</code>, ma non &egrave; ci&ograve; che vuoi
+            per un&rsquo;API che deve rispondere in pochi millisecondi.
+          </p>
+
+          <h2 id="g1">G1 in pratica</h2>
+          <p>
+            G1 divide l&rsquo;heap in region di dimensione uniforme, raccoglie
+            prima le region pi&ugrave; &ldquo;sporche&rdquo; e mira a un tempo
+            di pausa configurabile. Il target predefinito &egrave;
+            <strong>200 ms</strong> (<code>-XX:MaxGCPauseMillis=200</code>).
+            Abbassarlo non &egrave; gratis: il collector fa pi&ugrave; lavoro
+            per rispettarlo e pu&ograve; ridurre il throughput. Su una REST con
+            SLO di p99 a 300 ms, 200 ms di target &egrave; gi&agrave; un
+            obiettivo ambizioso; meglio misurare le pause reali prima di
+            toccarlo.
+          </p>
+          <ul>
+            <li>Non impostare <code>-XX:G1HeapRegionSize</code> senza motivo: G1 lo sceglie in base all&rsquo;heap.</li>
+            <li>Le allocazioni pi&ugrave; grandi del 50% di una region sono <em>humongous</em>: evitare array enormi riduce il lavoro extra.</li>
+            <li><code>-XX:InitiatingHeapOccupancyPercent</code> (default 45) decide quando parte il ciclo di marking; valori bassi anticipano il lavoro, valori alti rischiano full GC.</li>
+            <li><code>-XX:+UseStringDeduplication</code> pu&ograve; ridurre la memoria se ci sono molte stringhe duplicate, ma consuma CPU.</li>
+            <li>Un full GC in G1 &egrave; un segnale: spesso l&rsquo;heap &egrave; troppo piccolo o il carico &egrave; cambiato.</li>
+          </ul>
+          <p>
+            Se vedi pause molto pi&ugrave; lunghe del target, non &egrave;
+            automaticamente colpa del GC: può essere uno stop-the-world per
+            altro (safepoint, deoptimization, dump, I/O) o una carenza di CPU.
+            Il GC log dice quale pausa &egrave; stata e quanto &egrave; durata;
+            senza quel dato si sta guardando il sintomo sbagliato.
+          </p>
+
+          <h2 id="zgc">ZGC e Shenandoah</h2>
+          <p>
+            ZGC &egrave; un collector a bassa latenza: le sue pause sono
+            dell&rsquo;ordine del millisecondo anche con heap molto grandi. Il
+            prezzo &egrave; un maggiore consumo di CPU e di memoria nativa, e
+            una complessit&agrave; che non sempre ripaga su un Pod da 1 GiB.
+            La modalit&agrave; generazionale &egrave; disponibile come opt-in su
+            Java 21 (<code>-XX:+UseZGC -XX:+ZGenerational</code>), &egrave;
+            default da Java 23, &egrave; l&rsquo;unica modalit&agrave; da Java
+            24 e l&rsquo;opzione <code>ZGenerational</code> scade su Java 26.
+          </p>
+          <pre><code># Java 21: ZGC generazionale opt-in
+-XX:+UseZGC -XX:+ZGenerational
+
+# Java 23+: la modalità generazionale è il default di ZGC
+-XX:+UseZGC
+
+# Non aggiungere ZGenerational su Java 24+: è obsoleto e su 26 scade.</code></pre>
+          <p>
+            ZGC ha senso quando hai un heap grande (tipicamente 16 GiB o
+            pi&ugrave;), un requisito di pausa molto stretto e CPU da
+            dedicargli. Su un servizio con heap da 1&ndash;2 GiB e due core, G1
+            &egrave; quasi sempre la scelta migliore. Attenzione al budget:
+            ZGC usa memoria nativa aggiuntiva, quindi la percentuale di heap
+            va abbassata rispetto a G1 per non finire contro il limite del
+            container.
+          </p>
+          <p>
+            Shenandoah &egrave; un altro collector low-pause, disponibile nelle
+            build OpenJDK che lo includono (non in Oracle JDK). Se usi Temurin,
+            Corretto o una build Red Hat, verifica che il collector sia
+            presente con <code>java -XX:+PrintFlagsFinal -version | grep
+            UseShenandoahGC</code> prima di adottarlo.
+          </p>
+
+          <h2 id="virtual-threads">Virtual threads</h2>
+          <p>
+            Con Spring Boot 3.2+ pu&ograve; bastare una propriet&agrave; per
+            far gestire le richieste da virtual threads:
+          </p>
+          <pre><code>spring:
+  threads:
+    virtual:
+      enabled: true</code></pre>
+          <p>
+            I virtual threads sono leggeri e si creano per richiesta: non vanno
+            messi in un pool. Il guadagno si vede con molte richieste
+            concorrenti che passano il tempo ad aspettare I/O &mdash; database,
+            HTTP, code. Su Java 21 un virtual thread che entra in un blocco
+            <code>synchronized</code> pu&ograve; restare &ldquo;pinned&rdquo; al
+            thread di piattaforma; Java 24 risolve gran parte di questo
+            problema (JEP 491). Se usi Java 21, controlla driver JDBC, client
+            HTTP e librerie che usano <code>synchronized</code>.
+          </p>
+          <p>
+            Il pool JDBC resta un limite reale: mille virtual thread non
+            significano mille connessioni al database. Dimensiona HikariCP sul
+            database, non sulla concorrenza delle richieste. Un valore tipico
+            per una REST &egrave; 10&ndash;20 connessioni per replica, da
+            verificare con il carico e con il limite del server.
+          </p>
+
+          <h2 id="flag">I flag di partenza</h2>
+          <p>
+            Per Java 17, 21 e 25 il blocco seguente &egrave; un punto di
+            partenza ragionevole per una REST su un Pod da 1&ndash;2 GiB. Non
+            &egrave; una ricetta da copiare ovunque: <code>MaxRAMPercentage</code>
+            va scelto in base al limite, e il GC log su stdout va raccolto dal
+            sistema di logging.
+          </p>
+          <pre><code>JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70.0 \
+  -XX:InitialRAMPercentage=50.0 \
+  -XX:+ExitOnOutOfMemoryError \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/tmp \
+  -Xlog:gc*:stdout:time,uptime,level,tags \
+  -XX:NativeMemoryTracking=summary"</code></pre>
+          <p>
+            <code>JAVA_TOOL_OPTIONS</code> viene letto automaticamente dalla
+            JVM, anche con <code>java -jar</code>. &Egrave; comodo in
+            Kubernetes, ma stampa una riga <code>Picked up
+            JAVA_TOOL_OPTIONS</code> all&rsquo;avvio: &egrave; normale.
+            <code>JDK_JAVA_OPTIONS</code> &egrave; un&rsquo;alternativa da Java
+            9, con la stessa idea. Evita di costruire l&rsquo;<code>ENTRYPOINT</code>
+            come <code>java $JAVA_OPTS -jar</code>: nella forma exec la shell
+            non espande la variabile.
+          </p>
+          <p>
+            Su Java 8 i flag sono diversi, perché la unified logging non esiste
+            e il container support va verificato:
+          </p>
+          <pre><code>JAVA_TOOL_OPTIONS="-XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=200 \
+  -XX:MaxRAMPercentage=70.0 \
+  -XX:+ExitOnOutOfMemoryError \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/tmp \
+  -Xloggc:/tmp/gc.log \
+  -XX:+PrintGCDetails \
+  -XX:+PrintGCDateStamps \
+  -XX:+UseGCLogFileRotation \
+  -XX:NumberOfGCLogFiles=5 \
+  -XX:GCLogFileSize=10M"</code></pre>
+          <p>
+            Su Java 8 il GC log su file dentro il container va perso con il
+            Pod. Se ti serve davvero, monta un volume o usa un sidecar che
+            raccolga il file; in alternativa accetta di perdere il dettaglio e
+            usa le metriche. <code>-XX:+UseContainerSupport</code> &egrave;
+            attivo dalle 8u191, ma il cgroup v2 richiede 8u372+.
+          </p>
+
+          <h2 id="osservare">Osservare memoria e GC</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Strumento</th><th>Cosa mostra</th><th>Quando usarlo</th><th>Attenzione</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>-Xlog:gc*:stdout</code></td><td>Pause, cause, tempi, occupancy</td><td>Sempre, in produzione.</td><td>Volume di log: parti da <code>gc*</code> e filtra se serve.</td></tr>
+                <tr><td><code>-XX:NativeMemoryTracking=summary</code></td><td>Memoria nativa per categoria</td><td>Quando l&rsquo;RSS supera l&rsquo;heap.</td><td>Overhead (~5%); non lasciarlo se non serve.</td></tr>
+                <tr><td><code>jcmd &lt;pid&gt; VM.native_memory summary</code></td><td>Dettaglio NMT</td><td>Confronto heap vs RSS.</td><td>NMT deve essere attivo all&rsquo;avvio.</td></tr>
+                <tr><td><code>jcmd &lt;pid&gt; GC.heap_info</code></td><td>Heap usato, committed, region</td><td>Per capire se l&rsquo;heap &egrave; davvero pieno.</td><td>Richiede strumenti JDK nell&rsquo;immagine.</td></tr>
+                <tr><td>JFR</td><td>Allocazioni, GC, thread, I/O</td><td>Incidenti e analisi di latenza.</td><td>File su volume o stream; overhead dipende dal profilo.</td></tr>
+                <tr><td>Micrometer / Actuator</td><td><code>jvm.memory.used</code>, <code>jvm.gc.pause</code>, <code>http.server.requests</code></td><td>Dashboard e alert.</td><td>Le metriche JVM non sostituiscono il GC log.</td></tr>
+                <tr><td><code>kubectl top pod</code></td><td>RSS e CPU del Pod</td><td>Prima occhiata a un Pod sospetto.</td><td>Richiede metrics-server; non mostra il dettaglio JVM.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Un metodo semplice: prendi un Pod sotto carico rappresentativo,
+            guarda <code>jvm.memory.used</code> e il GC log per l&rsquo;heap,
+            poi confronta con il RSS di <code>kubectl top pod</code>. Se la
+            differenza &egrave; stabile e sotto il 25&ndash;30% del limite, la
+            configurazione &egrave; sana. Se il RSS cresce nel tempo mentre
+            l&rsquo;heap dopo il GC torna basso, il sospetto &egrave; una
+            perdita nativa o un agente; se l&rsquo;heap dopo il GC resta alto,
+            &egrave; una perdita di oggetti o un carico che non lascia respiro.
+          </p>
+          <div class="callout">
+            <strong>Un dump può uccidere il Pod.</strong> Un heap dump di 1 GiB
+            scritto in <code>/tmp</code> occupa spazio nel container e pu&ograve;
+            far scattare il limite di memoria o riempire il disco effimero.
+            Monta un volume con spazio sufficiente, oppure accetta il rischio
+            consapevolmente e tieni il dump piccolo.
+          </div>
+        </section>
+
+        <section class="tabpanel" id="kubernetes" role="tabpanel" aria-labelledby="tab-kubernetes" hidden>
+          <nav class="section-index" aria-labelledby="kubernetes-index-title">
+            <p class="section-index-title" id="kubernetes-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#dockerfile">Dall&rsquo;artefatto all&rsquo;immagine</a></li>
+              <li><a href="#deployment">Un Deployment completo</a></li>
+              <li><a href="#probe">Startup, readiness e liveness</a></li>
+              <li><a href="#config">Configurazione Spring Boot</a></li>
+              <li><a href="#shutdown">Spegnimento senza errori</a></li>
+              <li><a href="#risorse">Risorse, QoS e scalabilit&agrave;</a></li>
+              <li><a href="#sicurezza">Sicurezza del container</a></li>
+              <li><a href="#build">Build, registry e native image</a></li>
+              <li><a href="#checklist">Checklist prima della produzione</a></li>
+            </ol>
+          </nav>
+
+          <h2 id="dockerfile">Dall&rsquo;artefatto all&rsquo;immagine</h2>
+          <p>
+            Spring Boot produce un jar eseguibile che contiene l&rsquo;applicazione
+            e le dipendenze. Per Kubernetes serve un&rsquo;immagine piccola,
+            non-root e con i layer ordinati in modo che un cambio di codice non
+            riscarichi tutte le librerie. Il modo pi&ugrave; semplice &egrave;
+            estrarre i layer del jar con il supporto integrato di Spring Boot.
+          </p>
+          <pre><code># Prima stage: estrae i layer dal jar
+FROM eclipse-temurin:25-jre AS builder
+WORKDIR /app
+COPY build/libs/orders-api.jar app.jar
+RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
+
+# Seconda stage: immagine finale, senza JDK e senza build tools
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+COPY --from=builder --chown=10001:10001 /app/extracted/dependencies/ ./
+COPY --from=builder --chown=10001:10001 /app/extracted/spring-boot-loader/ ./
+COPY --from=builder --chown=10001:10001 /app/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=10001:10001 /app/extracted/application/ ./
+USER 10001
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]</code></pre>
+          <p>
+            <code>jarmode=tools</code> &egrave; disponibile da Spring Boot 3.3;
+            con versioni precedenti si usa <code>layertools</code>. I nomi dei
+            layer &mdash; <code>dependencies</code>,
+            <code>spring-boot-loader</code>, <code>snapshot-dependencies</code>,
+            <code>application</code> &mdash; sono quelli generati dal plugin.
+            Se il progetto usa Gradle, il jar si trova in
+            <code>build/libs/</code>; con Maven in <code>target/</code>.
+          </p>
+          <div class="callout">
+            <strong>Non copiare l&rsquo;intero progetto nell&rsquo;immagine.</strong>
+            <code>COPY . .</code> porta con s&eacute; <code>.git</code>,
+            <code>target/</code>, test e segreti locali. Copia solo il jar
+            costruito dalla pipeline, oppure usa un <code>.dockerignore</code>
+            esplicito.
+          </div>
+
+          <h2 id="deployment">Un Deployment completo</h2>
+          <p>
+            Questo manifest &egrave; un punto di partenza per una REST su un Pod
+            da 2 GiB e 2 CPU. Le richieste e i limiti sono uguali: il Pod
+            ottiene la classe <strong>Guaranteed</strong>, il che lo rende meno
+            esposto alle eviction per pressione di memoria. Le sonde usano gli
+            endpoint di Spring Boot Actuator, non una pagina generica.
+          </p>
+          <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  labels:
+    app: orders-api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: orders-api
+  template:
+    metadata:
+      labels:
+        app: orders-api
+    spec:
+      terminationGracePeriodSeconds: 45
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: registry.example.com/orders-api:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: &gt;-
+                -XX:MaxRAMPercentage=75.0
+                -XX:InitialRAMPercentage=50.0
+                -XX:+ExitOnOutOfMemoryError
+                -XX:+HeapDumpOnOutOfMemoryError
+                -XX:HeapDumpPath=/tmp
+                -Xlog:gc*:stdout:time,uptime,level,tags
+                -Djava.io.tmpdir=/tmp
+            - name: SPRING_PROFILES_ACTIVE
+              value: kubernetes
+          resources:
+            requests:
+              cpu: "2"
+              memory: "2Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 2Gi</code></pre>
+          <p>
+            Il valore <code>failureThreshold: 30</code> con
+            <code>periodSeconds: 5</code> d&agrave; alla startupProbe un budget
+            di <strong>150 secondi</strong>. &Egrave; un margine sano per una
+            JVM che parte a freddo su 2 CPU; se l&rsquo;applicazione impiega di
+            pi&ugrave;, aumenta il budget invece di allungare la liveness. La
+            liveness non deve diventare un timer di startup mascherato.
+          </p>
+
+          <h2 id="probe">Startup, readiness e liveness</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Probe</th><th>Domanda</th><th>Endpoint</th><th>Se fallisce</th><th>Consiglio</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>startupProbe</strong></td><td>La JVM e Spring hanno finito di partire?</td><td><code>/actuator/health/liveness</code></td><td>kubelet riavvia il container dopo il budget.</td><td>Solo per lo startup; budget generoso, poi si disattiva da sola.</td></tr>
+                <tr><td><strong>readinessProbe</strong></td><td>Il Pod pu&ograve; ricevere traffico?</td><td><code>/actuator/health/readiness</code></td><td>Il Pod esce dagli endpoint del Service, ma non viene ucciso.</td><td>Pu&ograve; includere dipendenze esterne, con cautela.</td></tr>
+                <tr><td><strong>livenessProbe</strong></td><td>La JVM &egrave; ancora viva e in grado di progredire?</td><td><code>/actuator/health/liveness</code></td><td>kubelet riavvia il container.</td><td>Non controllare database, cache o servizi esterni.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Spring Boot espone due gruppi separati. Il gruppo
+            <em>liveness</em> contiene <code>livenessState</code>; il gruppo
+            <em>readiness</em> contiene <code>readinessState</code>. Su
+            Kubernetes i probe sono abilitati automaticamente; fuori da
+            Kubernetes servono le propriet&agrave;
+            <code>management.endpoint.health.probes.enabled=true</code>. Se
+            aggiungi il database al gruppo readiness, ricorda che un database
+            lento fa uscire <em>tutti</em> i Pod dal Service: &egrave; una
+            scelta legittima per un servizio che non pu&ograve; funzionare
+            senza DB, ma va presa consapevolmente.
+          </p>
+          <pre><code># Solo se vuoi che la readiness dipenda anche dal database
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: readinessState,db</code></pre>
+          <p>
+            I timeout contano. Il default di <code>timeoutSeconds</code>
+            &egrave; 1 secondo: durante una pausa di GC o un picco di CPU,
+            un&rsquo;API che risponde in 1,2 secondi viene dichiarata morta.
+            Tre secondi sono un compromesso ragionevole per una REST; per
+            servizi con elaborate risposte lente, aumenta il timeout della
+            readiness e non quello della liveness.
+          </p>
+
+          <h2 id="config">Configurazione Spring Boot</h2>
+          <p>
+            Queste propriet&agrave; coprono il minimo per convivere con
+            Kubernetes: spegnimento ordinato, directory temporanea scrivibile,
+            probe e metriche. <code>/tmp</code> &egrave; montato come
+            <code>emptyDir</code>, quindi Tomcat pu&ograve; scrivere la sua
+            work directory anche con il root file system in sola lettura.
+          </p>
+          <pre><code>server:
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    basedir: /tmp/tomcat
+
+spring:
+  application:
+    name: orders-api
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true</code></pre>
+          <p>
+            <code>show-details: never</code> evita di esporre dettagli su
+            database e filesystem a chi raggiunge l&rsquo;endpoint. Se usi
+            Prometheus, aggiungi la dipendenza
+            <code>micrometer-registry-prometheus</code> e esponi
+            <code>/actuator/prometheus</code> solo sulla rete interna. Le
+            metriche JVM pi&ugrave; utili sono <code>jvm.memory.used</code>,
+            <code>jvm.memory.max</code>, <code>jvm.gc.pause</code>,
+            <code>process.cpu.usage</code> e <code>http.server.requests</code>.
+          </p>
+          <p>
+            Per la configurazione esterna, meglio i file montati da ConfigMap e
+            Secret che le variabili d&rsquo;ambiente: un file si pu&ograve;
+            leggere con <code>spring.config.import</code>, non finisce in
+            <code>ps</code> e si pu&ograve; versionare. Le variabili restano
+            comode per i flag JVM e per i valori non segreti.
+          </p>
+          <pre><code>spring:
+  config:
+    import: optional:configtree:/etc/orders-api/
+
+# Nel Pod:
+#   volumeMounts:
+#     - name: config
+#       mountPath: /etc/orders-api
+#       readOnly: true</code></pre>
+
+          <h2 id="shutdown">Spegnimento senza errori</h2>
+          <p>
+            Un rollout che sembra funzionare pu&ograve; comunque produrre 502 e
+            503: il Pod viene rimosso dagli endpoint e riceve
+            <code>SIGTERM</code> quasi nello stesso momento, ma i due eventi
+            non sono istantanei e non hanno un ordine garantito. Se la JVM
+            smette di ascoltare prima che kube-proxy e l&rsquo;ingress abbiano
+            aggiornato le regole, per qualche secondo le richieste continuano
+            ad arrivare a un processo che non risponde.
+          </p>
+          <ol>
+            <li>Kubernetes avvia la rimozione del Pod dagli endpoint del Service.</li>
+            <li>kubelet esegue il <code>preStop</code> (<code>sleep 5</code>) e solo al termine invia <code>SIGTERM</code>.</li>
+            <li>Spring Boot mette la readiness in <code>OUT_OF_SERVICE</code> e smette di accettare nuove richieste.</li>
+            <li>Le richieste in corso vengono completate entro <code>timeout-per-shutdown-phase</code>.</li>
+            <li>Il contesto si chiude, i pool vengono rilasciati, il processo esce con 0.</li>
+            <li>Se il tempo complessivo supera <code>terminationGracePeriodSeconds</code>, arriva <code>SIGKILL</code>.</li>
+          </ol>
+          <p>
+            La somma deve stare nel grace period:
+            <code>preStop + shutdown + margine &lt; terminationGracePeriodSeconds</code>.
+            Con 5 + 20 + 20 = 45 secondi il conto torna. Se hai richieste lunghe
+            o code, aumenta il grace period e il timeout di Spring; non ridurre
+            il preStop a zero solo perché &ldquo;tanto il readiness basta&rdquo;.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/java-k8s/java-k8s-lifecycle.svg"
+                 width="1200" height="720"
+                 alt="Ciclo di vita di un Pod Java: startupProbe durante l'avvio, readinessProbe per entrare nel Service, livenessProbe in servizio, poi preStop, SIGTERM, graceful shutdown di Spring Boot ed exit 0.">
+            <figcaption>
+              Le tre probe rispondono a domande diverse. La startupProbe copre
+              l&rsquo;avvio lento della JVM, la readiness governa il traffico,
+              la liveness decide il riavvio. Illustrazione Adripedia.
+            </figcaption>
+          </figure>
+
+          <h2 id="risorse">Risorse, QoS e scalabilit&agrave;</h2>
+          <p>
+            Kubernetes assegna una classe di qualit&agrave; del servizio in base
+            a requests e limits. Con requests uguali ai limits per CPU e
+            memoria, il Pod &egrave; <strong>Guaranteed</strong>; con valori
+            diversi &egrave; <strong>Burstable</strong>; senza nessun valore
+            &egrave; <strong>BestEffort</strong>. In caso di pressione sul
+            nodo, i Pod Guaranteed sono gli ultimi a essere sfrattati, ma non
+            sono immuni: un limite di memoria superato porta comunque a
+            <code>OOMKilled</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Classe</th><th>Requests / limits</th><th>Comportamento</th><th>Uso consigliato</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Guaranteed</strong></td><td>Uguali per CPU e memoria</td><td>Massima prevedibilit&agrave;; eviction pi&ugrave; tardiva.</td><td>Default per una REST Java in produzione.</td></tr>
+                <tr><td><strong>Burstable</strong></td><td>Requests minori dei limits</td><td>Pu&ograve; usare pi&ugrave; CPU, ma &egrave; soggetto a throttling e a eviction.</td><td>Solo se il carico &egrave; davvero a burst e accetti il rischio.</td></tr>
+                <tr><td><strong>BestEffort</strong></td><td>Nessun valore</td><td>Prima vittima della pressione; la JVM vede il nodo.</td><td>Da evitare per Java in produzione.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La CPU &egrave; una quota, non un numero di core. Con
+            <code>limits.cpu: 2</code> la JVM vede due processori effettivi e
+            dimensiona i thread del GC di conseguenza. Se il limite &egrave;
+            troppo basso, il throttling colpisce anche il GC e le pause
+            percepite crescono. Se non metti il limite CPU, la JVM vede tutti i
+            core del nodo e pu&ograve; generare pi&ugrave; thread del dovuto:
+            meglio un limite esplicito, o <code>-XX:ActiveProcessorCount</code>
+            se la JVM sbaglia a leggere la quota.
+          </p>
+          <p>
+            L&rsquo;autoscaling basato sulla CPU &egrave; il pi&ugrave; semplice
+            e spesso sufficiente. Quello basato sulla memoria &egrave; meno
+            affidabile per Java: l&rsquo;heap cresce e non si restringe subito
+            dopo un picco, quindi il Pod sembra &ldquo;pieno&rdquo; anche
+            quando non lo &egrave;. Se ti serve scalare su latenza o code,
+            usa metriche applicative.
+          </p>
+          <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+spec:
+  selector:
+    app: orders-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: orders-api
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: orders-api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orders-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orders-api
+  minReplicas: 3
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300</code></pre>
+          <p>
+            Con <code>maxUnavailable: 0</code> e <code>maxSurge: 1</code> il
+            rollout aggiunge un Pod alla volta e non toglie capacità prima che
+            il nuovo sia pronto. Il PodDisruptionBudget protegge dai drenaggi
+            volontari (manutenzione, upgrade del nodo), non dai crash. Con tre
+            repliche e <code>minAvailable: 2</code> si
+            perde al massimo una replica alla volta.
+          </p>
+
+          <h2 id="sicurezza">Sicurezza del container</h2>
+          <p>
+            Un&rsquo;immagine Java non ha bisogno di root, di capability o di
+            un file system scrivibile. Il manifest qui sopra applica le
+            impostazioni di base: utente non-root, nessuna escalation di
+            privilegi, root file system in sola lettura, tutte le capability
+            rimosse, profilo seccomp predefinito. Sono valori che riducono la
+            superficie senza cambiare il funzionamento dell&rsquo;applicazione,
+            a patto di montare <code>/tmp</code> e di non scrivere altrove.
+          </p>
+          <ul>
+            <li><strong>Utente non-root:</strong> <code>runAsUser: 10001</code> e <code>USER 10001</code> nell&rsquo;immagine.</li>
+            <li><strong>Root file system:</strong> <code>readOnlyRootFilesystem: true</code>; usa <code>emptyDir</code> per <code>/tmp</code>.</li>
+            <li><strong>Capability:</strong> <code>drop: ["ALL"]</code>; non servono a una JVM che ascolta su una porta alta.</li>
+            <li><strong>Seccomp:</strong> <code>RuntimeDefault</code>; non disattivarlo senza una ragione precisa.</li>
+            <li><strong>Service account:</strong> <code>automountServiceAccountToken: false</code> se l&rsquo;app non parla con l&rsquo;API Kubernetes.</li>
+            <li><strong>Immagine:</strong> pin a digest, scansione vulnerability, SBOM, base image aggiornata.</li>
+            <li><strong>Secret:</strong> montati come file, non passati in variabili d&rsquo;ambiente o in <code>JAVA_TOOL_OPTIONS</code>.</li>
+          </ul>
+          <p>
+            Se usi un agente APM o un exporter che richiede accesso a
+            <code>/proc</code>, a socket o a file di sistema, aggiungi solo
+            ci&ograve; che serve e documenta l&rsquo;eccezione. Le eccezioni
+            silenziose sono il modo pi&ugrave; comune per annullare questi
+            default.
+          </p>
+
+          <h2 id="build">Build, registry e native image</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Approccio</th><th>Comando</th><th>Vantaggi</th><th>Limiti</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Dockerfile multi-stage</td><td><code>docker build -t ...</code></td><td>Controllo completo di layer, utente e base image.</td><td>Va mantenuto; richiede un daemon o Buildah.</td></tr>
+                <tr><td>Buildpacks</td><td><code>./mvnw spring-boot:build-image</code></td><td>Base image e memory calculator gestiti; niente Dockerfile.</td><td>Meno controllo sul contenuto; dipende dal builder.</td></tr>
+                <tr><td>Jib</td><td><code>./mvnw compile jib:build</code></td><td>Reproducibile, senza daemon, layer ottimizzati.</td><td>Richiede il plugin; base image da scegliere.</td></tr>
+                <tr><td>Native image</td><td><code>./mvnw -Pnative native:compile</code></td><td>Startup molto rapido, memoria pi&ugrave; bassa.</td><td>Build lenta, riflessione e agenti da configurare; non per tutti i casi.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            I buildpack Paketo usano un <em>memory calculator</em> che
+            dimensiona l&rsquo;heap in base al limite del container: &egrave;
+            comodo, ma i valori vanno verificati, perché il calcolo non conosce
+            il tuo carico. Le immagini Red Hat con <code>run-java.sh</code>
+            possono impostare l&rsquo;heap all&rsquo;80% del limite: &egrave;
+            un default pi&ugrave; aggressivo del 70&ndash;75% consigliato qui,
+            quindi controlla prima di fidarti.
+          </p>
+          <p>
+            La native image &egrave; interessante per scale-to-zero, funzioni e
+            servizi con startup frequente. Per una REST che resta accesa, il
+            guadagno di memoria non sempre giustifica la complessit&agrave; di
+            build e di diagnostica. Se la provi, usa GraalVM 25 o successivo,
+            come richiesto da Spring Boot 4.1.
+          </p>
+
+          <h2 id="checklist">Checklist prima della produzione</h2>
+          <ul>
+            <li>JDK LTS supportato dal vendor, con patch recente; Spring Boot in una linea con supporto OSS.</li>
+            <li><code>limits.memory</code> impostato; heap al 70&ndash;75% e non uguale al limite.</li>
+            <li><code>requests</code> uguali ai <code>limits</code> per CPU e memoria (Guaranteed).</li>
+            <li>CPU sufficiente per startup e GC; niente limiti da <code>500m</code> su Spring Boot completo.</li>
+            <li><code>startupProbe</code> con budget misurato, non con un timeout arbitrario.</li>
+            <li><code>readinessProbe</code> separata dalla <code>livenessProbe</code>; la liveness non controlla il database.</li>
+            <li><code>server.shutdown=graceful</code>, <code>preStop</code> e grace period coerenti.</li>
+            <li><code>maxUnavailable: 0</code>, PDB e almeno due repliche per i servizi critici.</li>
+            <li>Root file system read-only, <code>/tmp</code> su <code>emptyDir</code>, utente non-root.</li>
+            <li>GC log su stdout, metriche Actuator, NMT attivabile per diagnosi.</li>
+            <li><code>ExitOnOutOfMemoryError</code> e heap dump con spazio sufficiente.</li>
+            <li>Rollout provato davvero: osserva 502/503, restart e tempi di startup durante un deploy.</li>
+          </ul>
+          <div class="callout">
+            <strong>Il test che vale pi&ugrave; di dieci flag:</strong> fai un
+            rollout con carico reale e guarda contemporaneamente
+            <code>kubectl get pods -w</code>, i log del GC e la latenza
+            all&rsquo;ingress. Se il deploy &egrave; pulito, i flag sono
+            coerenti; se compaiono 503, il problema &egrave; nella sequenza di
+            spegnimento o nelle probe, non nell&rsquo;heap.
+          </div>
+        </section>
+
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: jcmd, OOMKilled, probe, rollout, GC&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare le tabelle e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <nav class="section-index" aria-labelledby="comandi-index-title">
+            <p class="section-index-title" id="comandi-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#comandi-jvm">Comandi JVM nel container</a></li>
+              <li><a href="#comandi-k8s">Comandi Kubernetes</a></li>
+              <li><a href="#comandi-actuator">Actuator e metriche</a></li>
+              <li><a href="#diagnostica">Sintomo, causa, rimedio</a></li>
+              <li><a href="#faq">Domande frequenti</a></li>
+            </ol>
+          </nav>
+
+          <h2 id="comandi-jvm">Comandi JVM nel container</h2>
+          <p>
+            Molti comandi funzionano solo se l&rsquo;immagine contiene gli
+            strumenti del JDK. Con un JRE minimale o distroless, <code>jcmd</code>
+            e <code>jstat</code> possono mancare: in quel caso si usa
+            <code>kubectl debug</code> con un&rsquo;immagine di diagnostica,
+            oppure si accetta di lavorare solo con log e metriche. Il PID 1
+            dentro il container &egrave; la JVM: nei comandi sotto va indicato
+            come <code>1</code>, non come il PID visto sull&rsquo;host.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>java -XshowSettings:system -version</code></td><td>Mostra cgroup, CPU e memoria visti dalla JVM</td><td>Su JDK 8/11 pu&ograve; servire <code>-XshowSettings:all</code>.</td></tr>
+                <tr><td><code>java -XshowSettings:vm -version</code></td><td>Heap massimo e iniziale, GC scelto</td><td>Il primo controllo quando un flag sembra ignorato.</td></tr>
+                <tr><td><code>jcmd 1 VM.flags</code></td><td>Flag JVM effettivi</td><td>Conferma cosa &egrave; arrivato da <code>JAVA_TOOL_OPTIONS</code>.</td></tr>
+                <tr><td><code>jcmd 1 GC.heap_info</code></td><td>Heap usato, committed e region</td><td>Distingue &ldquo;heap pieno&rdquo; da &ldquo;RSS alto&rdquo;.</td></tr>
+                <tr><td><code>jcmd 1 VM.native_memory summary</code></td><td>Memoria nativa per categoria</td><td>Richiede <code>-XX:NativeMemoryTracking=summary</code> all&rsquo;avvio.</td></tr>
+                <tr><td><code>jcmd 1 Thread.print</code></td><td>Thread dump</td><td>Utile per blocchi, pool esauriti e virtual thread pinned.</td></tr>
+                <tr><td><code>jcmd 1 JFR.start duration=60s filename=/tmp/app.jfr</code></td><td>Registrazione JFR di 60 secondi</td><td>Scrivi su un volume se il file deve sopravvivere al Pod.</td></tr>
+                <tr><td><code>jstat -gcutil 1 1000</code></td><td>Occupazione e pause GC ogni secondo</td><td>Richiede <code>jstat</code> nell&rsquo;immagine.</td></tr>
+                <tr><td><code>jmap -histo:live 1 | head -40</code></td><td>Classi che occupano pi&ugrave; heap</td><td>Il comando pu&ograve; causare una pausa: non in produzione senza motivo.</td></tr>
+                <tr><td><code>kill -3 1</code></td><td>Thread dump su stdout</td><td>Funziona anche senza strumenti JDK, se il processo &egrave; HotSpot.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code># Esempio: capire dove è finita la memoria
+kubectl exec deploy/orders-api -- jcmd 1 VM.native_memory summary
+kubectl exec deploy/orders-api -- jcmd 1 GC.heap_info
+kubectl top pod -l app=orders-api
+
+# Thread dump senza jcmd
+kubectl exec deploy/orders-api -- kill -3 1
+kubectl logs deploy/orders-api --tail=200</code></pre>
+
+          <h2 id="comandi-k8s">Comandi Kubernetes</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>kubectl get pods -l app=orders-api -o wide</code></td><td>Stato, restart e nodo dei Pod</td><td>Guarda <code>RESTARTS</code> e <code>STATUS</code>.</td></tr>
+                <tr><td><code>kubectl describe pod &lt;pod&gt;</code></td><td>Eventi, probe, ultimo stato del container</td><td>Cerca <code>OOMKilled</code>, <code>exitCode</code> e <code>Last State</code>.</td></tr>
+                <tr><td><code>kubectl logs &lt;pod&gt; --tail=200</code></td><td>Log applicativi e GC</td><td>Il GC log su stdout finisce qui.</td></tr>
+                <tr><td><code>kubectl logs &lt;pod&gt; --previous</code></td><td>Log del container precedente</td><td>Fondamentale dopo un crash o un <code>OOMKilled</code>.</td></tr>
+                <tr><td><code>kubectl get events --sort-by=.lastTimestamp</code></td><td>Eventi del namespace in ordine</td><td>Mostra eviction, probe fallite, image pull.</td></tr>
+                <tr><td><code>kubectl top pod &lt;pod&gt;</code></td><td>CPU e memoria reali</td><td>Richiede metrics-server; utile per il confronto heap/RSS.</td></tr>
+                <tr><td><code>kubectl rollout status deploy/orders-api</code></td><td>Avanzamento del rollout</td><td>Si blocca se un Pod non diventa pronto.</td></tr>
+                <tr><td><code>kubectl rollout undo deploy/orders-api</code></td><td>Torna alla revisione precedente</td><td>Non risolve un problema di configurazione già distribuito.</td></tr>
+                <tr><td><code>kubectl rollout restart deploy/orders-api</code></td><td>Riavvia i Pod in modo controllato</td><td>Utile dopo un cambio di ConfigMap o Secret.</td></tr>
+                <tr><td><code>kubectl port-forward svc/orders-api 8080:80</code></td><td>Espone il Service in locale</td><td>Per provare Actuator senza ingress.</td></tr>
+                <tr><td><code>kubectl debug -it &lt;pod&gt; --image=busybox --target=app</code></td><td>Container effimero nel namespace del Pod</td><td>Condivide il process namespace con il container target.</td></tr>
+                <tr><td><code>kubectl exec -it deploy/orders-api -- sh</code></td><td>Shell nel container</td><td>Non funziona con distroless: usa <code>kubectl debug</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="comandi-actuator">Actuator e metriche</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa mostra</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>curl -s localhost:8080/actuator/health</code></td><td>Stato complessivo</td><td>Con <code>show-details: never</code> non espone i dettagli.</td></tr>
+                <tr><td><code>curl -s localhost:8080/actuator/health/liveness</code></td><td>Stato usato dalla livenessProbe</td><td>Deve dipendere solo dallo stato interno.</td></tr>
+                <tr><td><code>curl -s localhost:8080/actuator/health/readiness</code></td><td>Stato usato dalla readinessProbe</td><td><code>OUT_OF_SERVICE</code> durante lo shutdown.</td></tr>
+                <tr><td><code>curl -s localhost:8080/actuator/metrics/jvm.memory.used</code></td><td>Memoria JVM per area</td><td>Confronta heap, non-heap e totale.</td></tr>
+                <tr><td><code>curl -s localhost:8080/actuator/metrics/jvm.gc.pause</code></td><td>Pause del GC</td><td>Utile per correlare latenza e GC.</td></tr>
+                <tr><td><code>curl -s localhost:8080/actuator/metrics/http.server.requests</code></td><td>Richieste HTTP per stato e URI</td><td>Verifica 5xx e latenza percepita.</td></tr>
+                <tr><td><code>curl -s localhost:8080/actuator/prometheus</code></td><td>Metriche in formato Prometheus</td><td>Richiede il registry Micrometer e l&rsquo;esposizione dell&rsquo;endpoint.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="diagnostica">Sintomo, causa, rimedio</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sintomo</th><th>Causa probabile</th><th>Verifica</th><th>Rimedio</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>OOMKilled</code>, exit <code>137</code></td>
+                  <td>Heap troppo vicino al limite o crescita nativa.</td>
+                  <td><code>kubectl describe pod</code>; confronta heap e RSS con NMT.</td>
+                  <td>Abbassa <code>MaxRAMPercentage</code> a 65&ndash;70%, aumenta il limite o riduci thread e buffer.</td>
+                </tr>
+                <tr>
+                  <td>Exit <code>3</code> con <code>Terminating due to OutOfMemoryError</code></td>
+                  <td><code>ExitOnOutOfMemoryError</code> ha fermato la JVM.</td>
+                  <td><code>kubectl logs --previous</code>; cerca il tipo di OOM.</td>
+                  <td>Analizza il dump, corregge la perdita o aumenta l&rsquo;heap. Il riavvio &egrave; voluto.</td>
+                </tr>
+                <tr>
+                  <td><code>CrashLoopBackOff</code> e startup lenta</td>
+                  <td>startupProbe troppo stretta o CPU insufficiente.</td>
+                  <td>Tempo di startup nei log; eventi di probe failed.</td>
+                  <td>Aumenta <code>failureThreshold</code> o <code>periodSeconds</code>; dai pi&ugrave; CPU all&rsquo;avvio.</td>
+                </tr>
+                <tr>
+                  <td>503 durante il rollout</td>
+                  <td>Pod rimosso dagli endpoint mentre la JVM smette di ascoltare.</td>
+                  <td>Correla gli errori con <code>kubectl get pods -w</code>.</td>
+                  <td>Aggiungi <code>preStop</code>, <code>server.shutdown=graceful</code> e grace period adeguato.</td>
+                </tr>
+                <tr>
+                  <td>Riavvii sotto carico</td>
+                  <td>livenessProbe troppo aggressiva o timeout di 1 s durante il GC.</td>
+                  <td>Pause del GC e eventi di liveness failed.</td>
+                  <td>Alza <code>timeoutSeconds</code> a 3, riduci il carico sul GC, separa liveness e readiness.</td>
+                </tr>
+                <tr>
+                  <td>Latenza a singhiozzo e CPU al 100%</td>
+                  <td>CPU limit troppo basso: throttling.</td>
+                  <td>Metriche <code>container_cpu_cfs_throttled_periods_total</code>.</td>
+                  <td>Aumenta il limite CPU o riduci il numero di thread; verifica il GC.</td>
+                </tr>
+                <tr>
+                  <td>La JVM vede tutta la memoria del nodo</td>
+                  <td>Limite assente, cgroup v2 non riconosciuto o JDK troppo vecchio.</td>
+                  <td><code>java -XshowSettings:system -version</code>.</td>
+                  <td>Imposta <code>limits.memory</code>; aggiorna a 8u372+/11.0.16+; non disattivare <code>UseContainerSupport</code>.</td>
+                </tr>
+                <tr>
+                  <td>Readiness sempre <code>DOWN</code></td>
+                  <td>Il gruppo readiness include un database irraggiungibile.</td>
+                  <td><code>curl /actuator/health/readiness</code> e log del DB.</td>
+                  <td>Togli il DB dalla readiness o accetta che il servizio sia fuori servizio senza di esso.</td>
+                </tr>
+                <tr>
+                  <td><code>UnknownHostException</code> o DNS lento</td>
+                  <td><code>ndots:5</code> e ricerca dei nomi di servizio.</td>
+                  <td>Tempo di risoluzione e configurazione <code>dnsConfig</code>.</td>
+                  <td>Imposta <code>ndots:2</code> nel Pod; usa il nome completo del Service se serve.</td>
+                </tr>
+                <tr>
+                  <td>Heap dump assente dopo un OOM</td>
+                  <td>Percorso non scrivibile o spazio esaurito.</td>
+                  <td>Log della JVM; <code>df -h /tmp</code> nel container.</td>
+                  <td>Monta un volume con spazio, verifica i permessi e il flag <code>HeapDumpPath</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="faq">Domande frequenti</h2>
+
+          <h3>Devo usare <code>-Xmx</code> o <code>MaxRAMPercentage</code>?</h3>
+          <p>
+            Per un Pod che pu&ograve; cambiare limite, la percentuale &egrave;
+            pi&ugrave; comoda. Per un servizio con memoria fissa e un carico
+            molto prevedibile, <code>-Xmx</code> &egrave; pi&ugrave; esplicito.
+            Non usare entrambi: <code>-Xmx</code> vince e la percentuale
+            diventa un&rsquo;illusione.
+          </p>
+
+          <h3>Il 75% del limite &egrave; sempre giusto?</h3>
+          <p>
+            No. &Egrave; un punto di partenza. Su 1 GiB con Spring Boot, JPA e
+            molti thread, il 70% &egrave; spesso pi&ugrave; sicuro; su heap
+            grandi e non-heap stabile, il 75% va bene. La risposta vera la
+            danno RSS e NMT.
+          </p>
+
+          <h3>Perch&eacute; il Pod viene ucciso se l&rsquo;heap non &egrave; pieno?</h3>
+          <p>
+            Perch&eacute; il limite del container comprende tutto il processo.
+            Metaspace, code cache, stack, buffer diretti e memoria nativa
+            possono superare il 25% lasciato libero. Non &egrave; un problema
+            di heap: &egrave; un problema di budget complessivo.
+          </p>
+
+          <h3>G1 o ZGC per una REST?</h3>
+          <p>
+            G1 &egrave; il default e va bene nella maggior parte dei casi. ZGC
+            ha senso con heap grandi, latenza molto stretta e CPU disponibile.
+            Su un Pod da 1&ndash;2 GiB, ZGC raramente ripaga.
+          </p>
+
+          <h3>I virtual threads eliminano il pool JDBC?</h3>
+          <p>
+            No. I virtual threads rendono economico attendere, ma il database
+            ha un limite di connessioni reale. HikariCP va dimensionato sul
+            database, non sul numero di richieste concorrenti.
+          </p>
+
+          <h3>Posso usare Java 27 in produzione?</h3>
+          <p>
+            Puoi, ma non &egrave; LTS. Spring Boot 4.1.2 lo supporta; se ti
+            serve stabilit&agrave; a lungo termine, Java 25 &egrave; la scelta
+            pi&ugrave; prudente. Usa Java 27 in staging per verificare librerie
+            e agenti in vista della prossima LTS.
+          </p>
+
+          <h3>Meglio un JRE o un JDK nell&rsquo;immagine?</h3>
+          <p>
+            JRE per la produzione, JDK solo se ti servono strumenti di
+            diagnostica o la compilazione a runtime. In alternativa, usa
+            un&rsquo;immagine di debug separata per <code>kubectl debug</code>.
+          </p>
+
+          <h3>Il GC log su stdout non &egrave; troppo rumoroso?</h3>
+          <p>
+            Dipende dal traffico e dal livello di log. <code>gc*</code> &egrave;
+            dettagliato; se il volume &egrave; eccessivo, parti da
+            <code>gc</code> o <code>gc+heap=info</code> e aumenta solo quando
+            indaghi. Un GC log assente &egrave; peggio di uno rumoroso.
+          </p>
+
+          <h3>Come verifico che i flag siano davvero attivi?</h3>
+          <p>
+            <code>java -XshowSettings:vm -version</code> e
+            <code>jcmd 1 VM.flags</code>. Se un flag non compare, controlla
+            l&rsquo;ordine: un <code>-Xmx</code> esplicito pu&ograve; avere la
+            precedenza su una percentuale, e un flag duplicato pu&ograve;
+            essere stato sovrascritto.
+          </p>
+
+          <div class="callout">
+            <strong>Una nota di metodo:</strong> la diagnostica Java su
+            Kubernetes &egrave; soprattutto una questione di contesto. Prima di
+            cambiare un flag, rispondi a tre domande: il Pod &egrave; stato
+            ucciso dal kernel o dalla JVM? Il problema &egrave; l&rsquo;heap o
+            il processo intero? Il comportamento cambia durante il rollout o
+            sotto carico? Le risposte stanno in <code>describe</code>, nei log
+            del GC e nelle metriche, non nel flag successivo.
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

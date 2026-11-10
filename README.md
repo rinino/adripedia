@@ -6,8 +6,9 @@ La gerarchia è **area → sezione → pagine**. Le prime due aree sono
 **Informatica** (che contiene le sezioni **OpenCode**, V2, versione `2.2.5`,
 **Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Podman**, versione
 `6.1.4`, **Buildah**, versione `1.46.0`, **Kubernetes**, versione `1.37`,
-**k3s**, versione `1.37.2+k3s1`, **k9s**, versione `0.51.0`, e **WSL**,
-versione `3.0.3`) e **Link** (collegamenti esterni).
+**Java su Kubernetes**, con Java `25` LTS e Spring Boot `4.1.2`, **k3s**,
+versione `1.37.2+k3s1`, **k9s**, versione `0.51.0`, e **WSL**, versione
+`3.0.3`) e **Link** (collegamenti esterni).
 
 ## Struttura
 
@@ -26,6 +27,8 @@ adripedia/
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, configurazione, approfondimenti
 │  ├─ kubernetes/             # sezione Kubernetes
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti, CKA
+│  ├─ java-kubernetes/        # sezione Java su Kubernetes
+│  │  └─ index.html           # pagina unica a tab: panoramica, versioni e JVM, memoria e GC, Kubernetes e Spring Boot, comandi e diagnostica
 │  ├─ k3s/                    # sezione k3s
 │  │  └─ index.html           # pagina unica a tab: panoramica, installazione, comandi, approfondimenti
 │  ├─ k9s/                    # sezione k9s
@@ -56,6 +59,7 @@ adripedia/
 │     ├─ k3s/                 # due diagrammi ufficiali dell'architettura k3s
 │     ├─ k9s/                 # tre screenshot ufficiali di k9s
 │     ├─ kubernetes/          # cinque diagrammi originali della sezione Kubernetes
+│     ├─ java-k8s/            # due diagrammi originali della sezione Java su Kubernetes
 │     └─ wsl/                 # diagramma dell'architettura WSL 2
 ├─ .nojekyll                  # GitHub Pages: non processare con Jekyll
 └─ README.md
@@ -91,10 +95,13 @@ Poi visita <http://localhost:8000>.
 
 ## Pagine a tab
 
-Le sezioni Git, Docker, Podman, Buildah, Kubernetes e WSL usano una pagina unica
-con tab riutilizzabili. Anche le sezioni k3s e k9s usano lo stesso schema: k3s
-&egrave; completa con quattro tab, k9s con cinque. Podman e Buildah ne hanno
-cinque: panoramica, installazione, comandi, configurazione e approfondimenti.
+Le sezioni Git, Docker, Podman, Buildah, Kubernetes, Java su Kubernetes e WSL
+usano una pagina unica con tab riutilizzabili. Anche le sezioni k3s e k9s usano
+lo stesso schema: k3s &egrave; completa con quattro tab, k9s con cinque. Podman e
+Buildah ne hanno cinque: panoramica, installazione, comandi, configurazione e
+approfondimenti. Java su Kubernetes segue lo stesso formato, con tab dedicati a
+panoramica, versioni della JVM, memoria e GC, manifest e Spring Boot, comandi e
+diagnostica.
 
 ```html
 <div class="tabs" data-tabs>
@@ -114,7 +121,8 @@ supporta le frecce e Home/End e apre il tab indicato dall'hash (`#due`). Senza
 JavaScript tutti i pannelli restano visibili. Per aggiungere un tab basta un
 pulsante con `aria-controls` uguale all'`id` del pannello.
 
-Il tab **Comandi** delle pagine Git, Docker, Podman, Buildah, Kubernetes e WSL ha in più una ricerca
+Il tab **Comandi** delle pagine Git, Docker, Podman, Buildah, Kubernetes, Java su
+Kubernetes e WSL ha in più una ricerca
 (`#cmd-search-input`) che indicizza le righe delle tabelle e dei blocchi di
 codice del pannello: scrivendo si filtrano i comandi, con frecce e Invio
 oppure con il mouse si
@@ -196,7 +204,8 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
 - Le pagine a tab mostrano tutti i pannelli quando JavaScript è disattivato.
 - I contenuti sono in italiano e allineati alla documentazione ufficiale
   OpenCode V2, Git 2.56.0, Docker 29.9.3, Podman 6.1.4, Buildah 1.46.0,
-  Kubernetes 1.37, k3s 1.37.2+k3s1, k9s 0.51.0 e WSL 3.0.3.
+  Kubernetes 1.37, Java 25 LTS con Spring Boot 4.1.2, k3s 1.37.2+k3s1,
+  k9s 0.51.0 e WSL 3.0.3.
 
 ## Immagini della sezione Docker
 
@@ -300,3 +309,19 @@ riprendono concetti dalla documentazione Kubernetes:
 I disegni non usano loghi o marchi Kubernetes. Le didascalie nelle pagine
 riportano la fonte concettuale; se sostituisci un'immagine, aggiorna anche la
 didascalia.
+
+## Immagini della sezione Java su Kubernetes
+
+I due diagrammi in `assets/img/java-k8s/` sono originali di Adripedia e
+riprendono concetti dalla documentazione HotSpot, Spring Boot e Kubernetes:
+
+- `java-k8s-memory.svg`: Pod con limite di 1 GiB, heap della JVM al 75%,
+  spazio non-heap per metaspace, code cache, stack e buffer diretti, con
+  l'errore classico di `-Xmx` uguale al limite del container.
+- `java-k8s-lifecycle.svg`: ciclo di vita del Pod, dalla startupProbe alla
+  readiness, dalla liveness al `preStop`, al `SIGTERM` e al graceful shutdown di
+  Spring Boot.
+
+I disegni non usano immagini o marchi delle rispettive aziende. Le didascalie
+nelle pagine riportano la fonte concettuale; se sostituisci un'immagine, aggiorna
+anche la didascalia.
