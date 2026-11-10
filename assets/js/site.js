@@ -84,6 +84,16 @@
               ]
             },
             {
+              text: "Buildah",
+              children: [
+                { text: "Panoramica", href: "informatica/buildah/index.html#panoramica" },
+                { text: "Installazione", href: "informatica/buildah/index.html#installazione" },
+                { text: "Comandi", href: "informatica/buildah/index.html#comandi" },
+                { text: "Configurazione", href: "informatica/buildah/index.html#configurazione" },
+                { text: "Approfondimenti", href: "informatica/buildah/index.html#approfondimenti" }
+              ]
+            },
+            {
               text: "Kubernetes",
               children: [
                 { text: "Panoramica", href: "informatica/kubernetes/index.html#panoramica" },

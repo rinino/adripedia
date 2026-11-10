@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buildah — Adripedia</title>
+  <meta name="description" content="Buildah: guida completa allo strumento daemonless per costruire immagini OCI. Panoramica, installazione, comandi con ricerca, configurazione, build da zero e con Containerfile, rootless e confronto con Podman e Docker.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+  <noscript>
+    <style>
+      .tabpanel[hidden] { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body data-root="../.." data-page="informatica/buildah/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Buildah</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Buildah</h1>
+      <p class="lead">
+        Buildah costruisce immagini OCI senza daemon e senza obbligarti a un
+        Dockerfile: pu&ograve; partire da una ricetta oppure assemblare
+        l'immagine un comando alla volta. La guida spiega a cosa serve, come si
+        usa e dove si colloca rispetto a Podman e Docker.
+      </p>
+
+      <div class="callout">
+        <strong>Versione documentata:</strong> Buildah <code>1.46.0</code>
+        (21 ottobre 2026), licenza Apache 2.0. Fa parte del progetto
+        <strong>CNCF Sandbox &ldquo;Podman Container Tools&rdquo;</strong>
+        insieme a Podman e Skopeo. Podman 6.1.x include Buildah 1.45.x; la 1.46
+        &egrave; la release standalone pi&ugrave; recente. Per il contesto
+        completo sui container restano disponibili le guide
+        <a href="../podman/index.html">Podman</a> e
+        <a href="../docker/index.html">Docker</a>.
+      </div>
+
+      <div class="tabs" data-tabs>
+        <noscript>
+          <p class="callout">
+            JavaScript &egrave; disattivato: i contenuti dei cinque tab sono
+            mostrati uno dopo l'altro.
+          </p>
+        </noscript>
+
+        <div class="tablist" role="tablist" aria-label="Contenuti della guida Buildah">
+          <button class="tab" id="tab-panoramica" type="button" role="tab"
+                  aria-selected="true" aria-controls="panoramica" tabindex="0">
+            Panoramica
+          </button>
+          <button class="tab" id="tab-installazione" type="button" role="tab"
+                  aria-selected="false" aria-controls="installazione" tabindex="-1">
+            Installazione
+          </button>
+          <button class="tab" id="tab-comandi" type="button" role="tab"
+                  aria-selected="false" aria-controls="comandi" tabindex="-1">
+            Comandi
+          </button>
+          <button class="tab" id="tab-configurazione" type="button" role="tab"
+                  aria-selected="false" aria-controls="configurazione" tabindex="-1">
+            Configurazione
+          </button>
+          <button class="tab" id="tab-approfondimenti" type="button" role="tab"
+                  aria-selected="false" aria-controls="approfondimenti" tabindex="-1">
+            Approfondimenti
+          </button>
+        </div>
+
+        <!-- ================================================================
+             Panoramica
+             ================================================================ -->
+        <section class="tabpanel" id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica">
+          <h2>Che cos'&egrave; Buildah</h2>
+          <p>
+            Buildah &egrave; uno <strong>strumento a riga di comando</strong>
+            che costruisce immagini nel formato <strong>OCI</strong> (e, se
+            serve, nel formato Docker). Non &egrave; un motore che tiene in vita
+            i container: &egrave; il laboratorio in cui l'immagine viene
+            preparata. Crea un <em>container di lavoro</em>, ci installa
+            pacchetti, copia file, imposta ambiente, comando di avvio e porte,
+            poi lo chiude dentro un'immagine con <code>buildah commit</code>.
+          </p>
+          <p>
+            La cosa che lo distingue da <code>docker build</code> &egrave; che
+            non ha bisogno di un daemon: ogni comando &egrave; un processo che
+            parte, compie il suo lavoro e termina. E non ha bisogno nemmeno di
+            un Dockerfile. Puoi usare un <code>Containerfile</code> quando la
+            ricetta &egrave; stabile, oppure concatenare i comandi
+            <code>from</code>, <code>run</code>, <code>copy</code>,
+            <code>config</code> e <code>commit</code> quando vuoi costruire
+            l'immagine da uno script, da un linguaggio di programmazione o da
+            una pipeline.
+          </p>
+          <p>
+            Buildah nasce nello stesso ecosistema di Podman e Skopeo e con loro
+            condivide le librerie di <code>containers/storage</code> e
+            <code>containers/image</code>. Le immagini prodotte non sono
+            &ldquo;immagini Buildah&rdquo;: sono immagini OCI standard, che
+            Podman, Docker, Kubernetes e qualsiasi registry accettano senza
+            conversioni.
+          </p>
+
+          <figure class="figure">
+            <img src="../../assets/img/buildah/buildah-workflow.svg"
+                 width="1200" height="780"
+                 alt="Schema del flusso di lavoro di Buildah: da un Containerfile o da una sequenza di comandi a un container di lavoro, poi a un'immagine OCI nello storage, fino al registry o a Podman.">
+            <figcaption>
+              Buildah legge una ricetta oppure esegue comandi espliciti, crea un
+              container di lavoro, lo configura e produce un'immagine nello
+              storage locale. Nessun daemon resta acceso. Illustrazione
+              Adripedia, concetti dalla documentazione Buildah.
+            </figcaption>
+          </figure>
+
+          <h2>Perch&eacute; esiste</h2>
+          <p>
+            Costruire un'immagine e eseguirla sono due problemi diversi. Docker
+            li ha messi nello stesso prodotto, con un daemon che fa entrambe le
+            cose. Buildah separa il primo problema e lo espone come una
+            collezione di comandi elementari, nello spirito delle
+            <em>coreutils</em> di Unix. Da qui derivano i suoi vantaggi concreti:
+          </p>
+          <ul>
+            <li><strong>niente daemon</strong>: non c'&egrave; un servizio da
+              avviare, aggiornare o proteggere; ogni build &egrave; un processo
+              isolato;</li>
+            <li><strong>rootless</strong>: un utente normale pu&ograve;
+              costruire immagini usando i namespace utente, senza
+              <code>sudo</code>;</li>
+            <li><strong>scriptabile</strong>: le stesse operazioni di un
+              Dockerfile sono disponibili come comandi, quindi pu&ograve;
+              essere chiamato da bash, Python, Go o da un job di CI;</li>
+            <li><strong>immagini minime</strong>: puoi partire da
+              <code>scratch</code> e aggiungere solo ci&ograve; che serve;</li>
+            <li><strong>nessun Docker-in-Docker</strong>: in CI si costruisce
+              direttamente sull'host Linux o dentro un container dedicato.</li>
+          </ul>
+          <p>
+            Podman, a sua volta, usa l'API Go di Buildah per implementare
+            <code>podman build</code>. Quindi quando costruisci con Podman stai
+            gi&agrave; usando il motore di Buildah, anche se il comando si
+            chiama diversamente.
+          </p>
+
+          <h2>Cosa fa e cosa non fa</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Attivit&agrave;</th><th>Buildah</th><th>Podman</th><th>Docker</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Costruire un'immagine da Containerfile</td><td>S&igrave;, con <code>buildah build</code></td><td>S&igrave;, con <code>podman build</code></td><td>S&igrave;, con <code>docker build</code></td></tr>
+                <tr><td>Costruire senza file di ricetta</td><td>S&igrave;, con i comandi espliciti</td><td>No, serve un Containerfile</td><td>No, serve un Dockerfile</td></tr>
+                <tr><td>Eseguire un servizio di lunga durata</td><td>No: <code>run</code> serve per il <code>RUN</code></td><td>S&igrave;</td><td>S&igrave;</td></tr>
+                <tr><td>Gestire pod e manifest Kubernetes</td><td>Solo manifest di immagini</td><td>S&igrave;, con <code>kube play</code></td><td>No, non &egrave; il suo scopo</td></tr>
+                <tr><td>Pubblicare su un registry</td><td>S&igrave;, con <code>push</code> e <code>manifest push</code></td><td>S&igrave;</td><td>S&igrave;</td></tr>
+                <tr><td>Montare il rootfs per modificarlo</td><td>S&igrave;, con <code>mount</code></td><td>S&igrave;, ma non &egrave; il flusso tipico</td><td>No, non &egrave; esposto cos&igrave;</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>L'architettura in breve</h2>
+          <p>
+            Buildah &egrave; un binario Go che parla direttamente con
+            <code>containers/storage</code> per i file system e con
+            <code>containers/image</code> per i formati e i registry. Per le
+            istruzioni che devono eseguire un processo, come <code>RUN</code>,
+            chiama un runtime OCI, di solito <code>runc</code> o
+            <code>crun</code>. Il modello &egrave; <em>fork-exec</em>: il
+            comando che digiti &egrave; il processo che coordina il lavoro, e
+            quando ha finito esce.
+          </p>
+          <p>
+            Un <strong>container di lavoro</strong> non &egrave; un container
+            che resta in esecuzione. &Egrave; un rootfs salvato nello storage,
+            con una configurazione associata: lo vedi con
+            <code>buildah containers</code>, puoi montarlo con
+            <code>buildah mount</code> e lo trasformi in immagine con
+            <code>buildah commit</code>. I container di lavoro di Buildah non
+            compaiono in <code>podman ps</code>, e i container di Podman non
+            compaiono in <code>buildah containers</code>. Le immagini, invece,
+            sono condivise: ci&ograve; che Buildah scrive nello storage lo vede
+            anche Podman.
+          </p>
+
+          <h2>Buildah e Podman: chi fa cosa</h2>
+          <p>
+            La divisione &egrave; semplice: <strong>Buildah costruisce</strong>,
+            <strong>Podman esegue e gestisce</strong>. Podman incorpora il
+            codice di Buildah per <code>podman build</code>, quindi le due
+            strade producono lo stesso tipo di immagine. La differenza pratica
+            &egrave; l'interfaccia: Buildah espone i singoli passaggi della
+            build, Podman espone il ciclo di vita dei container.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspetto</th><th>Buildah</th><th>Podman</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Scopo principale</td><td>Costruire e manipolare immagini</td><td>Eseguire e gestire container, pod e immagini</td></tr>
+                <tr><td>Daemon</td><td>Nessuno</td><td>Nessuno</td></tr>
+                <tr><td>Container di lavoro</td><td>S&igrave;, temporanei, visibili con <code>buildah containers</code></td><td>No: i container sono servizi, visibili con <code>podman ps</code></td></tr>
+                <tr><td>Build da Containerfile</td><td><code>buildah build</code></td><td><code>podman build</code>, che usa Buildah</td></tr>
+                <tr><td>Build senza Containerfile</td><td>S&igrave;</td><td>No</td></tr>
+                <tr><td>Storage delle immagini</td><td><code>containers/storage</code></td><td><code>containers/storage</code></td></tr>
+                <tr><td>Comando tipico</td><td><code>buildah commit</code></td><td><code>podman run</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Quando scegliere Buildah</h2>
+          <p>
+            Buildah d&agrave; il meglio di s&eacute; quando la build &egrave;
+            parte di un'automazione o quando serve un controllo fine su ci&ograve;
+            che finisce nell'immagine:
+          </p>
+          <ul>
+            <li>pipeline CI che non vogliono un daemon n&eacute; privilegi di root;</li>
+            <li>immagini minime, costruite da <code>scratch</code> o da una base
+              ridotta, con pochi pacchetti e nessun residuo di build;</li>
+            <li>build generate da uno script, con parametri calcolati a runtime;</li>
+            <li>immagini multi-architettura raccolte in un manifest list;</li>
+            <li>ambienti Kubernetes in cui non si vuole esporre il socket di
+              Docker;</li>
+            <li>debug di un Dockerfile: eseguire le istruzioni una alla volta
+              rende visibile ci&ograve; che il file nasconde.</li>
+          </ul>
+          <p>
+            Non &egrave; invece lo strumento giusto per gestire i container di
+            tutti i giorni, per Docker Compose o per chi vuole un'interfaccia
+            grafica: in quei casi servono Podman, Podman Desktop o Docker.
+          </p>
+
+          <h2>Requisiti e versioni</h2>
+          <p>
+            Buildah gira <strong>solo su Linux</strong>. Non esiste un binario
+            nativo per Windows o macOS: in quei sistemi si usa una macchina
+            Linux, una distribuzione WSL 2 oppure un container Linux. Sul kernel
+            servono il supporto a <strong>overlayfs</strong> (oppure
+            <code>fuse-overlayfs</code>), i <strong>namespace</strong> e un
+            runtime OCI come <code>runc</code> o <code>crun</code>. Per
+            l'uso rootless servono <code>/etc/subuid</code>,
+            <code>/etc/subgid</code> e i helper <code>newuidmap</code> e
+            <code>newgidmap</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Versione</th><th>Data</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Buildah 1.46.0</td><td>21 ottobre 2026</td><td>Release stabile documentata qui. Richiede containers/storage 1.64, containers/image 5.41 e containers/common 0.69.</td></tr>
+                <tr><td>Buildah 1.45.2</td><td>12 ottobre 2026</td><td>Serie inclusa in Podman 6.1.x.</td></tr>
+                <tr><td>Buildah 1.44.0</td><td>27 maggio 2026</td><td>Serie richiesta da Podman 6.0.</td></tr>
+                <tr><td>Buildah 1.43.x</td><td>2026</td><td>Serie precedente, ancora presente in alcune distribuzioni.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Le versioni nei repository delle distribuzioni spesso arrivano con
+            mesi di ritardo rispetto a monte. Prima di seguire un esempio,
+            controlla <code>buildah --version</code>: un flag pu&ograve; non
+            esistere ancora, oppure comportarsi diversamente.
+          </p>
+        </section>
+
+        <!-- ================================================================
+             Installazione
+             ================================================================ -->
+        <section class="tabpanel" id="installazione" role="tabpanel" aria-labelledby="tab-installazione" hidden>
+          <h2>Installazione su Linux</h2>
+          <p>
+            Buildah &egrave; pacchettizzato nelle principali distribuzioni. La
+            versione disponibile dipende dal repository: su Fedora e Arch
+            &egrave; in genere recente, su Debian e Ubuntu segue il ciclo della
+            distribuzione. Il pacchetto installa anche le dipendenze comuni,
+            come <code>runc</code> e <code>containers-common</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Distribuzione</th><th>Comando</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Fedora</td><td><code>sudo dnf install -y buildah</code></td><td>Disponibile nei repository ufficiali.</td></tr>
+                <tr><td>Fedora Silverblue</td><td>Gi&agrave; installato</td><td>Fa parte dell'immagine di base.</td></tr>
+                <tr><td>Fedora CoreOS</td><td><code>sudo rpm-ostree install buildah</code></td><td>Richiede un riavvio; in alternativa si usa <code>podman build</code>.</td></tr>
+                <tr><td>RHEL e CentOS Stream</td><td><code>sudo dnf install -y buildah</code></td><td>Su RHEL 7 il repository &egrave; <code>rhel-7-server-extras-rpms</code>.</td></tr>
+                <tr><td>Debian 12 e successivi</td><td><code>sudo apt update &amp;&amp; sudo apt install -y buildah</code></td><td>Disponibile anche in unstable e sid.</td></tr>
+                <tr><td>Ubuntu 22.04 e successivi</td><td><code>sudo apt update &amp;&amp; sudo apt install -y buildah</code></td><td>Pacchetto nel repository <code>universe</code>; su 20.04 non &egrave; disponibile.</td></tr>
+                <tr><td>Arch Linux</td><td><code>sudo pacman -S buildah</code></td><td>Segue rapidamente le release upstream.</td></tr>
+                <tr><td>openSUSE</td><td><code>sudo zypper install buildah</code></td><td>Su Kubic si usa <code>transactional-update pkg in buildah</code>.</td></tr>
+                <tr><td>Gentoo</td><td><code>sudo emerge app-containers/buildah</code></td><td>&mdash;</td></tr>
+                <tr><td>Raspberry Pi OS arm64</td><td>Come Debian</td><td>Usa il repository arm64 di Debian.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Verifica dell'installazione</h2>
+          <p>
+            Tre comandi bastano per capire se tutto &egrave; al posto giusto:
+            la versione, lo storage e la mappatura degli utenti.
+          </p>
+          <pre><code>buildah --version
+buildah info
+buildah unshare id</code></pre>
+          <p>
+            <code>buildah info</code> restituisce un JSON con la distribuzione,
+            l'architettura, il driver di storage, il <code>GraphRoot</code> e il
+            <code>RunRoot</code>. Se <code>rootless</code> &egrave;
+            <code>false</code> e stai lavorando senza <code>sudo</code>, c'&egrave;
+            qualcosa da sistemare nella configurazione degli ID subordinati.
+          </p>
+          <pre><code>buildah info --format '{{.store.GraphDriverName}}'
+buildah info --format '{{.store.GraphRoot}}'
+buildah info --format '{{.host.rootless}}'</code></pre>
+
+          <h2>Configurare l'uso rootless</h2>
+          <p>
+            Rootless significa costruire immagini come utente normale. Buildah
+            crea un <strong>user namespace</strong> in cui il tuo UID diventa
+            <code>0</code> e una parte degli UID subordinati viene mappata
+            all'interno. Per farlo ha bisogno di due intervalli assegnati
+            all'utente, uno per gli UID e uno per i GID, e dei programmi
+            <code>newuidmap</code> e <code>newgidmap</code> forniti dal
+            pacchetto <code>uidmap</code>.
+          </p>
+          <pre><code>grep "$USER" /etc/subuid
+grep "$USER" /etc/subgid
+
+# se mancano gli intervalli:
+sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$USER"
+
+# verifica la mappatura dentro il namespace
+buildah unshare cat /proc/self/uid_map
+buildah unshare cat /proc/self/gid_map</code></pre>
+          <p>
+            Il formato tipico &egrave; <code>utente:100000:65536</code>: il
+            primo numero &egrave; l'inizio dell'intervallo sul host, il secondo
+            &egrave; la quantit&agrave; di ID disponibili. Se hai modificato
+            <code>/etc/subuid</code> o <code>/etc/subgid</code>, apri una nuova
+            sessione prima di riprovare: i processi gi&agrave; avviati possono
+            avere una mappatura vecchia.
+          </p>
+          <div class="callout">
+            <strong>Perch&eacute; serve <code>uidmap</code>.</strong> I due
+            helper applicano la mappatura dichiarata in
+            <code>/etc/subuid</code> e <code>/etc/subgid</code>. Senza di loro
+            <code>buildah</code> pu&ograve; fallire con <code>newuidmap: not
+            found</code> oppure con un errore di permessi durante la creazione
+            del namespace.
+          </div>
+
+          <h2>Rootless e rootful a confronto</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspetto</th><th>Rootless (utente normale)</th><th>Rootful (<code>sudo buildah</code>)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Storage</td><td><code>$HOME/.local/share/containers/storage</code></td><td><code>/var/lib/containers/storage</code></td></tr>
+                <tr><td>RunRoot</td><td><code>$XDG_RUNTIME_DIR/containers</code></td><td><code>/run/containers/storage</code></td></tr>
+                <tr><td>Mount del rootfs</td><td>Richiede <code>buildah unshare</code></td><td>Diretto</td></tr>
+                <tr><td>Rete durante <code>RUN</code></td><td><code>pasta</code>, in modalit&agrave; user-mode</td><td>Namespace di rete completo, anche reti con nome</td></tr>
+                <tr><td>Porte sotto 1024</td><td>Dipende da <code>net.ipv4.ip_unprivileged_port_start</code></td><td>Consentite</td></tr>
+                <tr><td>Isolamento</td><td>Un errore nella build non &egrave; root sul host</td><td>La build gira con privilegi pieni</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Windows</h2>
+          <p>
+            Buildah non gira nativamente su Windows. Le strade praticabili sono
+            tre, in ordine di semplicit&agrave;:
+          </p>
+          <ol>
+            <li><strong>WSL 2</strong>: installa una distribuzione Linux e poi
+              Buildah al suo interno. &Egrave; la soluzione pi&ugrave; diretta
+              per usare il comando <code>buildah</code> vero e proprio.</li>
+            <li><strong>Macchina Podman</strong>: Podman per Windows crea una VM
+              Linux gestita da <code>podman machine</code>. Il comando
+              <code>podman build</code> funziona subito e usa Buildah come
+              motore; per il binario <code>buildah</code> puoi installarlo nella
+              VM o nella distribuzione WSL.</li>
+            <li><strong>Container ufficiale</strong>:
+              <code>quay.io/buildah/stable</code> contiene Buildah e le sue
+              dipendenze. Serve per&ograve; un ambiente isolato e alcune opzioni
+              di sicurezza aggiuntive, quindi &egrave; pi&ugrave; adatto alla
+              CI che al desktop.</li>
+          </ol>
+          <pre><code># dentro una distribuzione WSL 2 (esempio Ubuntu)
+sudo apt update
+sudo apt install -y buildah
+buildah --version
+buildah info</code></pre>
+          <p>
+            Con WSL 2 non serve systemd per usare Buildah: ogni comando &egrave;
+            un processo. Se la build usa <code>RUN</code>, assicurati che la
+            virtualizzazione sia attiva e che la distribuzione abbia accesso
+            alle risorse necessarie.
+          </p>
+
+          <h2>macOS</h2>
+          <p>
+            Anche su macOS serve una VM Linux. Il percorso pi&ugrave; comodo
+            &egrave; <code>podman machine</code>: crea e avvia una macchina
+            Linux, e da l&igrave; <code>podman build</code> usa Buildah.
+            In alternativa puoi usare una VM Linux gestita da altri strumenti,
+            oppure il container ufficiale. Non cercare un'installazione
+            &ldquo;nativa&rdquo;: non esiste.
+          </p>
+          <pre><code>podman machine init
+podman machine start
+podman machine ssh
+
+# dentro la VM:
+# installa buildah con il package manager della distribuzione
+buildah --version</code></pre>
+
+          <h2>Container ufficiale</h2>
+          <p>
+            L'immagine <code>quay.io/buildah/stable</code> &egrave; pensata per
+            eseguire Buildah dentro un container. La documentazione ufficiale
+            usa un container di lunga durata con accesso al device FUSE e
+            alcune opzioni di sicurezza allentate. &Egrave; un pattern utile in
+            CI, ma va trattato come un ambiente fidato: non usarlo per costruire
+            codice non controllato.
+          </p>
+          <pre><code>podman pull docker://quay.io/buildah/stable:latest
+podman run --rm quay.io/buildah/stable buildah version
+
+podman run --detach --name buildahctr \
+  --net=host \
+  --security-opt label=disable \
+  --security-opt seccomp=unconfined \
+  --device /dev/fuse:rw \
+  -v /var/lib/mycontainer:/var/lib/containers:Z \
+  quay.io/buildah/stable sh -c 'while true; do sleep 100000; done'
+
+podman exec -it buildahctr /bin/sh
+# dentro il container:
+buildah version</code></pre>
+          <p>
+            Se compare <code>fuse: device not found</code>, il modulo FUSE non
+            &egrave; caricato sul host: <code>sudo modprobe fuse</code>.
+          </p>
+
+          <h2>Aggiornare Buildah</h2>
+          <p>
+            L'aggiornamento passa dal package manager della distribuzione. Dopo
+            l'upgrade controlla la versione e lo storage, soprattutto se cambi
+            anche Podman: le due serie devono restare compatibili con le
+            librerie comuni.
+          </p>
+          <pre><code>sudo dnf upgrade buildah
+# oppure
+sudo apt update &amp;&amp; sudo apt upgrade buildah
+
+buildah --version
+buildah info</code></pre>
+          <div class="callout warn">
+            <strong>Non mescolare versioni a caso.</strong> Buildah, Podman,
+            containers/storage e containers/image condividono formati e
+            configurazione. Un pacchetto aggiornato e un altro fermo possono
+            produrre errori difficili da leggere. Quando possibile aggiorna
+            insieme <code>buildah</code>, <code>podman</code> e
+            <code>containers-common</code>.
+          </div>
+
+          <h2>Disinstallare</h2>
+          <p>
+            La disinstallazione del pacchetto non cancella i dati: immagini,
+            container di lavoro e cache restano nello storage. Se vuoi davvero
+            ripartire da zero, rimuovi prima ci&ograve; che non ti serve e poi
+            lo storage.
+          </p>
+          <pre><code># rimuove container di lavoro e cache
+buildah prune --all
+
+# rootless
+rm -rf "$HOME/.local/share/containers/storage"
+
+# rootful
+sudo rm -rf /var/lib/containers/storage</code></pre>
+          <div class="callout warn">
+            <strong>Attenzione.</strong> La rimozione dello storage elimina
+            anche le immagini condivise con Podman e Skopeo. Se hai immagini
+            importanti, esportale prima con <code>buildah push</code> o
+            <code>podman save</code>.
+          </div>
+
+          <h2>Problemi comuni</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sintomo</th><th>Causa probabile</th><th>Rimedio</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>newuidmap: not found</code></td><td>Manca il pacchetto <code>uidmap</code>.</td><td>Installalo con il package manager.</td></tr>
+                <tr><td><code>no subuid ranges</code> o mappatura vuota</td><td><code>/etc/subuid</code> e <code>/etc/subgid</code> non contengono l'utente.</td><td>Aggiungi gli intervalli con <code>usermod</code> e apri una nuova sessione.</td></tr>
+                <tr><td><code>overlay: invalid argument</code></td><td>OverlayFS non utilizzabile dentro il namespace utente.</td><td>Aggiorna il kernel o usa <code>fuse-overlayfs</code>.</td></tr>
+                <tr><td><code>permission denied</code> su <code>buildah mount</code></td><td>Il mount rootless richiede un namespace dedicato.</td><td>Esegui <code>buildah unshare</code> e ripeti il comando.</td></tr>
+                <tr><td>Nome breve non risolto</td><td><code>registries.conf</code> non ha un registry predefinito.</td><td>Usa un riferimento completo o configura <code>unqualified-search-registries</code>.</td></tr>
+                <tr><td>Errore TLS verso un registry</td><td>Certificato non trusted o registry HTTP.</td><td>Aggiungi il certificato in <code>/etc/containers/certs.d</code> o segna il registry come <code>insecure</code>.</td></tr>
+                <tr><td><code>--network mynet</code> fallisce rootless</td><td>Le reti con nome sono supportate solo rootful.</td><td>Usa <code>pasta</code> o esegui come root.</td></tr>
+                <tr><td><code>runc: command not found</code></td><td>Manca il runtime OCI.</td><td>Installa <code>runc</code> o configura <code>crun</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             Comandi
+             ================================================================ -->
+        <section class="tabpanel" id="comandi" role="tabpanel" aria-labelledby="tab-comandi" hidden>
+          <div class="cmd-search">
+            <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+            <div class="cmd-search-field">
+              <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="cmd-search-input" id="cmd-search-input" type="search"
+                     placeholder="Per esempio: from, run, commit, manifest, unshare&hellip;"
+                     autocomplete="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                     aria-autocomplete="list" aria-describedby="cmd-search-hint">
+            </div>
+            <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+              Digita per filtrare le tabelle e i comandi qui sotto.
+            </p>
+            <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+                aria-label="Comandi trovati" hidden></ul>
+          </div>
+
+          <h2>Aiuto, versioni e informazioni</h2>
+          <p>
+            Buildah ha un albero di comandi ampio ma coerente. I primi tre
+            comandi da ricordare sono <code>--help</code>, <code>version</code>
+            e <code>info</code>: rispondono a &ldquo;quali comandi esistono?&rdquo;,
+            &ldquo;che versione sto usando?&rdquo; e &ldquo;dove sta scrivendo?&rdquo;.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah --version</code></td><td>Versione del binario</td><td>Controlla sempre prima di seguire un esempio.</td></tr>
+                <tr><td><code>buildah version</code></td><td>Versione e informazioni di build</td><td>Utile nei bug report.</td></tr>
+                <tr><td><code>buildah info</code></td><td>Host, storage, driver e statistiche</td><td>Il primo comando quando qualcosa non funziona.</td></tr>
+                <tr><td><code>buildah info --format '{{.store.GraphRoot}}'</code></td><td>Percorso dello storage</td><td>Conferma se stai usando lo storage rootless o rootful.</td></tr>
+                <tr><td><code>buildah --help</code></td><td>Elenco dei comandi</td><td>Include <code>source</code>, <code>mkcw</code> e gli altri comandi meno usati.</td></tr>
+                <tr><td><code>buildah from --help</code></td><td>Opzioni di un comando</td><td>Sostituisci <code>from</code> con il comando che ti interessa.</td></tr>
+                <tr><td><code>buildah unshare id</code></td><td>Esegue un comando nel namespace utente</td><td>Verifica la mappatura rootless.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Immagini nello storage</h2>
+          <p>
+            Buildah non ha un demone a cui chiedere le immagini: legge
+            direttamente lo storage. I comandi sono vicini a quelli di Podman e
+            Docker, ma <code>buildah images</code> mostra solo ci&ograve; che
+            &egrave; presente nell'archivio condiviso.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah pull docker.io/library/alpine:3.22</code></td><td>Scarica un'immagine</td><td>Il riferimento completo evita ambiguit&agrave; sui nomi brevi.</td></tr>
+                <tr><td><code>buildah images</code></td><td>Elenca le immagini locali</td><td>Mostra nome, tag, ID, dimensione e data.</td></tr>
+                <tr><td><code>buildah images --all</code></td><td>Include anche le immagini intermedie</td><td>Utile quando usi <code>--layers</code>.</td></tr>
+                <tr><td><code>buildah inspect --type image alpine:3.22</code></td><td>Configurazione e manifest dell'immagine</td><td>Con <code>--format</code> estrai un solo campo.</td></tr>
+                <tr><td><code>buildah tag alpine:3.22 localhost/alpine:test</code></td><td>Aggiunge un nome</td><td>Non duplica i layer.</td></tr>
+                <tr><td><code>buildah rmi localhost/alpine:test</code></td><td>Rimuove un'immagine</td><td>Fallisce se un container di lavoro la usa.</td></tr>
+                <tr><td><code>buildah rmi --all</code></td><td>Rimuove tutte le immagini</td><td>Operazione distruttiva.</td></tr>
+                <tr><td><code>buildah rmi --prune</code></td><td>Rimuove le immagini non usate</td><td>Pi&ugrave; sicuro di <code>--all</code>.</td></tr>
+                <tr><td><code>buildah prune</code></td><td>Pulisce immagini intermedie e cache</td><td>Non tocca le immagini finali.</td></tr>
+                <tr><td><code>buildah prune --all</code></td><td>Rimuove tutte le immagini senza container</td><td>Non ha una modalit&agrave; di anteprima: controlla prima cosa stai usando.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Container di lavoro</h2>
+          <p>
+            Un container di lavoro &egrave; il banco su cui costruisci
+            l'immagine. Esiste finch&eacute; non lo rimuovi o non lo chiudi con
+            <code>commit --rm</code>. Non &egrave; un servizio: non ha un PID 1
+            che resta acceso.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah from alpine:3.22</code></td><td>Crea un container di lavoro da un'immagine</td><td>Stampa il nome generato, per esempio <code>alpine-working-container</code>.</td></tr>
+                <tr><td><code>buildah from --name web alpine:3.22</code></td><td>Crea un container di lavoro con un nome scelto</td><td>Il nome rende gli script pi&ugrave; leggibili.</td></tr>
+                <tr><td><code>buildah from scratch</code></td><td>Crea un rootfs vuoto</td><td>Per immagini minimali; devi aggiungere tutto ci&ograve; che serve.</td></tr>
+                <tr><td><code>buildah containers</code></td><td>Elenca i container di lavoro</td><td>Non mostra i container di Podman.</td></tr>
+                <tr><td><code>buildah rename web api</code></td><td>Rinomina un container di lavoro</td><td>Utile negli script.</td></tr>
+                <tr><td><code>buildah rm web</code></td><td>Rimuove un container di lavoro</td><td>Non rimuove l'immagine da cui &egrave; partito.</td></tr>
+                <tr><td><code>buildah rm --all</code></td><td>Rimuove tutti i container di lavoro</td><td>Attenzione: perdi le modifiche non ancora committate.</td></tr>
+                <tr><td><code>buildah mount web</code></td><td>Monta il rootfs e stampa il percorso</td><td>Rootless: richiede <code>buildah unshare</code>.</td></tr>
+                <tr><td><code>buildah umount web</code></td><td>Smonta il rootfs</td><td>Da fare prima di rimuovere il container.</td></tr>
+                <tr><td><code>buildah unshare --mount web sh</code></td><td>Apre una shell nel namespace con il rootfs montato</td><td>La variabile <code>web</code> contiene il percorso.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Costruire a mano</h2>
+          <p>
+            Questi sono i mattoni con cui Buildah costruisce un'immagine senza
+            Containerfile. Ogni comando agisce su un container di lavoro
+            esistente; l'ordine conta.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah run web -- apk add --no-cache nginx</code></td><td>Esegue un comando nel rootfs</td><td>Il <code>--</code> separa le opzioni di Buildah dal comando.</td></tr>
+                <tr><td><code>buildah run --env APP_ENV=prod web -- env</code></td><td>Esegue con una variabile temporanea</td><td>La variabile non resta nell'immagine.</td></tr>
+                <tr><td><code>buildah copy web index.html /usr/share/nginx/html/index.html</code></td><td>Copia un file o una directory</td><td>La destinazione &egrave; relativa al rootfs.</td></tr>
+                <tr><td><code>buildah copy --chown 1000:1000 web app /app</code></td><td>Copia cambiando proprietario</td><td>Utile per container non-root.</td></tr>
+                <tr><td><code>buildah add web app.tar.gz /srv</code></td><td>Aggiunge file, URL o archivi</td><td>Gli archivi riconosciuti vengono estratti.</td></tr>
+                <tr><td><code>buildah add web https://example.com/file.txt /srv/file.txt</code></td><td>Scarica da URL</td><td>Accetta anche <code>--checksum</code>.</td></tr>
+                <tr><td><code>buildah config --env APP_ENV=production web</code></td><td>Imposta una variabile permanente</td><td>Finisce nella configurazione dell'immagine.</td></tr>
+                <tr><td><code>buildah config --cmd '[&quot;nginx&quot;,&quot;-g&quot;,&quot;daemon off;&quot;]' web</code></td><td>Imposta il comando predefinito</td><td>&Egrave; il <code>CMD</code> del Dockerfile, in forma exec.</td></tr>
+                <tr><td><code>buildah config --entrypoint '["/usr/sbin/nginx"]' web</code></td><td>Imposta l'entrypoint</td><td>Accetta stringa o array JSON.</td></tr>
+                <tr><td><code>buildah config --port 80/tcp web</code></td><td>Espone una porta</td><td>Documenta la porta; non la pubblica.</td></tr>
+                <tr><td><code>buildah config --volume /data web</code></td><td>Dichiara un volume</td><td>Il volume viene creato a runtime.</td></tr>
+                <tr><td><code>buildah config --workingdir /app web</code></td><td>Imposta la directory di lavoro</td><td>Corrisponde a <code>WORKDIR</code>.</td></tr>
+                <tr><td><code>buildah config --user 1000:1000 web</code></td><td>Imposta l'utente predefinito</td><td>Buona pratica per i servizi.</td></tr>
+                <tr><td><code>buildah config --label org.opencontainers.image.source=https://example.com web</code></td><td>Aggiunge una label</td><td>Utile per tracciare la provenienza.</td></tr>
+                <tr><td><code>buildah config --healthcheck 'CMD curl -f http://localhost/ || exit 1' web</code></td><td>Definisce un healthcheck</td><td>Il formato &egrave; quello del Dockerfile.</td></tr>
+                <tr><td><code>buildah commit web localhost/web:1.0</code></td><td>Crea l'immagine</td><td>Il container di lavoro resta.</td></tr>
+                <tr><td><code>buildah commit --rm web localhost/web:1.0</code></td><td>Crea l'immagine e rimuove il container</td><td>Il flusso pi&ugrave; pulito per gli script.</td></tr>
+                <tr><td><code>buildah commit --format docker web localhost/web:1.0</code></td><td>Crea un'immagine in formato Docker</td><td>Il default &egrave; OCI.</td></tr>
+                <tr><td><code>buildah commit --squash web localhost/web:1.0</code></td><td>Comprime tutto in un layer</td><td>Riduce i layer, perde la storia.</td></tr>
+                <tr><td><code>buildah commit --timestamp 1700000000 web localhost/web:1.0</code></td><td>Imposta la data di creazione</td><td>Per build riproducibili.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Costruire da Containerfile</h2>
+          <p>
+            <code>buildah build</code> e il suo alias <code>buildah bud</code>
+            leggono un Containerfile o un Dockerfile e applicano le istruzioni.
+            &Egrave; la strada da scegliere quando la ricetta deve essere
+            versionata e condivisa.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah build -t localhost/app:1.0 .</code></td><td>Costruisce dal Containerfile nella directory corrente</td><td>Il contesto &egrave; <code>.</code>.</td></tr>
+                <tr><td><code>buildah bud -t localhost/app:1.0 .</code></td><td>Alias di <code>build</code></td><td>Utile per script scritti prima della rinomina.</td></tr>
+                <tr><td><code>buildah build -f Containerfile.prod -t localhost/app:1.0 .</code></td><td>Sceglie un file specifico</td><td>Accetta anche un URL.</td></tr>
+                <tr><td><code>buildah build --build-arg VERSION=1.0 -t localhost/app:1.0 .</code></td><td>Passa un argomento di build</td><td>Deve essere dichiarato con <code>ARG</code>.</td></tr>
+                <tr><td><code>buildah build --layers -t localhost/app:1.0 .</code></td><td>Abilita la cache dei layer intermedi</td><td>Il default di <code>buildah build</code> &egrave; <code>false</code>.</td></tr>
+                <tr><td><code>buildah build --no-cache -t localhost/app:1.0 .</code></td><td>Ignora la cache</td><td>Utile per verificare una build pulita.</td></tr>
+                <tr><td><code>buildah build --pull=always -t localhost/app:1.0 .</code></td><td>Aggiorna l'immagine di base</td><td>Il default &egrave; <code>missing</code>.</td></tr>
+                <tr><td><code>buildah build --platform linux/arm64 -t localhost/app:arm64 .</code></td><td>Costruisce per un'altra architettura</td><td>Le istruzioni <code>RUN</code> richiedono emulazione.</td></tr>
+                <tr><td><code>buildah build --target build -t localhost/app:debug .</code></td><td>Si ferma a uno stage</td><td>Utile nelle build multi-stage.</td></tr>
+                <tr><td><code>buildah build --network host -t localhost/app:1.0 .</code></td><td>Usa la rete del host durante <code>RUN</code></td><td>Meno isolato; usalo con consapevolezza.</td></tr>
+                <tr><td><code>buildah build --secret id=npmtoken,src=./token -t localhost/app:1.0 .</code></td><td>Passa un secret alla build</td><td>Va montato con <code>RUN --mount=type=secret</code>.</td></tr>
+                <tr><td><code>buildah build --ssh default -t localhost/app:1.0 .</code></td><td>Espone l'agente SSH</td><td>Per dipendenze private.</td></tr>
+                <tr><td><code>buildah build --squash -t localhost/app:1.0 .</code></td><td>Comprime i layer</td><td>Utile per immagini piccole e semplici.</td></tr>
+                <tr><td><code>buildah build --timestamp 1700000000 -t localhost/app:1.0 .</code></td><td>Data fissa per la build</td><td>Per artefatti riproducibili.</td></tr>
+                <tr><td><code>buildah build --jobs 4 --platform linux/amd64,linux/arm64 --manifest localhost/app:multi .</code></td><td>Build multi-arch in parallelo</td><td>Crea direttamente un manifest list.</td></tr>
+                <tr><td><code>buildah build --logfile build.log -t localhost/app:1.0 .</code></td><td>Scrive l'output su file</td><td>Comodo in CI.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Registry e manifest</h2>
+          <p>
+            Buildah sa autenticarsi, pubblicare immagini e comporre manifest
+            list per le build multi-architettura. L'autenticazione usa un file
+            in <code>${XDG_RUNTIME_DIR}/containers/auth.json</code>, non il
+            <code>~/.docker/config.json</code> di Docker.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah login -u utente quay.io</code></td><td>Accede a un registry</td><td>La password viene chiesta senza eco.</td></tr>
+                <tr><td><code>buildah login -u utente --password-stdin quay.io</code></td><td>Legge la password da stdin</td><td>Adatto alla CI.</td></tr>
+                <tr><td><code>buildah login --get-login quay.io</code></td><td>Mostra l'utente autenticato</td><td>Utile per verificare le credenziali.</td></tr>
+                <tr><td><code>buildah logout quay.io</code></td><td>Rimuove le credenziali</td><td>&mdash;</td></tr>
+                <tr><td><code>buildah push localhost/web:1.0 docker://quay.io/utente/web:1.0</code></td><td>Pubblica un'immagine</td><td>Il prefisso <code>docker://</code> &egrave; esplicito.</td></tr>
+                <tr><td><code>buildah push --digestfile digest.txt localhost/web:1.0 docker://quay.io/utente/web:1.0</code></td><td>Salva il digest</td><td>Utile per pinning e verifiche.</td></tr>
+                <tr><td><code>buildah manifest create localhost/app:multi</code></td><td>Crea un manifest list</td><td>Vuoto finch&eacute; non aggiungi immagini.</td></tr>
+                <tr><td><code>buildah manifest add localhost/app:multi docker://quay.io/utente/app:amd64</code></td><td>Aggiunge un'immagine</td><td>L'ordine &egrave; manifest, poi immagine.</td></tr>
+                <tr><td><code>buildah manifest inspect localhost/app:multi</code></td><td>Mostra il contenuto</td><td>Controlla architetture e digest.</td></tr>
+                <tr><td><code>buildah manifest push --all localhost/app:multi docker://quay.io/utente/app:multi</code></td><td>Pubblica il manifest e le immagini</td><td><code>--all</code> &egrave; necessario per includere tutte le piattaforme.</td></tr>
+                <tr><td><code>buildah manifest rm localhost/app:multi</code></td><td>Rimuove il manifest list</td><td>Non rimuove le immagini che contiene.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Diagnostica e pulizia</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cosa fa</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah --log-level debug images</code></td><td>Output dettagliato</td><td>Utile per capire un errore di storage o registry.</td></tr>
+                <tr><td><code>buildah inspect --type container web</code></td><td>Configurazione del container di lavoro</td><td>Mostra immagine di partenza, ambiente e metadati.</td></tr>
+                <tr><td><code>buildah info --debug</code></td><td>Informazioni estese sul host</td><td>Da allegare ai bug report.</td></tr>
+                <tr><td><code>buildah prune</code></td><td>Rimuove immagini intermedie e cache</td><td>Sicuro nella maggior parte dei casi.</td></tr>
+                <tr><td><code>buildah prune --all</code></td><td>Pulisce tutte le immagini senza container</td><td>Controlla cosa sta usando Podman.</td></tr>
+                <tr><td><code>buildah rm --all</code></td><td>Rimuove i container di lavoro</td><td>Non tocca le immagini.</td></tr>
+                <tr><td><code>buildah rmi --prune</code></td><td>Rimuove le immagini non referenziate</td><td>&mdash;</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Esempio completo: da zero a immagine</h2>
+          <p>
+            Il primo esempio costruisce un'immagine nginx partendo da Alpine,
+            senza scrivere un Containerfile. Ogni riga &egrave; un comando che
+            potresti eseguire a mano per capire cosa succede.
+          </p>
+          <pre><code>ctr=$(buildah from alpine:3.22)
+
+buildah run "$ctr" -- apk add --no-cache nginx
+buildah copy "$ctr" index.html /usr/share/nginx/html/index.html
+buildah config --port 80/tcp "$ctr"
+buildah config --cmd '["nginx","-g","daemon off;"]' "$ctr"
+buildah config --label org.opencontainers.image.title=web "$ctr"
+
+buildah commit --rm "$ctr" localhost/web:1.0
+buildah images
+podman run --rm -p 8080:80 localhost/web:1.0</code></pre>
+          <p>
+            Il secondo esempio fa la stessa cosa con un Containerfile. &Egrave;
+            la forma che conviene versionare in un repository.
+          </p>
+          <pre><code># Containerfile
+FROM alpine:3.22
+
+RUN apk add --no-cache nginx
+COPY index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+LABEL org.opencontainers.image.title="web"
+CMD ["nginx", "-g", "daemon off;"]</code></pre>
+          <pre><code>buildah build -t localhost/web:1.0 .
+buildah push localhost/web:1.0 docker://quay.io/utente/web:1.0</code></pre>
+        </section>
+
+        <!-- ================================================================
+             Configurazione
+             ================================================================ -->
+        <section class="tabpanel" id="configurazione" role="tabpanel" aria-labelledby="tab-configurazione" hidden>
+          <h2>Dove stanno i file</h2>
+          <p>
+            Buildah non ha un file di configurazione tutto suo: usa le
+            convenzioni comuni degli strumenti <em>containers</em>. Gli stessi
+            file sono letti da Podman e Skopeo, quindi una modifica ha effetto
+            su tutto l'ecosistema. La precedenza va dal generale allo
+            specifico: prima i file forniti dal pacchetto, poi quelli di
+            sistema, infine quelli dell'utente.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>File</th><th>Percorsi principali</th><th>Cosa controlla</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>containers.conf</code></td><td><code>/usr/share/containers/containers.conf</code>, <code>/etc/containers/containers.conf</code>, <code>/etc/containers/containers.conf.d/*.conf</code>, <code>$XDG_CONFIG_HOME/containers/containers.conf</code></td><td>Impostazioni del motore: runtime, ambienti, DNS, capability.</td></tr>
+                <tr><td><code>storage.conf</code></td><td><code>/usr/share/containers/storage.conf</code>, <code>/etc/containers/storage.conf</code>, <code>$XDG_CONFIG_HOME/containers/storage.conf</code></td><td>Driver, <code>graphroot</code>, <code>runroot</code>, dimensioni.</td></tr>
+                <tr><td><code>registries.conf</code></td><td><code>/etc/containers/registries.conf</code>, <code>/etc/containers/registries.conf.d/*.conf</code>, <code>$HOME/.config/containers/registries.conf</code></td><td>Registry da consultare per i nomi brevi, mirror, registry insicuri.</td></tr>
+                <tr><td><code>policy.json</code></td><td><code>/etc/containers/policy.json</code></td><td>Policy di firma e provenienza delle immagini.</td></tr>
+                <tr><td><code>mounts.conf</code></td><td><code>/usr/share/containers/mounts.conf</code>, <code>/etc/containers/mounts.conf</code></td><td>Mount automatici durante <code>run</code> e <code>build</code>.</td></tr>
+                <tr><td><code>auth.json</code></td><td><code>${XDG_RUNTIME_DIR}/containers/auth.json</code></td><td>Credenziali dei registry.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Su rootless, <code>$XDG_CONFIG_HOME</code> vale di solito
+            <code>$HOME/.config</code> e <code>$XDG_RUNTIME_DIR</code> vale
+            <code>/run/user/&lt;uid&gt;</code>. Il percorso effettivo compare in
+            <code>buildah info</code>: &egrave; la fonte pi&ugrave; affidabile
+            quando hai pi&ugrave; configurazioni sovrapposte.
+          </p>
+
+          <h2>storage.conf</h2>
+          <p>
+            &Egrave; il file che decide dove finiscono immagini e container di
+            lavoro. Il driver predefinito &egrave; <code>overlay</code>; se il
+            kernel non permette overlay dentro il namespace utente si usa
+            <code>fuse-overlayfs</code>, mentre <code>vfs</code> &egrave; il
+            ripiego che copia i file e occupa molto spazio.
+          </p>
+          <pre><code># /etc/containers/storage.conf (estratto)
+[storage]
+driver = "overlay"
+graphroot = "/var/lib/containers/storage"
+runroot = "/run/containers/storage"
+
+[storage.options.overlay]
+mount_program = "/usr/bin/fuse-overlayfs"</code></pre>
+          <p>
+            In rootless i percorsi cambiano automaticamente:
+            <code>graphroot</code> diventa
+            <code>$HOME/.local/share/containers/storage</code> e
+            <code>runroot</code> diventa <code>$XDG_RUNTIME_DIR/containers</code>.
+            Non serve scriverli a mano, a meno che tu non voglia uno storage
+            separato per i test. In quel caso puoi usare
+            <code>CONTAINERS_STORAGE_CONF</code> per puntare a un file
+            alternativo.
+          </p>
+          <pre><code>buildah info --format '{{.store.GraphDriverName}}'
+buildah info --format '{{.store.GraphRoot}}'
+buildah info --format '{{.store.RunRoot}}'</code></pre>
+          <div class="callout">
+            <strong>Un driver per volta.</strong> Se cambi driver, le immagini
+            gi&agrave; presenti non diventano automaticamente leggibili. Usa
+            uno storage separato per le prove e migra con calma, non a met&agrave;
+            su un ambiente di produzione.
+          </div>
+
+          <h2>registries.conf</h2>
+          <p>
+            Quando scrivi <code>buildah pull alpine</code>, Buildah deve capire
+            <em>da dove</em> scaricare. <code>registries.conf</code> elenca i
+            registry da provare per i nomi non qualificati e permette di
+            definire mirror, prefissi e registry insicuri.
+          </p>
+          <pre><code># /etc/containers/registries.conf
+unqualified-search-registries = ["docker.io", "quay.io"]
+short-name-mode = "enforcing"
+
+[[registry]]
+prefix = "docker.io"
+location = "docker.io"
+
+[[registry.mirror]]
+location = "mirror.example.com/docker"
+
+[[registry]]
+prefix = "registry.example.com"
+location = "registry.example.com:5000"
+insecure = true</code></pre>
+          <p>
+            Le chiavi da ricordare:
+          </p>
+          <ul>
+            <li><code>unqualified-search-registries</code>: l'ordine in cui
+              provare i nomi brevi;</li>
+            <li><code>short-name-mode</code>: <code>enforcing</code> rifiuta i
+              nomi ambigui, <code>permissive</code> avvisa e prosegue;</li>
+            <li><code>prefix</code> e <code>location</code>: riscrivono un
+              nome verso un altro registry;</li>
+            <li><code>insecure</code>: consente HTTP o certificati non
+              verificati, da usare solo su reti fidate;</li>
+            <li><code>[[registry.mirror]]</code>: un mirror alternativo, provato
+              prima della location principale.</li>
+          </ul>
+          <div class="callout warn">
+            <strong>Il nome breve &egrave; comodo ma rischioso.</strong> Se un
+            registry prima nella lista contiene un'immagine con lo stesso nome,
+            potresti scaricare quella sbagliata. Nei progetti importanti usa
+            sempre il riferimento completo, con registry, namespace e tag.
+          </div>
+
+          <h2>containers.conf</h2>
+          <p>
+            <code>containers.conf</code> raccoglie i default del motore. Buildah
+            lo legge per impostazioni come il runtime OCI, le variabili
+            d'ambiente e i server DNS da usare durante le build. Non &egrave;
+            obbligatorio modificarlo: i default funzionano nella maggior parte
+            dei casi.
+          </p>
+          <pre><code># /etc/containers/containers.conf (estratto)
+[engine]
+runtime = "crun"
+
+[engine.runtimes]
+crun = ["/usr/bin/crun"]
+runc = ["/usr/bin/runc"]
+
+[containers]
+env = ["TZ=Europe/Rome"]
+dns_servers = ["1.1.1.1", "9.9.9.9"]</code></pre>
+          <p>
+            Le sezioni pi&ugrave; utili in una build sono
+            <code>[engine]</code> per scegliere il runtime e
+            <code>[containers]</code> per ambiente e DNS. Se un comando
+            funziona a mano ma fallisce in CI, confronta il
+            <code>containers.conf</code> dei due ambienti: spesso la differenza
+            &egrave; l&igrave;.
+          </p>
+          <p>
+            Il file si pu&ograve; estendere con drop-in:
+            <code>/etc/containers/containers.conf.d/*.conf</code> vengono letti
+            in ordine alfabetico e sovrascrivono i valori precedenti. Per
+            l'utente, il percorso &egrave;
+            <code>$XDG_CONFIG_HOME/containers/containers.conf</code>.
+          </p>
+
+          <h2>Autenticazione ai registry</h2>
+          <p>
+            <code>buildah login</code> scrive le credenziali in
+            <code>${XDG_RUNTIME_DIR}/containers/auth.json</code>. &Egrave; un
+            file separato da quello di Docker: se hai gi&agrave; fatto
+            <code>docker login</code>, non dare per scontato che Buildah veda
+            le stesse credenziali.
+          </p>
+          <pre><code>buildah login -u utente quay.io
+buildah login --get-login quay.io
+buildah logout quay.io
+
+# file alternativo, per esempio in CI
+export REGISTRY_AUTH_FILE="$PWD/auth.json"
+buildah login -u "$REGISTRY_USER" --password-stdin "$REGISTRY"</code></pre>
+          <p>
+            In una pipeline evita di mettere la password nella riga di comando:
+            usa <code>--password-stdin</code> e un secret dell'ambiente. Il file
+            <code>auth.json</code> contiene credenziali in chiaro o token:
+            trattalo come un segreto e non committarlo.
+          </p>
+
+          <h2>policy.json</h2>
+          <p>
+            <code>policy.json</code> stabilisce quali immagini sono accettate in
+            base alla firma. Il pacchetto <code>containers-common</code> di
+            solito installa una policy permissiva
+            (<code>insecureAcceptAnything</code>), adatta a un ambiente di
+            sviluppo ma non a una supply chain rigorosa. Per la produzione si
+            usa <code>reject</code> come default e si elencano i registry
+            firmati con <code>signedBy</code>.
+          </p>
+          <pre><code>{
+  "default": [
+    { "type": "reject" }
+  ],
+  "transports": {
+    "docker": {
+      "quay.io/esempio": [
+        {
+          "type": "signedBy",
+          "keyType": "GPGKeys",
+          "keyPath": "/etc/pki/containers/esempio.pub"
+        }
+      ]
+    }
+  }
+}</code></pre>
+          <div class="callout warn">
+            <strong>Non copiare questa policy senza pensarci.</strong> Con
+            <code>reject</code> come default, ogni immagine non firmata viene
+            rifiutata, comprese quelle ufficiali che non hai elencato. &Egrave;
+            il comportamento desiderato in produzione, ma va preparato con
+            chiavi e registry verificati.
+          </div>
+
+          <h2>mounts.conf</h2>
+          <p>
+            <code>mounts.conf</code> elenca file o directory montati
+            automaticamente durante <code>buildah run</code> e
+            <code>buildah build</code>. Il contenuto &egrave; disponibile per i
+            processi della build ma <strong>non viene salvato</strong>
+            nell'immagine. Si usa per credenziali temporanee, subscription o
+            configurazioni che non devono finire nel risultato.
+          </p>
+          <pre><code># /usr/share/containers/mounts.conf
+/usr/share/rhel/secrets:/run/secrets</code></pre>
+          <p>
+            Non &egrave; un volume: il contenuto viene copiato nello storage del
+            container di lavoro, non collegato con un bind mount. Per i secret
+            di build &egrave; spesso preferibile <code>--secret</code>, che
+            resta limitato alla singola istruzione <code>RUN</code>.
+          </p>
+
+          <h2>Variabili d'ambiente</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Variabile</th><th>Effetto</th><th>Esempio</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>BUILDAH_FORMAT</code></td><td>Formato predefinito delle immagini</td><td><code>export BUILDAH_FORMAT=docker</code></td></tr>
+                <tr><td><code>BUILDAH_ISOLATION</code></td><td>Isolamento predefinito per <code>RUN</code></td><td><code>export BUILDAH_ISOLATION=rootless</code></td></tr>
+                <tr><td><code>BUILDAH_LAYERS</code></td><td>Abilita la cache dei layer intermedi</td><td><code>export BUILDAH_LAYERS=true</code></td></tr>
+                <tr><td><code>BUILDAH_HISTORY</code></td><td>Registra la storia delle istruzioni</td><td><code>export BUILDAH_HISTORY=true</code></td></tr>
+                <tr><td><code>BUILDAH_RUNTIME</code></td><td>Runtime OCI da usare</td><td><code>export BUILDAH_RUNTIME=/usr/bin/crun</code></td></tr>
+                <tr><td><code>BUILDAH_CPPFLAGS</code></td><td>Flag per il preprocessore dei Containerfile <code>.in</code></td><td><code>export BUILDAH_CPPFLAGS="-I./include"</code></td></tr>
+                <tr><td><code>REGISTRY_AUTH_FILE</code></td><td>Percorso alternativo di <code>auth.json</code></td><td><code>export REGISTRY_AUTH_FILE=./auth.json</code></td></tr>
+                <tr><td><code>CONTAINERS_STORAGE_CONF</code></td><td>Percorso alternativo di <code>storage.conf</code></td><td><code>export CONTAINERS_STORAGE_CONF=./storage.conf</code></td></tr>
+                <tr><td><code>TMPDIR</code></td><td>Directory per i file temporanei</td><td>Utile quando <code>/tmp</code> &egrave; piccolo o montato <code>noexec</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Esempio completo</h2>
+          <p>
+            Un setup rootless sobrio: registry predefiniti espliciti, storage
+            standard, autenticazione separata e una build con cache. &Egrave;
+            un buon punto di partenza per un progetto che verr&agrave; costruito
+            anche in CI.
+          </p>
+          <pre><code>mkdir -p "$HOME/.config/containers"
+
+cat &gt; "$HOME/.config/containers/registries.conf" &lt;&lt;'EOF'
+unqualified-search-registries = ["docker.io", "quay.io"]
+short-name-mode = "enforcing"
+EOF
+
+buildah info --format '{{.store.GraphRoot}}'
+buildah login -u "$REGISTRY_USER" --password-stdin quay.io
+
+export BUILDAH_LAYERS=true
+buildah build --build-arg VERSION=1.0 -t localhost/app:1.0 .
+buildah push localhost/app:1.0 docker://quay.io/utente/app:1.0</code></pre>
+        </section>
+
+        <!-- ================================================================
+             Approfondimenti
+             ================================================================ -->
+        <section class="tabpanel" id="approfondimenti" role="tabpanel" aria-labelledby="tab-approfondimenti" hidden>
+          <nav class="section-index" aria-labelledby="section-index-title">
+            <p class="section-index-title" id="section-index-title">In questa sezione</p>
+            <ol>
+              <li><a href="#processi">I processi che lancia Buildah</a></li>
+              <li><a href="#architettura">Dentro Buildah</a></li>
+              <li><a href="#da-zero">Costruire da zero, a mano</a></li>
+              <li><a href="#containerfile">Costruire con un Containerfile</a></li>
+              <li><a href="#layer">Layer, cache e build riproducibili</a></li>
+              <li><a href="#rootless">Rootless in pratica</a></li>
+              <li><a href="#sicurezza">Sicurezza</a></li>
+              <li><a href="#ci">Buildah in CI</a></li>
+              <li><a href="#confronto">Buildah, Podman e Docker</a></li>
+              <li><a href="#versioni">Buildah 1.46 e compatibilit&agrave;</a></li>
+              <li><a href="#migrazione">Arrivare da docker build</a></li>
+              <li><a href="#faq">Domande frequenti</a></li>
+            </ol>
+          </nav>
+
+          <div class="callout feature">
+            <p class="callout-tag">In evidenza</p>
+            <h2 id="processi">I processi che lancia Buildah</h2>
+            <p>
+              Buildah non ha un daemon: il comando che digiti &egrave; un
+              processo che parte, lavora e termina. Durante un
+              <code>RUN</code>, per&ograve;, non c'&egrave; solo Buildah:
+              entrano in scena un helper dello stesso binario, il runtime
+              OCI, il comando del container e, quando servono, la rete e il
+              file system rootless. Qui vediamo chi sono, chi li lancia, in
+              che ordine e cosa fanno.
+            </p>
+            <p class="callout-links">
+              <a href="#processi-catena">La catena</a> &middot;
+              <a href="#processi-tabella">Chi fa cosa</a> &middot;
+              <a href="#processi-run">Vita di un RUN</a> &middot;
+              <a href="#processi-osservare">Come osservarli</a>
+            </p>
+          </div>
+
+          <h3 id="processi-catena">La catena dei processi</h3>
+          <p>
+            Il caso normale &egrave; l'isolamento <strong>OCI</strong>: Buildah
+            prepara un bundle, lancia un runtime e gli lascia creare il
+            container. Il runtime non &egrave; un daemon e non resta in
+            esecuzione: esegue pochi comandi brevi e poi esce. Il processo che
+            dura per tutto il <code>RUN</code> &egrave; l'helper di Buildah,
+            che aspetta la fine del comando.
+          </p>
+          <pre><code>buildah                                  # CLI: legge Containerfile, storage e config
+└─ buildah-oci-runtime                   # re-exec dello stesso binario
+   ├─ crun create --bundle ... --pid-file ... app
+   ├─ crun start app
+   ├─ /bin/sh -c "..."                   # init del container: è il comando RUN
+   │  └─ ...                             # dnf, apk, make, ...
+   ├─ crun state app                     # ogni 100 ms, per sapere se è vivo
+   └─ crun delete app                    # pulizia finale</code></pre>
+          <p>
+            Le righe <code>crun ...</code> sono comandi brevi: compaiono e
+            spariscono. Se guardi con <code>ps</code> durante un
+            <code>RUN</code> lungo, di solito vedi
+            <code>buildah-oci-runtime</code> e il comando del container come
+            suo figlio; il runtime ha gi&agrave; finito il proprio lavoro. Al
+            posto di <code>crun</code> pu&ograve; esserci <code>runc</code>:
+            dipende da <code>containers.conf</code> e da ci&ograve; che &egrave;
+            installato.
+          </p>
+
+          <p>
+            In <strong>rootless</strong> la catena si allunga un po', perch&eacute;
+            Buildah deve prima entrare in uno user namespace:
+          </p>
+          <pre><code>buildah                                  # processo originale
+├─ newuidmap / newgidmap                # se servono più mapping subuid/subgid
+└─ buildah                               # seconda istanza, dentro lo user namespace
+   ├─ pasta ...                          # rete rootless (default private)
+   ├─ fuse-overlayfs ...                 # solo se l'overlay nativo non basta
+   └─ buildah-oci-runtime
+      ├─ crun create/start/state/delete
+      └─ /bin/sh -c "..."</code></pre>
+          <p>
+            <code>newuidmap</code> e <code>newgidmap</code> sono helper
+            setuid: scrivono le mappe UID/GID del processo. Servono quando ci
+            sono pi&ugrave; ID da mappare; con una mappatura singola Buildah
+            pu&ograve; scrivere i file direttamente. Se non sono installati e
+            la configurazione li richiede, il rootless si ferma.
+          </p>
+
+          <p>
+            Con <code>--isolation=chroot</code> il runtime OCI non viene
+            usato affatto:
+          </p>
+          <pre><code>buildah
+└─ buildah-chroot-runtime
+   └─ buildah-chroot-exec
+      └─ /bin/sh -c "..."   # dopo chroot(); nessun crun/runc</code></pre>
+          <p>
+            &Egrave; una modalit&agrave; pi&ugrave; leggera ma meno isolata:
+            usa pochi namespace, forza la rete host e va riservata a build
+            fidate o ad ambienti dove un runtime OCI non &egrave; disponibile.
+          </p>
+
+          <h3 id="processi-tabella">Chi fa cosa</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Processo</th><th>Quando compare</th><th>Chi lo lancia</th><th>Cosa fa</th><th>Vita</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah</code></td><td>Ogni comando</td><td>La shell o l'utente</td><td>Legge configurazione e storage, interpreta il Containerfile, coordina i passaggi.</td><td>Fino alla fine del comando.</td></tr>
+                <tr><td><code>buildah</code> (seconda istanza)</td><td>Rootless, se serve uno user namespace</td><td><code>buildah</code> stesso, con <code>MaybeReexecUsingUserNamespace</code></td><td>Entra in un user namespace con le mappe UID/GID e prosegue l&igrave; il lavoro.</td><td>Tutta l'operazione.</td></tr>
+                <tr><td><code>newuidmap</code>, <code>newgidmap</code></td><td>Rootless con pi&ugrave; mapping subuid/subgid</td><td><code>containers/storage/pkg/unshare</code></td><td>Scrivono <code>/proc/&lt;pid&gt;/uid_map</code> e <code>gid_map</code> per il nuovo namespace.</td><td>Pochi istanti.</td></tr>
+                <tr><td><code>buildah-oci-runtime</code></td><td>Ogni <code>RUN</code> con isolamento OCI</td><td><code>buildah</code> via reexec</td><td>Prepara il bundle OCI, esegue <code>create</code>, <code>start</code>, <code>state</code>, <code>kill</code> e <code>delete</code>, sincronizza la rete e attende l'exit.</td><td>Il singolo <code>RUN</code>.</td></tr>
+                <tr><td><code>crun</code> o <code>runc</code></td><td>Per <code>create</code>, <code>start</code>, <code>state</code>, <code>kill</code>, <code>delete</code></td><td><code>buildah-oci-runtime</code></td><td>Crea namespace, monta il rootfs, applica cgroup, seccomp, capability, SELinux/AppArmor e avvia il processo init.</td><td>Pochi istanti per comando; l'init del container resta.</td></tr>
+                <tr><td>Comando del container</td><td>Durante il <code>RUN</code></td><td>Il runtime OCI</td><td>&Egrave; il PID 1 nel container: esegue l'istruzione, con i suoi figli (<code>dnf</code>, <code>apk</code>, <code>make</code>, ...).</td><td>La durata del <code>RUN</code>.</td></tr>
+                <tr><td><code>pasta</code></td><td>Rootless con rete (default <code>private</code>)</td><td>Il processo <code>buildah</code> padre</td><td>Crea l'interfaccia tap, configura indirizzi, route e port forwarding senza privilegi di root.</td><td>La durata del <code>RUN</code>.</td></tr>
+                <tr><td><code>netavark</code> (o CNI)</td><td>Rootful con rete</td><td><code>buildah</code>, tramite <code>NetworkInterface.Setup</code></td><td>Crea bridge e veth, collega il network namespace e applica le regole di rete.</td><td>Setup e teardown, non tutto il <code>RUN</code>.</td></tr>
+                <tr><td><code>aardvark-dns</code></td><td>Rootful, rete netavark con DNS abilitato</td><td><code>netavark</code></td><td>Risolve i nomi dei container nella rete.</td><td>Finch&eacute; il DNS serve.</td></tr>
+                <tr><td><code>fuse-overlayfs</code></td><td>Rootless, quando l'overlay nativo non &egrave; disponibile</td><td><code>containers/storage</code></td><td>Monta il rootfs overlay in userspace, senza richiedere overlay kernel.</td><td>Finch&eacute; il mount &egrave; attivo.</td></tr>
+                <tr><td><code>buildah-chroot-runtime</code>, <code>buildah-chroot-exec</code></td><td>Con <code>--isolation=chroot</code></td><td><code>buildah</code> via reexec</td><td>Preparano namespace e bind mount, fanno <code>chroot</code> ed eseguono il comando.</td><td>Il singolo <code>RUN</code>.</td></tr>
+                <tr><td><code>storage-mountfrom</code></td><td>Quando lo storage monta un layer overlay</td><td><code>containers/storage</code></td><td>Helper breve che esegue il mount dell'overlay nel processo giusto.</td><td>Pochi istanti.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="processi-run">Vita di un RUN, passo per passo</h3>
+          <ol>
+            <li>
+              Buildah prepara il <strong>bundle OCI</strong>: rootfs,
+              <code>config.json</code>, ambiente, mount, utente, capability e
+              seccomp. Il bundle finisce in una directory temporanea: quella
+              indicata da <code>TMPDIR</code>, da <code>tmp_dir</code> in
+              <code>containers.conf</code> o, in mancanza, <code>/var/tmp</code>.
+              Il RunRoot dello storage &egrave; un'altra cosa (stato e lock dei
+              container) e lo leggi con
+              <code>buildah info --format '{{.store.RunRoot}}'</code>.
+            </li>
+            <li>
+              Buildah si re-exec come <code>buildah-oci-runtime</code> e gli
+              passa la configurazione tramite una pipe. Il processo originale
+              resta il coordinatore e non esegue direttamente il comando.
+            </li>
+            <li>
+              L'helper esegue
+              <code>crun create --bundle ... --pid-file ... &lt;nome&gt;</code>.
+              Il runtime crea i namespace, monta il rootfs, applica i limiti e
+              crea il processo init; scrive il PID nel file.
+            </li>
+            <li>
+              Se la rete &egrave; attiva, l'helper avvisa il padre. Il padre
+              apre <code>/proc/&lt;pid&gt;/ns/net</code>, configura
+              <code>pasta</code> in rootless o <code>netavark</code>/CNI in
+              rootful, aggiorna <code>/etc/hosts</code> e
+              <code>resolv.conf</code>, poi d&agrave; il via all'helper.
+            </li>
+            <li>
+              L'helper esegue <code>crun start &lt;nome&gt;</code>: l'init
+              esegue il comando del <code>RUN</code>. Da qui in poi il comando
+              &egrave; il PID 1 del container, con i suoi figli.
+            </li>
+            <li>
+              L'helper attende con <code>wait4(pid)</code> e nel frattempo
+              interroga <code>crun state</code> ogni 100 ms. Se arriva
+              <code>SIGINT</code>, <code>SIGTERM</code> o <code>SIGHUP</code>,
+              invia <code>crun kill SIGKILL</code> al container.
+            </li>
+            <li>
+              All'uscita esegue <code>crun delete</code>, restituisce il codice
+              di uscita e il padre chiude la rete. Buildah aggiorna il
+              container di lavoro e, se richiesto, scrive il layer.
+            </li>
+            <li>
+              Alla fine non resta nulla in esecuzione: niente daemon, niente
+              shim, niente <code>conmon</code>. Il prossimo comando riparte da
+              zero.
+            </li>
+          </ol>
+
+          <h3 id="processi-rootless">Rootless, rootful e chroot</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Scenario</th><th>Isolamento predefinito</th><th>Rete</th><th>Storage</th><th>Processi caratteristici</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rootful</td><td><code>oci</code> (<code>crun</code>/<code>runc</code> come root)</td><td><code>netavark</code> o CNI</td><td>Overlay kernel</td><td><code>buildah-oci-runtime</code> e runtime</td></tr>
+                <tr><td>Rootless</td><td><code>rootless</code> (runtime dentro user namespace)</td><td><code>pasta</code>; reti nominate non supportate</td><td>Overlay nativo o <code>fuse-overlayfs</code></td><td>Seconda istanza <code>buildah</code>, <code>newuidmap</code>/<code>newgidmap</code>, <code>pasta</code></td></tr>
+                <tr><td><code>--isolation=chroot</code></td><td><code>chroot</code>, senza runtime OCI</td><td>Rete host forzata</td><td>Lo stesso storage</td><td><code>buildah-chroot-runtime</code> e <code>buildah-chroot-exec</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            In rootless Buildah re-exec s&eacute; stesso in uno user namespace
+            prima di fare qualsiasi cosa. Lo stesso meccanismo &egrave; usato
+            da <code>buildah unshare</code>, che entra nel namespace e poi
+            esegue il comando che gli passi. Se il sistema ha pi&ugrave; ID
+            subordinati, entrano in gioco <code>newuidmap</code> e
+            <code>newgidmap</code>; controlla <code>/etc/subuid</code> e
+            <code>/etc/subgid</code>.
+          </p>
+          <p>
+            Le reti nominate non funzionano in rootless: oltre a
+            <code>host</code> e <code>none</code>, l'unica modalit&agrave;
+            rootless &egrave; <code>pasta</code>. Da Buildah 1.44 il codice di
+            rete non usa pi&ugrave; <code>slirp4netns</code> e la 1.46 ha
+            tolto anche la dipendenza residua; la chiave
+            <code>default_rootless_network_cmd</code> in
+            <code>containers.conf</code> esiste ancora, ma Buildah accetta
+            solo <code>pasta</code>.
+          </p>
+          <p>
+            <code>fuse-overlayfs</code> non &egrave; obbligatorio: di norma
+            viene usato solo quando l'overlay nativo non &egrave; disponibile
+            (o quando lo forzi in <code>storage.conf</code>). Puoi vedere il
+            driver attivo con
+            <code>buildah info --format '{{.store.GraphDriverName}}'</code>;
+            se leggi <code>vfs</code>, non c'&egrave; alcun overlay e le build
+            saranno pi&ugrave; lente.
+          </p>
+
+          <h3 id="processi-osservare">Come osservarli davvero</h3>
+          <p>
+            Un <code>RUN</code> abbastanza lungo &egrave; il modo migliore per
+            vedere la catena. Crea un Containerfile minimo:
+          </p>
+          <pre><code>printf '%s\n' 'FROM alpine:3.22' 'RUN sleep 30' > Containerfile
+buildah build -t lente .</code></pre>
+          <p>
+            In un secondo terminale, mentre la build &egrave; ferma nel
+            <code>sleep</code>:
+          </p>
+          <pre><code>ps -eo pid,ppid,user,args --forest | grep -E 'buildah|crun|runc|pasta|netavark|fuse-overlayfs'
+pstree -alp "$(pgrep -n buildah)"</code></pre>
+          <p>
+            Per vedere i comandi esatti che Buildah passa al runtime, alza il
+            log:
+          </p>
+          <pre><code>buildah --log-level debug build -t lente . 2&gt;&amp;1 | grep -E 'Running|network|runtime'</code></pre>
+          <p>
+            Se hai <code>strace</code>, puoi seguire le chiamate che creano
+            processi e namespace:
+          </p>
+          <pre><code>strace -f -e trace=clone,clone3,execve -o /tmp/buildah.trace buildah build -t lente .</code></pre>
+          <p>
+            Infine, la configurazione effettiva si legge da <code>info</code>:
+          </p>
+          <pre><code>buildah info --format '{{.host.OCIRuntime}}'
+buildah info --format '{{.host.rootless}}'
+buildah info --format '{{.store.GraphDriverName}}'
+buildah info --format '{{.store.RunRoot}}'</code></pre>
+          <p>
+            Con <code>--jobs N</code> Buildah pu&ograve; eseguire pi&ugrave;
+            stadi in parallelo: in quel caso vedrai pi&ugrave; alberi
+            <code>buildah-oci-runtime</code> e pi&ugrave; runtime
+            contemporaneamente. Non &egrave; un daemon che resta acceso: sono
+            processi figli del comando di build.
+          </p>
+
+          <h3 id="processi-non">Cosa Buildah non lancia</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Processo</th><th>Chi lo usa</th><th>Perch&eacute; non serve a Buildah</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>conmon</code></td><td>Podman</td><td>Buildah attende direttamente il processo con <code>wait4</code>; non gli serve un supervisore separato.</td></tr>
+                <tr><td><code>containerd</code>, <code>containerd-shim</code></td><td>Docker e Kubernetes</td><td>Buildah parla direttamente con il runtime OCI, senza un daemon intermedio.</td></tr>
+                <tr><td><code>dockerd</code></td><td>Docker</td><td>Buildah non ha un demone: &egrave; un comando one-shot.</td></tr>
+                <tr><td><code>skopeo</code></td><td>Pu&ograve; essere usato a parte</td><td>Buildah usa la libreria <code>containers/image</code>, non il binario <code>skopeo</code>.</td></tr>
+                <tr><td><code>docker-proxy</code></td><td>Docker</td><td>Le porte non sono il suo scopo; la rete serve solo durante il <code>RUN</code>.</td></tr>
+                <tr><td><code>systemd</code></td><td>Il sistema, non Buildah</td><td>Buildah non crea un servizio; al massimo passa al runtime opzioni come <code>--cgroup-parent</code> o <code>--cgroupns</code>.</td></tr>
+                <tr><td><code>iptables</code>, <code>nft</code></td><td>Gli strumenti di rete</td><td>Non li invoca direttamente: se servono regole, le gestisce <code>netavark</code>.</td></tr>
+                <tr><td><code>tar</code>, <code>gzip</code></td><td>Utility esterne</td><td>Archivi e compressione sono gestiti dalle librerie Go, non da processi esterni.</td></tr>
+                <tr><td><code>podman</code></td><td>Podman stesso</td><td>Buildah non ha bisogno di Podman per costruire, n&eacute; lo chiama al posto tuo.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="processi-confronto">La catena di Buildah, Podman e Docker</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Strumento</th><th>Catena tipica</th><th>Differenza chiave</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Buildah</strong></td><td><code>buildah</code> &rarr; <code>buildah-oci-runtime</code> &rarr; <code>crun</code>/<code>runc</code> &rarr; comando</td><td>Niente daemon, niente <code>conmon</code>: Buildah &egrave; il supervisore del singolo <code>RUN</code>.</td></tr>
+                <tr><td><strong>Podman</strong></td><td><code>podman</code> &rarr; <code>conmon</code> &rarr; <code>crun</code>/<code>runc</code> &rarr; comando</td><td>Niente daemon, ma <code>conmon</code> supervisiona il container anche dopo il comando.</td></tr>
+                <tr><td><strong>Docker</strong></td><td><code>docker</code> &rarr; <code>dockerd</code> &rarr; <code>containerd</code> &rarr; <code>containerd-shim</code> &rarr; <code>runc</code> &rarr; comando</td><td>Architettura a daemon e shim; <code>docker-proxy</code> gestisce le porte pubblicate.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Lo schema &egrave; semplificato: Docker pu&ograve; usare runtime
+            diversi e Podman pu&ograve; esporre un servizio API, ma la
+            differenza di fondo resta. Buildah costruisce e basta: quando il
+            comando finisce, la catena &egrave; gi&agrave; chiusa.
+          </p>
+
+          <h3 id="processi-problemi">Se qualcosa non parte</h3>
+          <ul>
+            <li><strong>Runtime mancante</strong>: controlla <code>buildah info --format '{{.host.OCIRuntime}}'</code> e installa il binario indicato, oppure usa <code>--runtime</code>.</li>
+            <li><strong><code>pasta</code> mancante</strong>: la rete rootless non parte; installa <code>pasta</code> oppure usa <code>--network=host</code> o <code>--network=none</code>.</li>
+            <li><strong><code>fuse-overlayfs</code> mancante</strong>: se l'overlay nativo non &egrave; disponibile, installalo o passa a <code>vfs</code>, accettando build pi&ugrave; lente.</li>
+            <li><strong><code>newuidmap</code>/<code>newgidmap</code> mancanti</strong>: installa il pacchetto <code>uidmap</code> e controlla <code>/etc/subuid</code> e <code>/etc/subgid</code>.</li>
+            <li><strong>Container rimasti</strong>: <code>buildah containers</code> mostra i container di lavoro; <code>buildah rm</code> li elimina e <code>buildah prune</code> pulisce le immagini non pi&ugrave; usate.</li>
+          </ul>
+
+          <p>
+            <strong>Fonti verificate:</strong>
+            <a href="https://github.com/podman-container-tools/buildah/blob/main/run_common.go">Buildah <code>run_common.go</code></a>,
+            <a href="https://github.com/podman-container-tools/buildah/blob/main/run_linux.go">Buildah <code>run_linux.go</code></a>,
+            <a href="https://github.com/podman-container-tools/buildah/blob/main/chroot/run_common.go">Buildah <code>chroot/run_common.go</code></a>,
+            <a href="https://github.com/containers/storage/blob/main/pkg/unshare/unshare_linux.go">containers/storage <code>unshare</code></a>.
+          </p>
+
+          <h2 id="architettura">Dentro Buildah</h2>
+          <p>
+            Buildah &egrave; un programma Go che usa alcune librerie
+            fondamentali dell'ecosistema containers:
+            <code>containers/storage</code> per gestire i file system,
+            <code>containers/image</code> per leggere e scrivere manifest,
+            <code>containers/common</code> per la configurazione e un
+            <em>image builder</em> per interpretare i Containerfile. Quando deve
+            eseguire un processo chiama un runtime OCI, di solito
+            <code>runc</code> o <code>crun</code>.
+          </p>
+          <p>
+            Il modello &egrave; <strong>fork-exec</strong>: non c'&egrave; un
+            servizio che aspetta richieste. Il comando che digiti apre lo
+            storage, prepara il container di lavoro, esegue ci&ograve; che gli
+            hai chiesto e termina. Questa scelta ha due conseguenze pratiche:
+            non c'&egrave; un daemon da aggiornare o proteggere, e ogni
+            operazione &egrave; isolata dalle altre.
+          </p>
+          <p>
+            Un <strong>container di lavoro</strong> &egrave; composto da un
+            rootfs e da una configurazione. Il rootfs &egrave; una directory
+            nello storage; la configurazione contiene ambiente, comando,
+            entrypoint, porte, label e le altre impostazioni che finiranno
+            nell'immagine. <code>buildah commit</code> impacchetta i due pezzi
+            in un manifest e in un file di configurazione OCI, poi li scrive
+            nello storage con un nome e un tag.
+          </p>
+          <p>
+            <code>buildah build</code> non &egrave; un mondo separato: legge il
+            Containerfile, traduce ogni istruzione nei primitivi che abbiamo
+            appena visto e alla fine crea l'immagine. La differenza &egrave;
+            solo il livello di astrazione. Se una build fallisce, puoi spesso
+            riprodurre il passaggio a mano con <code>from</code>,
+            <code>run</code> e <code>copy</code> per capire quale istruzione
+            non funziona.
+          </p>
+
+          <h2 id="da-zero">Costruire da zero, a mano</h2>
+          <p>
+            &ldquo;Da zero&rdquo; pu&ograve; voler dire due cose: senza
+            Containerfile, ma con un'immagine di base, oppure davvero da un
+            rootfs vuoto. La prima &egrave; la pi&ugrave; comune; la seconda
+            serve per immagini minimali e richiede un eseguibile statico o
+            un'installazione fatta con <code>dnf --installroot</code>.
+          </p>
+          <h3>Senza Containerfile, con una base</h3>
+          <pre><code># 1. crea il container di lavoro
+ctr=$(buildah from alpine:3.22)
+
+# 2. installa i pacchetti
+buildah run "$ctr" -- apk add --no-cache nginx
+
+# 3. copia i file dell'applicazione
+buildah copy "$ctr" index.html /usr/share/nginx/html/index.html
+
+# 4. configura l'immagine
+buildah config --port 80/tcp "$ctr"
+buildah config --cmd '["nginx","-g","daemon off;"]' "$ctr"
+buildah config --label org.opencontainers.image.title=web "$ctr"
+
+# 5. crea l'immagine e rimuove il container di lavoro
+buildah commit --rm "$ctr" localhost/web:1.0</code></pre>
+          <p>
+            Ogni passaggio &egrave; verificabile: dopo <code>from</code> puoi
+            eseguire <code>buildah containers</code>; dopo <code>run</code>
+            puoi montare il rootfs con <code>buildah mount</code> e guardare
+            dentro; dopo <code>commit</code> puoi controllare con
+            <code>buildah images</code> e <code>buildah inspect</code>.
+          </p>
+          <h3>Davvero da scratch</h3>
+          <pre><code># hello deve essere un binario statico
+ctr=$(buildah from scratch)
+buildah copy "$ctr" ./hello /hello
+buildah config --entrypoint '["/hello"]' "$ctr"
+buildah commit --rm "$ctr" localhost/hello:1.0</code></pre>
+          <p>
+            Un'immagine da <code>scratch</code> non contiene shell, package
+            manager n&eacute; certificati: contiene solo ci&ograve; che hai
+            copiato. &Egrave; il modo per ottenere immagini molto piccole, ma
+            anche il pi&ugrave; esigente: se il binario non &egrave; statico,
+            non partir&agrave;.
+          </p>
+
+          <h2 id="containerfile">Costruire con un Containerfile</h2>
+          <p>
+            Il Containerfile ha la stessa sintassi di un Dockerfile. Buildah
+            accetta sia il nome <code>Containerfile</code> sia
+            <code>Dockerfile</code>, e con <code>-f</code> puoi indicare un
+            percorso o un URL. Il vantaggio rispetto ai comandi a mano &egrave;
+            che la ricetta &egrave; un artefatto versionabile e riproducibile.
+          </p>
+          <pre><code># Containerfile multi-stage
+FROM golang:1.25-alpine AS build
+WORKDIR /src
+COPY . .
+RUN CGO_ENABLED=0 go build -o /out/app ./cmd/app
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=build /out/app /app
+USER 65532:65532
+ENTRYPOINT ["/app"]</code></pre>
+          <pre><code>buildah build --layers -t localhost/app:1.0 .
+buildah build --build-arg VERSION=1.0 -t localhost/app:1.0 .
+buildah inspect --type image localhost/app:1.0</code></pre>
+          <p>
+            Il multi-stage &egrave; particolarmente utile con Buildah: lo stage
+            di compilazione pu&ograve; contenere toolchain, compilatori e
+            dipendenze, mentre l'immagine finale copia solo il binario. In
+            questo modo la superficie d'attacco si riduce e l'immagine pesa
+            molto meno.
+          </p>
+          <p>
+            Per le build multi-architettura si usa <code>--platform</code> con
+            una lista di piattaforme e <code>--manifest</code> per raccogliere
+            i risultati:
+          </p>
+          <pre><code>buildah build \
+  --jobs 4 \
+  --platform linux/amd64,linux/arm64 \
+  --manifest localhost/app:multi \
+  .
+
+buildah manifest inspect localhost/app:multi
+buildah manifest push --all localhost/app:multi docker://quay.io/utente/app:multi</code></pre>
+          <p>
+            Le istruzioni <code>RUN</code> per un'architettura diversa da quella
+            del host richiedono un emulatore (per esempio QEMU) oppure una
+            build nativa su un nodo di quell'architettura. Senza di essi la
+            build si ferma, e il messaggio d'errore non sempre lo dice
+            chiaramente.
+          </p>
+
+          <h2 id="layer">Layer, cache e build riproducibili</h2>
+          <p>
+            Qui c'&egrave; una differenza che sorprende chi arriva da Podman:
+            <code>buildah build</code> ha <code>--layers</code> disattivato per
+            default, mentre <code>podman build</code> lo ha attivo. Senza
+            layer intermedi Buildah produce l'immagine finale ma non conserva
+            la cache di ogni istruzione; con <code>--layers</code> ogni
+            passaggio diventa un'immagine intermedia riutilizzabile.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Cache intermedi</th><th>Quando usarlo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>buildah build -t app .</code></td><td>No</td><td>Build una tantum, script semplici.</td></tr>
+                <tr><td><code>buildah build --layers -t app .</code></td><td>S&igrave;</td><td>Build ripetute, CI, sviluppo locale.</td></tr>
+                <tr><td><code>buildah build --layers --cache-from registry/cache --cache-to registry/cache -t app .</code></td><td>S&igrave;, anche remota</td><td>Cache condivisa tra runner.</td></tr>
+                <tr><td><code>buildah build --no-cache -t app .</code></td><td>No</td><td>Verifica che la build sia completa.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La cache remota richiede <code>--layers</code>: senza di essa
+            <code>--cache-from</code> viene ignorato. Per una build
+            riproducibile, oltre alla cache, fissa la data di creazione e i
+            riferimenti delle immagini:
+          </p>
+          <pre><code>buildah build \
+  --layers \
+  --timestamp 1700000000 \
+  --pull=never \
+  -t localhost/app:1.0 .
+
+buildah push --digestfile app.digest localhost/app:1.0 docker://quay.io/utente/app:1.0
+cat app.digest</code></pre>
+          <p>
+            Il pinning per digest &egrave; il modo pi&ugrave; solido per
+            garantire che due build usino esattamente la stessa base. Un tag
+            pu&ograve; cambiare; un digest no.
+          </p>
+
+          <h2 id="rootless">Rootless in pratica</h2>
+          <p>
+            Rootless non significa &ldquo;senza permessi&rdquo;: significa che
+            i permessi sono confinati in un namespace utente. Il tuo UID sul
+            host, per esempio <code>1000</code>, viene mappato a
+            <code>0</code> dentro la build; un intervallo di UID subordinati
+            copre gli altri utenti. Il kernel applica la mappatura, quindi un
+            processo che dentro il container sembra root non lo &egrave; sul
+            host.
+          </p>
+          <pre><code>buildah unshare cat /proc/self/uid_map
+buildah unshare cat /proc/self/gid_map
+
+# esempio di output
+#          0       1000          1
+#          1     100000      65536</code></pre>
+          <p>
+            La prima colonna &egrave; l'ID dentro il namespace, la seconda
+            l'ID sul host, la terza la lunghezza dell'intervallo. Se la seconda
+            riga manca, <code>/etc/subuid</code> o <code>/etc/subgid</code>
+            non sono configurati per il tuo utente.
+          </p>
+          <p>
+            Due attenzioni pratiche:
+          </p>
+          <ul>
+            <li><code>buildah mount</code> non funziona direttamente come
+              utente normale: serve <code>buildah unshare</code>, che apre un
+              namespace e monta il rootfs al suo interno;</li>
+            <li>la rete durante <code>RUN</code> usa <code>pasta</code> in
+              modalit&agrave; user-mode; le reti con nome e alcune
+              configurazioni avanzate restano rootful.</li>
+          </ul>
+          <p>
+            Per un uso quotidiano rootless, lo storage predefinito &egrave;
+            <code>$HOME/.local/share/containers/storage</code>. Se hai bisogno
+            di isolare un progetto, puoi puntare a un altro
+            <code>storage.conf</code> con
+            <code>CONTAINERS_STORAGE_CONF</code>, senza toccare le immagini
+            condivise.
+          </p>
+
+          <h2 id="sicurezza">Sicurezza</h2>
+          <p>
+            Buildah riduce la superficie d'attacco perch&eacute; non espone un
+            daemon e pu&ograve; girare rootless. Non &egrave; per&ograve;
+            automaticamente sicuro: la sicurezza dipende da cosa esegui
+            durante la build, da quali privilegi concedi e da come verifichi
+            ci&ograve; che scarichi.
+          </p>
+          <ul>
+            <li><strong>non usare root se non serve</strong>: una build
+              rootless limita i danni di un errore o di una dipendenza
+              compromessa;</li>
+            <li><strong>niente segreti nell'immagine</strong>: usa
+              <code>--secret</code> e <code>RUN --mount=type=secret</code>;
+              copiare un token e cancellarlo in un layer successivo non lo
+              rimuove dalla storia;</li>
+            <li><strong>immagini minime</strong>: meno pacchetti, meno
+              vulnerabilit&agrave;;</li>
+            <li><strong>capability e seccomp</strong>: non aggiungere
+              <code>--cap-add</code> o <code>--privileged</code> per
+              comodit&agrave;;</li>
+            <li><strong>SELinux o AppArmor</strong>: lascia attivi i profili
+              del host quando disponibili;</li>
+            <li><strong>firma e policy</strong>: verifica le immagini con
+              <code>policy.json</code> e pinna i digest;</li>
+            <li><strong>container ufficiale</strong>: l'immagine di Buildah per
+              la CI richiede opzioni che riducono l'isolamento
+              (<code>seccomp=unconfined</code>, <code>label=disable</code>,
+              <code>/dev/fuse</code>): usala solo su codice fidato.</li>
+          </ul>
+          <pre><code># secret montato solo durante il RUN, non salvato nell'immagine
+buildah build --secret id=npmtoken,src=./token -t localhost/app:1.0 .
+
+# nel Containerfile:
+# RUN --mount=type=secret,id=npmtoken \
+#     NPM_TOKEN=$(cat /run/secrets/npmtoken) npm ci</code></pre>
+
+          <h2 id="ci">Buildah in CI</h2>
+          <p>
+            In una pipeline Linux, Buildah elimina la necessit&agrave; di
+            Docker-in-Docker. Il runner deve avere un kernel con namespace e
+            overlay (o FUSE), e l'utente della CI deve avere subuid/subgid
+            configurati. Se il runner &egrave; un container, servono le
+            stesse opzioni dell'immagine ufficiale.
+          </p>
+          <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+export BUILDAH_LAYERS=true
+IMAGE="quay.io/utente/app"
+
+buildah build \
+  --layers \
+  --build-arg VERSION="$CI_COMMIT_SHA" \
+  -t "$IMAGE:$CI_COMMIT_SHA" \
+  -t "$IMAGE:latest" \
+  .
+
+printf '%s' "$REGISTRY_PASSWORD" | \
+  buildah login -u "$REGISTRY_USER" --password-stdin quay.io
+
+buildah push "$IMAGE:$CI_COMMIT_SHA"
+buildah push "$IMAGE:latest"</code></pre>
+          <p>
+            Per velocizzare le build ripetute si pu&ograve; usare una cache
+            remota. Il principio &egrave; lo stesso di BuildKit, ma i flag sono
+            quelli di Buildah:
+          </p>
+          <pre><code>buildah build \
+  --layers \
+  --cache-from "$CACHE_IMAGE" \
+  --cache-to "$CACHE_IMAGE" \
+  -t "$IMAGE:$CI_COMMIT_SHA" \
+  .</code></pre>
+          <p>
+            Per le build multi-architettura, la strada pi&ugrave; lineare &egrave;
+            costruire su un runner della piattaforma nativa e unire i
+            risultati in un manifest, oppure usare <code>--platform</code> con
+            QEMU se le istruzioni <code>RUN</code> devono essere emulate.
+          </p>
+
+          <h2 id="confronto">Buildah, Podman e Docker</h2>
+          <p>
+            I tre strumenti non sono in competizione diretta: coprono aree
+            diverse dello stesso ecosistema. La tabella seguente riassume le
+            differenze che contano davvero quando devi scegliere.
+          </p>
+          <figure class="figure">
+            <img src="../../assets/img/buildah/buildah-vs-podman-docker.svg"
+                 width="1200" height="840"
+                 alt="Confronto tra Docker, Podman e Buildah: Docker usa un daemon centrale, Podman è daemonless e gestisce container, Buildah è daemonless e specializzato nella costruzione di immagini.">
+            <figcaption>
+              Docker concentra build ed esecuzione in un daemon; Podman separa
+              l'esecuzione e usa Buildah per la build; Buildah espone la sola
+              costruzione delle immagini. Illustrazione Adripedia, concetti
+              dalla documentazione dei tre progetti.
+            </figcaption>
+          </figure>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspetto</th><th>Buildah</th><th>Podman</th><th>Docker</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Scopo</td><td>Costruire immagini</td><td>Eseguire e gestire container</td><td>Costruire ed eseguire container</td></tr>
+                <tr><td>Daemon</td><td>No</td><td>No</td><td>S&igrave;, <code>dockerd</code></td></tr>
+                <tr><td>Rootless predefinito</td><td>S&igrave;, se l'utente &egrave; configurato</td><td>S&igrave;, per l'utente normale</td><td>Possibile, non predefinito</td></tr>
+                <tr><td>Build da Containerfile</td><td><code>buildah build</code></td><td><code>podman build</code> (usa Buildah)</td><td><code>docker build</code> / <code>buildx</code></td></tr>
+                <tr><td>Build senza file di ricetta</td><td>S&igrave;</td><td>No</td><td>No</td></tr>
+                <tr><td>Container di lunga durata</td><td>No</td><td>S&igrave;</td><td>S&igrave;</td></tr>
+                <tr><td>Pod e manifest Kubernetes</td><td>Solo manifest di immagini</td><td>S&igrave;, <code>kube play</code></td><td>No</td></tr>
+                <tr><td>Compose</td><td>No</td><td>Tramite <code>podman compose</code></td><td>S&igrave;, Docker Compose</td></tr>
+                <tr><td>Multi-arch</td><td><code>--platform</code> e <code>manifest</code></td><td>Manifest e <code>buildx</code>-like</td><td><code>buildx</code></td></tr>
+                <tr><td>Storage immagini</td><td><code>containers/storage</code></td><td><code>containers/storage</code></td><td><code>/var/lib/docker</code></td></tr>
+                <tr><td>Uso tipico</td><td>CI, script, immagini minimali</td><td>Produzione Linux, pod, systemd</td><td>Sviluppo e produzione con Docker Desktop</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La riga sullo storage &egrave; la pi&ugrave; importante per capire
+            l'integrazione: Podman e Buildah condividono le immagini, quindi
+            puoi costruire con Buildah e avviare subito con Podman. Docker, con
+            il suo archivio separato, non vede le immagini di Buildah e
+            viceversa.
+          </p>
+
+          <h2 id="versioni">Buildah 1.46 e compatibilit&agrave;</h2>
+          <p>
+            La release 1.46.0 &egrave; del 21 ottobre 2026. Aggiorna le
+            dipendenze a containers/storage 1.64, containers/image 5.41 e
+            containers/common 0.69, e aggiunge alcuni dettagli utili a chi
+            scrive Containerfile complessi: <code>--include</code> per
+            <code>add</code> e <code>copy</code>, <code>--required-path</code>,
+            <code>--umask</code> per <code>run</code>, il supporto a
+            <code>--keep-git-dir</code> in <code>ADD</code> e le cache mount
+            con <code>sharing=private</code>.
+          </p>
+          <p>
+            Sul fronte delle rimozioni, la 1.46 ha eliminato la dipendenza da
+            <em>slirp</em>: la rete rootless passa da <code>pasta</code>. &Egrave;
+            la stessa direzione presa da Podman 6, che ha rimosso CNI,
+            iptables e slirp4netns.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Podman</th><th>Buildah richiesto o incluso</th><th>Note</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Podman 6.0</td><td>Buildah 1.44.0</td><td>Requisito minimo della major.</td></tr>
+                <tr><td>Podman 6.1.x</td><td>Buildah 1.45.x</td><td>Serie stabile attuale.</td></tr>
+                <tr><td>Buildah standalone 1.46.0</td><td>&mdash;</td><td>Release pi&ugrave; recente; non forzare Podman 6.1 a usarla se il pacchetto non lo prevede.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <strong>Regola pratica.</strong> Se installi Buildah e Podman dallo
+            stesso repository, lascia che il package manager risolva le
+            dipendenze. Se compili da sorgente o mescoli repository diversi,
+            controlla le versioni di <code>containers/storage</code> e
+            <code>containers/common</code>: sono il punto in cui i disallineamenti
+            si manifestano.
+          </div>
+
+          <h2 id="migrazione">Arrivare da docker build</h2>
+          <p>
+            La migrazione &egrave; spesso pi&ugrave; semplice di quanto sembri:
+            il Containerfile resta valido e cambia il comando. Le differenze da
+            conoscere sono poche ma importanti.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Docker</th><th>Buildah</th><th>Differenza</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>docker build -t app .</code></td><td><code>buildah build -t app .</code></td><td>Stessa sintassi del Containerfile.</td></tr>
+                <tr><td><code>docker buildx build --platform ...</code></td><td><code>buildah build --platform ...</code></td><td>Buildah usa <code>--manifest</code> per raccogliere le piattaforme.</td></tr>
+                <tr><td><code>docker push app</code></td><td><code>buildah push app docker://registry/app</code></td><td>Il trasporto va specificato.</td></tr>
+                <tr><td><code>docker login</code></td><td><code>buildah login</code></td><td>File di autenticazione diverso.</td></tr>
+                <tr><td>Cache dei layer attiva</td><td><code>--layers</code> esplicito</td><td>Il default di <code>buildah build</code> &egrave; disattivato.</td></tr>
+                <tr><td>Formato Docker predefinito</td><td>Formato OCI predefinito</td><td><code>--format docker</code> se serve.</td></tr>
+                <tr><td><code>--load</code> verso il daemon</td><td>Non esiste</td><td>L'immagine &egrave; gi&agrave; nello storage locale.</td></tr>
+                <tr><td><code>docker context</code></td><td>Non esiste</td><td>Buildah lavora sempre sullo storage locale dell'host.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Un flusso di migrazione realistico &egrave; questo: sostituisci
+            <code>docker build</code> con <code>buildah build --layers</code>,
+            lascia il Containerfile com'&egrave;, verifica che l'immagine
+            compaia in <code>podman images</code> e avvia i container con
+            Podman. Se usavi <code>docker compose</code>, tieni presente che
+            <code>podman compose</code> &egrave; un wrapper e richiede un
+            provider esterno.
+          </p>
+
+          <h2 id="faq">Domande frequenti</h2>
+
+          <h3>Buildah sostituisce Podman?</h3>
+          <p>
+            No. Buildah costruisce immagini; Podman le esegue e gestisce
+            container, pod, volumi e reti. Podman usa Buildah per la build,
+            quindi i due si completano invece di sovrapporsi.
+          </p>
+
+          <h3>Serve root per usare Buildah?</h3>
+          <p>
+            No, se l'utente ha subuid/subgid configurati e i helper
+            <code>newuidmap</code>/<code>newgidmap</code> installati. Rootful
+            resta utile per alcune operazioni, come i mount e le reti con nome,
+            ma non &egrave; il punto di partenza consigliato.
+          </p>
+
+          <h3>Posso usare un Dockerfile?</h3>
+          <p>
+            S&igrave;. Buildah accetta <code>Containerfile</code> e
+            <code>Dockerfile</code>; la sintassi &egrave; la stessa. Puoi anche
+            indicare un file con <code>-f</code> o un URL.
+          </p>
+
+          <h3>Buildah funziona su Windows o macOS?</h3>
+          <p>
+            Non in modo nativo. Serve una macchina Linux: WSL 2 su Windows,
+            una VM Linux su macOS, oppure il container ufficiale. In alternativa
+            si usa <code>podman build</code>, che passa comunque dal motore di
+            Buildah dentro la macchina Linux.
+          </p>
+
+          <h3>Dove finiscono le immagini?</h3>
+          <p>
+            Nello storage di <code>containers/storage</code>: rootless in
+            <code>$HOME/.local/share/containers/storage</code>, rootful in
+            <code>/var/lib/containers/storage</code>. Il percorso esatto lo
+            stampa <code>buildah info</code>.
+          </p>
+
+          <h3>Podman vede le immagini costruite da Buildah?</h3>
+          <p>
+            S&igrave;, perch&eacute; usano lo stesso storage. Non vede invece i
+            container di lavoro di Buildah: quelli sono un concetto interno
+            alla build e non sono container gestiti da Podman.
+          </p>
+
+          <h3><code>buildah commit</code> pubblica l'immagine?</h3>
+          <p>
+            No: la scrive nello storage locale. Per pubblicarla serve
+            <code>buildah push</code>, eventualmente dopo
+            <code>buildah login</code>.
+          </p>
+
+          <h3>Perch&eacute; la seconda build &egrave; lenta?</h3>
+          <p>
+            Probabilmente manca <code>--layers</code>. Senza cache dei layer
+            intermedi Buildah rif&agrave; ogni passaggio. Aggiungi
+            <code>--layers</code>, oppure imposta
+            <code>BUILDAH_LAYERS=true</code>.
+          </p>
+
+          <h3>Posso costruire per un'altra architettura?</h3>
+          <p>
+            S&igrave;, con <code>--platform</code>. Se la build contiene
+            <code>RUN</code>, serve un emulatore o un host di quell'architettura.
+            Per un risultato pubblicabile, raccogli le immagini in un manifest
+            con <code>--manifest</code> e <code>buildah manifest push --all</code>.
+          </p>
+
+          <h3>Buildah fa parte della CNCF?</h3>
+          <p>
+            S&igrave;. Insieme a Podman e Skopeo fa parte di
+            <em>Podman Container Tools</em>, progetto CNCF Sandbox dal 21
+            gennaio 2025. La licenza &egrave; Apache 2.0.
+          </p>
+
+          <h3>Dove trovo la documentazione aggiornata?</h3>
+          <p>
+            Il sito del progetto &egrave;
+            <a href="https://buildah.io/" target="_blank" rel="noopener">buildah.io</a>;
+            i manuali dei comandi sono nel repository e si leggono anche con
+            <code>buildah &lt;comando&gt; --help</code>. Per una versione
+            installata, l'aiuto locale &egrave; spesso pi&ugrave; preciso di un
+            articolo scritto mesi prima.
+          </p>
+
+          <div class="callout">
+            <strong>Una nota di metodo:</strong> Buildah cambia con regolarit&agrave;
+            e le distribuzioni non aggiornano tutte insieme. Quando un esempio
+            non funziona, controlla nell'ordine
+            <code>buildah --version</code>, <code>buildah info</code> e
+            <code>buildah &lt;comando&gt; --help</code>: nella maggior parte dei
+            casi la risposta &egrave; in uno di questi tre output.
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

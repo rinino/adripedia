@@ -60,15 +60,15 @@
           </ul>
           <p class="home-quick-foot">
             Ultimo aggiornamento
-            <time datetime="2026-11-08">8 nov 2026</time>
+            <time datetime="2026-11-10">10 nov 2026</time>
           </p>
         </aside>
       </section>
 
       <ul class="home-stats" aria-label="Adripedia in numeri">
         <li class="home-stat"><b>2</b><span>aree</span></li>
-        <li class="home-stat"><b>8</b><span>sezioni</span></li>
-        <li class="home-stat"><b>19</b><span>pagine</span></li>
+        <li class="home-stat"><b>9</b><span>sezioni</span></li>
+        <li class="home-stat"><b>20</b><span>pagine</span></li>
         <li class="home-stat"><b>51</b><span>domande CKA</span></li>
       </ul>
 
@@ -119,7 +119,7 @@
         <a class="card" href="informatica/index.html">
           <span class="card-mark" aria-hidden="true">&lt;/&gt;</span>
           <h3>Informatica</h3>
-          <p>Guide passo passo e approfondimenti su container, sistemi e strumenti di sviluppo. Dentro: Docker, Podman, Kubernetes, k3s, k9s, WSL, Git e OpenCode.</p>
+          <p>Guide passo passo e approfondimenti su container, sistemi e strumenti di sviluppo. Dentro: Docker, Podman, Buildah, Kubernetes, k3s, k9s, WSL, Git e OpenCode.</p>
         </a>
         <a class="card" href="link/index.html">
           <span class="card-mark" aria-hidden="true">&nearr;</span>
@@ -154,38 +154,44 @@
           <p>Podman da zero: installazione su Linux, Windows e macOS, comandi con ricerca, Quadlet, rootless e confronto puntuale con Docker.</p>
           <span class="card-chips"><span>Podman</span><span>5 tab</span><span>v6.1.4</span></span>
         </a>
-        <a class="card" href="informatica/kubernetes/index.html">
+        <a class="card" href="informatica/buildah/index.html">
           <span class="card-mark" aria-hidden="true">03</span>
+          <h3>Costruire immagini OCI</h3>
+          <p>Buildah da zero: comandi con ricerca, build a mano o da Containerfile, processi interni, rootless e confronto con Podman e Docker.</p>
+          <span class="card-chips"><span>Buildah</span><span>5 tab</span><span>v1.46.0</span></span>
+        </a>
+        <a class="card" href="informatica/kubernetes/index.html">
+          <span class="card-mark" aria-hidden="true">04</span>
           <h3>Capire Kubernetes senza perdersi</h3>
           <p>Architettura, installazione, comandi, rete, storage, memoria e immagini. In pi&ugrave;: glossario con ricerca e 51 domande per la CKA.</p>
           <span class="card-chips"><span>Kubernetes</span><span>5 tab</span><span>CKA</span></span>
         </a>
         <a class="card" href="informatica/wsl/index.html">
-          <span class="card-mark" aria-hidden="true">04</span>
+          <span class="card-mark" aria-hidden="true">05</span>
           <h3>Linux dentro Windows</h3>
           <p>Installazione di WSL, scelta e gestione delle distribuzioni, configurazione e comandi per lavorare senza cambiare computer.</p>
           <span class="card-chips"><span>WSL</span><span>3 tab</span><span>setup</span></span>
         </a>
         <a class="card" href="informatica/git/index.html">
-          <span class="card-mark" aria-hidden="true">05</span>
+          <span class="card-mark" aria-hidden="true">06</span>
           <h3>Avere Git sotto controllo</h3>
           <p>Concetti base, installazione su Windows e Linux e i comandi che servono davvero, raccolti in una pagina a tab.</p>
           <span class="card-chips"><span>Git</span><span>4 tab</span><span>comandi</span></span>
         </a>
         <a class="card" href="opencode/index.html">
-          <span class="card-mark" aria-hidden="true">06</span>
+          <span class="card-mark" aria-hidden="true">07</span>
           <h3>Usare OpenCode da zero</h3>
           <p>Otto pagine per installarlo, configurare agenti e scorciatoie, e convivere con la riga di comando senza troppi drammi.</p>
           <span class="card-chips"><span>OpenCode</span><span>8 pagine</span><span>agenti</span></span>
         </a>
         <a class="card" href="informatica/k3s/index.html">
-          <span class="card-mark" aria-hidden="true">07</span>
+          <span class="card-mark" aria-hidden="true">08</span>
           <h3>k3s, Kubernetes in piccolo</h3>
           <p>Guida completa alla distribuzione Kubernetes leggera: architettura, installazione, comandi con ricerca, datastore, rete e sicurezza.</p>
           <span class="card-chips"><span>k3s</span><span>4 tab</span><span>v1.37.2</span></span>
         </a>
         <a class="card" href="informatica/k9s/index.html">
-          <span class="card-mark" aria-hidden="true">08</span>
+          <span class="card-mark" aria-hidden="true">09</span>
           <h3>k9s, il cluster in terminale</h3>
           <p>Guida completa al terminale interattivo per Kubernetes: panoramica, installazione, comandi con ricerca, configurazione e approfondimenti.</p>
           <span class="card-chips"><span>k9s</span><span>v0.51.0</span></span>
@@ -266,6 +272,14 @@
       </p>
       <div class="updates" data-updates data-page-size="3">
         <ol class="updates-list" id="aggiornamenti-list" data-updates-list>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-10">10 novembre 2026</time>
+            <p>Buildah, approfondimento sui processi: albero dei processi, tabella di chi fa cosa, sequenza completa di un <code>RUN</code> (runtime OCI, rete, storage, helper interni), differenze tra rootless, rootful e chroot, comandi per osservarli e confronto con le catene di Podman e Docker.</p>
+          </li>
+          <li class="update">
+            <time class="update-date" datetime="2026-11-09">9 novembre 2026</time>
+            <p>Sezione Buildah completa: cinque tab con panoramica e confronto con Podman e Docker, installazione su Linux con note su Windows e macOS, comandi con ricerca, configurazione condivisa con l'ecosistema containers e approfondimenti con build pratica da zero, Containerfile, cache, rootless, sicurezza e CI. Documentata la release <code>1.46.0</code>.</p>
+          </li>
           <li class="update">
             <time class="update-date" datetime="2026-11-08">8 novembre 2026</time>
             <p>Sezione Podman completa: cinque tab con panoramica e confronto con Docker, installazione su Linux, Windows e macOS, comandi con ricerca, configurazione con Quadlet e approfondimenti su rootless, rete, storage e sicurezza. Documentata la release <code>6.1.4</code>.</p>

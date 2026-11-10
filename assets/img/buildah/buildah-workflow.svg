@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780" role="img" aria-labelledby="title desc">
+  <title id="title">Flusso di lavoro di Buildah</title>
+  <desc id="desc">Buildah parte da un Containerfile o da una sequenza di comandi, crea un container di lavoro con un rootfs, lo configura e produce un'immagine OCI o Docker nello storage locale. L'immagine può essere pubblicata su un registry oppure usata da Podman e Kubernetes. Non esiste un daemon centrale.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .box-title { font: 600 22px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .box-sub { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .chip { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #1f6fb2; }
+      .mono { font: 600 15px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="778" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">FLUSSO DI LAVORO</text>
+  <text x="56" y="100" class="title">Buildah: da una ricetta a un'immagine</text>
+  <text x="56" y="128" class="small">Ogni comando è un processo che parte, lavora e termina. Non c'è un daemon in ascolto.</text>
+
+  <!-- Sorgenti -->
+  <rect x="56" y="156" width="280" height="330" rx="18" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="188" class="label">SOGGENTI</text>
+  <text x="80" y="220" class="box-title">Sorgenti</text>
+  <text x="80" y="246" class="box-sub">La ricetta può essere un file</text>
+  <text x="80" y="268" class="box-sub">oppure una sequenza di comandi.</text>
+
+  <rect x="80" y="296" width="232" height="44" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="96" y="323" class="chip">Containerfile / Dockerfile</text>
+
+  <rect x="80" y="352" width="232" height="44" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="96" y="379" class="chip">script bash</text>
+
+  <rect x="80" y="408" width="232" height="44" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="96" y="435" class="chip">file locali, URL, archivi</text>
+
+  <text x="80" y="474" class="tiny">Il contesto di build può essere</text>
+  <text x="80" y="492" class="tiny">una directory, un archivio o un repo git.</text>
+
+  <line x1="336" y1="320" x2="386" y2="320" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Buildah -->
+  <rect x="392" y="156" width="520" height="330" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="420" y="188" class="label">MOTORE</text>
+  <text x="420" y="220" class="box-title">buildah</text>
+  <text x="420" y="246" class="box-sub">un binario Go, nessun servizio centralizzato</text>
+
+  <rect x="420" y="268" width="464" height="92" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="440" y="296" class="box-title">buildah build</text>
+  <text x="440" y="318" class="box-sub">legge il Containerfile e applica le istruzioni</text>
+  <text x="440" y="342" class="chip">FROM · RUN · COPY · CONFIG</text>
+  <text x="864" y="296" class="tiny" text-anchor="end">ricetta</text>
+
+  <rect x="420" y="378" width="464" height="92" rx="12" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="440" y="406" class="box-title">from → run → copy → config → commit</text>
+  <text x="440" y="428" class="box-sub">la stessa immagine, costruita un passo alla volta</text>
+  <text x="440" y="452" class="chip">manuale · script · linguaggio preferito</text>
+  <text x="864" y="406" class="tiny" text-anchor="end">comandi</text>
+
+  <line x1="884" y1="314" x2="948" y2="314" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="884" y1="424" x2="948" y2="424" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Storage -->
+  <rect x="956" y="156" width="188" height="330" rx="18" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="978" y="188" class="label">STORAGE</text>
+  <text x="978" y="218" class="box-title">containers/</text>
+  <text x="978" y="242" class="box-title">storage</text>
+
+  <rect x="978" y="266" width="144" height="84" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="992" y="292" class="chip">working</text>
+  <text x="992" y="312" class="chip">container</text>
+  <text x="992" y="334" class="tiny">rootfs + config</text>
+
+  <line x1="1050" y1="352" x2="1050" y2="382" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <rect x="978" y="388" width="144" height="74" rx="10" fill="#eaf3fc" stroke="#b9d7f2"/>
+  <text x="992" y="414" class="chip">immagine</text>
+  <text x="992" y="434" class="chip">OCI o Docker</text>
+  <text x="992" y="452" class="tiny">manifest + config</text>
+
+  <text x="978" y="476" class="tiny">podman images la vede</text>
+
+  <!-- Registry -->
+  <rect x="56" y="532" width="520" height="140" rx="18" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="564" class="label">PUBBLICAZIONE</text>
+  <text x="80" y="596" class="box-title">Registry</text>
+  <text x="80" y="620" class="box-sub">buildah push oppure buildah manifest push --all</text>
+  <text x="80" y="646" class="mono">quay.io · docker.io · registry interno</text>
+  <text x="556" y="596" class="tiny" text-anchor="end">autenticazione</text>
+  <text x="556" y="616" class="tiny" text-anchor="end">buildah login</text>
+
+  <!-- Runtime -->
+  <rect x="624" y="532" width="520" height="140" rx="18" fill="#ffffff" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="648" y="564" class="label">ESECUZIONE</text>
+  <text x="648" y="596" class="box-title">Podman e Kubernetes</text>
+  <text x="648" y="620" class="box-sub">leggono la stessa immagine dallo storage locale</text>
+  <text x="648" y="646" class="mono">podman run · podman kube play</text>
+  <text x="1124" y="596" class="tiny" text-anchor="end">stesse regole OCI</text>
+  <text x="1124" y="616" class="tiny" text-anchor="end">nessuna conversione</text>
+
+  <text x="56" y="716" class="small">Rootless: user namespace, subuid/subgid e newuidmap. Le immagini sono condivise con Podman; i container di lavoro di Buildah no.</text>
+  <text x="56" y="742" class="tiny">Illustrazione Adripedia · concetti dalla documentazione Buildah.</text>
+</svg>

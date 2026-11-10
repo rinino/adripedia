@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 840" width="1200" height="840" role="img" aria-labelledby="title desc">
+  <title id="title">Buildah, Podman e Docker a confronto</title>
+  <desc id="desc">Docker usa un daemon centrale, dockerd, che resta in ascolto e include la build. Podman è daemonless, gestisce container e pod di lunga durata e per la build usa l'API di Buildah. Buildah è specializzato nella costruzione delle immagini: accetta un Containerfile oppure comandi espliciti e produce un'immagine OCI. Podman e Buildah condividono lo storage delle immagini; Docker usa un archivio separato.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2383e2"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .panel-title { font: 700 24px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .panel-sub { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .flow-title { font: 600 18px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .flow-sub { font: 400 14px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .chip { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #1f6fb2; }
+      .mono { font: 600 15px "Consolas", "Courier New", monospace; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="838" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="64" class="label">CONFRONTO</text>
+  <text x="56" y="100" class="title">Tre strumenti, tre compiti</text>
+  <text x="56" y="128" class="small">Le immagini OCI sono le stesse. Cambiano il processo che le costruisce e il modo in cui vengono eseguite.</text>
+
+  <!-- Docker -->
+  <rect x="56" y="154" width="344" height="516" rx="20" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="84" y="190" class="panel-title">Docker</text>
+  <text x="84" y="214" class="panel-sub">daemon centrale, di solito come root</text>
+
+  <rect x="84" y="234" width="288" height="50" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="102" y="256" class="flow-title">docker CLI</text>
+  <text x="102" y="274" class="flow-sub">client</text>
+
+  <rect x="84" y="296" width="288" height="76" rx="10" fill="#fdf0e8" stroke="#e8c4ad"/>
+  <text x="102" y="320" class="flow-title">dockerd + BuildKit</text>
+  <text x="102" y="340" class="flow-sub">daemon sempre acceso</text>
+  <text x="102" y="358" class="flow-sub">API e costruzione immagini</text>
+
+  <rect x="84" y="384" width="288" height="50" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="102" y="406" class="flow-title">containerd</text>
+  <text x="102" y="424" class="flow-sub">ciclo di vita</text>
+
+  <rect x="84" y="446" width="288" height="50" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="102" y="468" class="flow-title">runc</text>
+  <text x="102" y="486" class="flow-sub">runtime OCI</text>
+
+  <rect x="84" y="508" width="288" height="50" rx="10" fill="#ffffff" stroke="#d8d7d3"/>
+  <text x="102" y="530" class="flow-title">processi del container</text>
+  <text x="102" y="548" class="flow-sub">PID 1 e figli</text>
+
+  <line x1="228" y1="284" x2="228" y2="294" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="228" y1="372" x2="228" y2="382" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="228" y1="434" x2="228" y2="444" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="228" y1="496" x2="228" y2="506" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <text x="84" y="592" class="chip">Dockerfile / buildx</text>
+  <text x="84" y="616" class="chip">daemon sempre acceso</text>
+  <text x="84" y="640" class="chip">root di default</text>
+  <text x="84" y="662" class="tiny">storage separato: /var/lib/docker</text>
+
+  <!-- Podman -->
+  <rect x="428" y="154" width="344" height="516" rx="20" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="456" y="190" class="panel-title">Podman</text>
+  <text x="456" y="214" class="panel-sub">daemonless, gestisce container e pod</text>
+
+  <rect x="456" y="234" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="474" y="256" class="flow-title">podman CLI</text>
+  <text x="474" y="274" class="flow-sub">avvia e poi esce</text>
+
+  <rect x="456" y="296" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="474" y="318" class="flow-title">conmon</text>
+  <text x="474" y="336" class="flow-sub">un supervisore per container</text>
+
+  <rect x="456" y="358" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="474" y="380" class="flow-title">crun</text>
+  <text x="474" y="398" class="flow-sub">namespace e cgroup</text>
+
+  <rect x="456" y="420" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="474" y="442" class="flow-title">processi del container</text>
+  <text x="474" y="460" class="flow-sub">anche di lunga durata</text>
+
+  <rect x="456" y="486" width="288" height="70" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="474" y="510" class="flow-title">podman build</text>
+  <text x="474" y="530" class="flow-sub">usa l'API di Buildah</text>
+  <text x="474" y="548" class="flow-sub">e richiede un Containerfile</text>
+
+  <line x1="600" y1="284" x2="600" y2="294" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="600" y1="346" x2="600" y2="356" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="600" y1="408" x2="600" y2="418" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <text x="456" y="592" class="chip">rootless</text>
+  <text x="456" y="616" class="chip">container long-lived</text>
+  <text x="456" y="640" class="chip">pod e Kubernetes</text>
+  <text x="456" y="662" class="tiny">condivide le immagini con Buildah</text>
+
+  <!-- Buildah -->
+  <rect x="800" y="154" width="344" height="516" rx="20" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="828" y="190" class="panel-title">Buildah</text>
+  <text x="828" y="214" class="panel-sub">specializzato nella costruzione</text>
+
+  <rect x="828" y="234" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="846" y="256" class="flow-title">buildah CLI</text>
+  <text x="846" y="274" class="flow-sub">un comando, un processo</text>
+
+  <rect x="828" y="296" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="846" y="318" class="flow-title">runc / crun</text>
+  <text x="846" y="336" class="flow-sub">solo per le istruzioni RUN</text>
+
+  <rect x="828" y="358" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="846" y="380" class="flow-title">working container</text>
+  <text x="846" y="398" class="flow-sub">rootfs + configurazione</text>
+
+  <rect x="828" y="420" width="288" height="50" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="846" y="442" class="flow-title">commit</text>
+  <text x="846" y="460" class="flow-sub">crea l'immagine OCI</text>
+
+  <rect x="828" y="486" width="288" height="70" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="846" y="510" class="flow-title">build oppure from → commit</text>
+  <text x="846" y="530" class="flow-sub">Containerfile o comandi espliciti</text>
+  <text x="846" y="548" class="flow-sub">nessun Dockerfile obbligatorio</text>
+
+  <line x1="972" y1="284" x2="972" y2="294" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="972" y1="346" x2="972" y2="356" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="972" y1="408" x2="972" y2="418" stroke="#2383e2" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <text x="828" y="592" class="chip">rootless</text>
+  <text x="828" y="616" class="chip">solo immagini</text>
+  <text x="828" y="640" class="chip">script e CI</text>
+  <text x="828" y="662" class="tiny">non gestisce servizi di lunga durata</text>
+
+  <!-- Storage -->
+  <rect x="56" y="694" width="1088" height="86" rx="16" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="722" class="box-title" style="font: 600 18px 'Segoe UI', Arial, sans-serif;">Storage delle immagini</text>
+  <text x="80" y="746" class="small">Podman e Buildah condividono containers/storage: un'immagine costruita da Buildah compare in <tspan class="mono">podman images</tspan>. Docker usa il proprio archivio.</text>
+  <text x="80" y="768" class="tiny">I working container di Buildah sono temporanei e non sono i container gestiti da Podman.</text>
+
+  <text x="56" y="808" class="tiny">Illustrazione Adripedia · concetti dalla documentazione Buildah, Podman e Docker.</text>
+</svg>

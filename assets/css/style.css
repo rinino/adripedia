@@ -1374,6 +1374,34 @@ kbd {
   background: var(--ok-bg);
 }
 
+.callout.feature {
+  border-color: #cfe3f8;
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(180deg, #f5f9ff, var(--surface));
+}
+
+.callout.feature h2 {
+  margin: 0 0 0.7rem;
+}
+
+.callout-tag {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.16rem 0.52rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.callout-links {
+  margin: 0.85rem 0 0;
+  font-size: 0.85rem;
+}
+
 /* Tab -------------------------------------------------------------------- */
 
 .tabs {
