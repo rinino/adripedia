@@ -36,6 +36,16 @@
           children: [
             { text: "Panoramica", href: "informatica/index.html" },
             {
+              text: "AI",
+              children: [
+                { text: "Introduzione", href: "informatica/ai/index.html" },
+                { text: "Come funziona un LLM", href: "informatica/ai/index.html#llm" },
+                { text: "Addestramento", href: "informatica/ai/index.html#addestramento" },
+                { text: "Risorse e calcolo", href: "informatica/ai/index.html#risorse" },
+                { text: "Glossario", href: "informatica/ai/index.html#glossario" }
+              ]
+            },
+            {
               text: "OpenCode",
               children: [
                 { text: "Panoramica", href: "opencode/index.html" },

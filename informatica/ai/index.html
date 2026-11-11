@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intelligenza artificiale — Adripedia</title>
+  <meta name="description" content="Introduzione all'intelligenza artificiale: parole chiave, modelli, addestramento, risorse, uso quotidiano, limiti e glossario. Una guida discorsiva per chi inizia.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/ai/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">AI</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Intelligenza artificiale</h1>
+      <p class="lead">
+        L&rsquo;AI non &egrave; una scatola magica n&eacute; un singolo prodotto:
+        &egrave; un insieme di tecniche, dati e macchine. Questa introduzione
+        mette in fila le parole che senti ovunque, spiega come funziona un
+        modello linguistico, come si addestra, quanta energia consuma e dove
+        conviene usarlo. Senza matematica, ma senza scorciatoie.
+      </p>
+
+      <div class="callout">
+        <strong>Come leggere questa sezione:</strong> &egrave; un&rsquo;introduzione
+        discorsiva, pensata per essere letta dall&rsquo;inizio alla fine. I numeri
+        sono ordini di grandezza verificati su fonti pubbliche e cambiano in
+        fretta: servono a capire la scala, non a fare previsioni. Gli
+        approfondimenti e i casi pratici arriveranno come pagine separate.
+      </div>
+
+      <nav class="section-index" aria-labelledby="ai-index-title">
+        <p class="section-index-title" id="ai-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cosa">Che cos&rsquo;&egrave; l&rsquo;AI, davvero</a></li>
+          <li><a href="#mappa">La mappa delle parole</a></li>
+          <li><a href="#llm">Come funziona un modello linguistico</a></li>
+          <li><a href="#addestramento">Come si addestra</a></li>
+          <li><a href="#risorse">Quanta energia e quanti calcoli</a></li>
+          <li><a href="#famiglie">Le famiglie di modelli</a></li>
+          <li><a href="#usare">Usare un modello</a></li>
+          <li><a href="#limiti">Limiti, rischi e buone pratiche</a></li>
+          <li><a href="#glossario">Glossario essenziale</a></li>
+          <li><a href="#continuare">Da dove continuare</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="cosa">Che cos&rsquo;&egrave; l&rsquo;AI, davvero</h2>
+      <p>
+        L&rsquo;intelligenza artificiale &egrave; l&rsquo;insieme delle tecniche
+        con cui un computer svolge compiti che, se li facesse una persona,
+        chiameremmo &ldquo;intelligenti&rdquo;: capire una frase, riconoscere
+        un&rsquo;immagine, tradurre, giocare a scacchi, scrivere codice. Il
+        termine nasce nel 1956 alla conferenza di Dartmouth, ma solo negli
+        ultimi quindici anni le macchine hanno cominciato a fare queste cose in
+        modo abbastanza affidabile da sembrare naturali.
+      </p>
+      <p>
+        La definizione pi&ugrave; utile per chi inizia &egrave; per&ograve;
+        un&rsquo;altra: <strong>l&rsquo;AI &egrave; un programma che impara una
+        funzione dagli esempi, invece di ricevere regole scritte a mano</strong>.
+        Un sistema tradizionale segue istruzioni esplicite (&ldquo;se il totale
+        supera 100, applica lo sconto&rdquo;). Un sistema di machine learning
+        riceve migliaia di esempi e trova da solo la regola che li spiega.
+        &Egrave; un cambio di metodo, prima ancora che di potenza.
+      </p>
+      <p>
+        Da qui discendono tre conseguenze che tornano in tutta la sezione.
+        Primo: il comportamento dipende dai dati, non solo dal codice. Secondo:
+        il sistema generalizza, cio&egrave; risponde anche a casi che non ha mai
+        visto &mdash; ed &egrave; proprio l&igrave; che nascono gli errori
+        interessanti. Terzo: non esiste un&rsquo;unica &ldquo;AI&rdquo;, ma una
+        famiglia di approcci, con obiettivi e limiti diversi.
+      </p>
+
+      <h3>Cosa non &egrave;</h3>
+      <ul>
+        <li><strong>Non &egrave; cosciente.</strong> Un modello linguistico non
+        ha esperienze, intenzioni o desideri. Produce testo statisticamente
+        plausibile, non pensieri.</li>
+        <li><strong>Non &egrave; una banca dati.</strong> Non &ldquo;cerca&rdquo;
+        la risposta in un archivio: la ricostruisce, e pu&ograve; sbagliare con
+        sicurezza.</li>
+        <li><strong>Non &egrave; infallibile.</strong> Anzi: pi&ugrave; un
+        compito &egrave; raro o verificabile, pi&ugrave; &egrave; facile che il
+        modello inventi.</li>
+        <li><strong>Non &egrave; magia n&eacute; una singola azienda.</strong>
+        Dietro ci sono matematica, dati, hardware e molto lavoro umano di
+        selezione e correzione.</li>
+      </ul>
+
+      <div class="callout">
+        <strong>Una nota sul vocabolario:</strong> &ldquo;intelligenza&rdquo;
+        &egrave; un&rsquo;etichetta comoda, non una misura. Un modello pu&ograve;
+        risolvere un problema di matematica olimpionica e non sapere quanti
+        giorni ha febbraio. I ricercatori chiamano questo <em>jagged frontier</em>:
+        il confine delle capacit&agrave; &egrave; frastagliato, non una linea che
+        sale uniforme.
+      </div>
+
+      <h2 id="mappa">La mappa delle parole</h2>
+      <p>
+        AI, machine learning, deep learning, rete neurale, modello generativo,
+        LLM: le parole si sovrappongono e i titoli le usano quasi come sinonimi.
+        Non lo sono. La figura qui sotto mostra la gerarchia; il testo la spiega.
+      </p>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-landscape.svg" width="1200" height="680"
+             alt="Mappa concettuale dell'intelligenza artificiale: l'AI contiene il machine learning, che contiene il deep learning, che a sua volta comprende i modelli generativi e i modelli linguistici di grandi dimensioni. Una diramazione laterale mostra l'AI simbolica, basata su regole.">
+        <figcaption>
+          Quattro livelli concentrici, non quattro alternative. Ogni livello
+          aggiunge un metodo, non sostituisce il precedente. Illustrazione
+          Adripedia.
+        </figcaption>
+      </figure>
+
+      <p>
+        <strong>Intelligenza artificiale</strong> &egrave; il contenitore
+        pi&ugrave; grande: comprende sia l&rsquo;AI simbolica (regole, ricerca,
+        pianificazione, sistemi esperti) sia l&rsquo;apprendimento automatico.
+        L&rsquo;AI simbolica ha dominato fino agli anni Ottanta e resta utile
+        dove le regole sono chiare e verificabili: un configuratore, un
+        pianificatore, un motore di ricerca.
+      </p>
+      <p>
+        <strong>Machine learning</strong> &egrave; il sottoinsieme che impara
+        dai dati. Invece di scrivere la regola, si sceglie un modello con
+        parametri regolabili e si lasciano aggiustare dagli esempi. &Egrave; la
+        definizione di Tom Mitchell, 1997: un programma impara se migliora con
+        l&rsquo;esperienza su un compito, misurato da una metrica. &Egrave; una
+        definizione operativa, non filosofica: se la metrica migliora, ha
+        imparato qualcosa.
+      </p>
+      <p>
+        <strong>Deep learning</strong> &egrave; il machine learning fatto con
+        reti neurali profonde, cio&egrave; con molti strati di trasformazioni.
+        Ogni strato impara rappresentazioni via via pi&ugrave; astratte: bordi,
+        forme, oggetti; lettere, parole, frasi. Il boom moderno parte dal 2012,
+        quando una rete profonda vinse ImageNet, e si consolida nel 2017 con il
+        transformer.
+      </p>
+      <p>
+        <strong>AI generativa</strong> &egrave; la parte che produce contenuti
+        nuovi &mdash; testo, immagini, audio, video, codice &mdash; invece di
+        limitarsi a classificare o prevedere un valore. &Egrave; addestrata a
+        imitare la distribuzione dei dati: impara cio&egrave; che &egrave;
+        probabile, non ci&ograve; che &egrave; vero.
+      </p>
+      <p>
+        <strong>LLM</strong> (<em>large language model</em>) &egrave; un modello
+        generativo per il testo, con molti parametri e addestrato su grandi
+        quantit&agrave; di testo. &ldquo;Grande&rdquo; non ha una soglia
+        ufficiale: oggi si parla di miliardi o trilioni di parametri, ma la
+        dimensione da sola non dice quanto un modello sia utile. Un
+        <strong>foundation model</strong> &egrave; un modello grande e generale,
+        pre-addestrato su dati vasti e poi adattato a molti compiti.
+        <strong>Multimodale</strong> significa che accetta o produce pi&ugrave;
+        tipi di dato: testo e immagini, per esempio, o audio e video.
+      </p>
+
+      <h2 id="llm">Come funziona un modello linguistico</h2>
+      <p>
+        Un modello linguistico non legge lettere e non ragiona su parole intere.
+        Lavora su <strong>token</strong>: pezzi di testo che possono essere una
+        parola, una parte di parola, un segno di punteggiatura o un byte. La
+        frase &ldquo;incredibile&rdquo; pu&ograve; diventare <code>in</code> +
+        <code>cred</code> + <code>ibile</code>. Il modello vede numeri, non
+        lettere.
+      </p>
+      <p>
+        Il <strong>tokenizer</strong> &egrave; il programma che spezza il testo
+        in token e li mappa su un vocabolario. La tecnica pi&ugrave; diffusa
+        &egrave; la <em>byte-pair encoding</em> (BPE): si parte dai caratteri e
+        si fondono ripetutamente le coppie pi&ugrave; frequenti, fino a ottenere
+        un vocabolario di decine o centinaia di migliaia di unit&agrave;. Le
+        lingue e i domini meno rappresentati nel vocabolario costano pi&ugrave;
+        token per lo stesso testo: &egrave; uno dei motivi per cui i prezzi e i
+        limiti non sono identici in ogni lingua.
+      </p>
+      <p>
+        Ogni token viene trasformato in un <strong>embedding</strong>: un
+        vettore di numeri, spesso di centinaia o migliaia di dimensioni. Token
+        con significati simili finiscono vicini in questo spazio. &Egrave; qui
+        che nasce la sfumatura: &ldquo;gatto&rdquo; e &ldquo;felino&rdquo; sono
+        punti vicini, &ldquo;gatto&rdquo; e &ldquo;bilancio&rdquo; sono lontani.
+        La posizione nella frase viene aggiunta con un altro segnale,
+        perch&eacute; l&rsquo;ordine conta.
+      </p>
+      <p>
+        Il cuore del modello &egrave; il <strong>transformer</strong>,
+        l&rsquo;architettura presentata nel 2017 nel paper
+        <em>Attention Is All You Need</em>. Il meccanismo di
+        <strong>attenzione</strong> permette a ogni token di guardare tutti gli
+        altri token del contesto e di pesare le relazioni: chi &egrave; il
+        soggetto, a cosa si riferisce un pronome, quale parola chiarisce un
+        aggettivo. Pi&ugrave; strati di attenzione e di trasformazioni si
+        impilano, e ogni strato costruisce una rappresentazione pi&ugrave;
+        ricca.
+      </p>
+      <p>
+        L&rsquo;obiettivo dell&rsquo;addestramento &egrave; semplice da
+        enunciare: <strong>prevedere il prossimo token</strong>. Dato un testo,
+        il modello produce una probabilit&agrave; per ogni token del vocabolario;
+        si sceglie un token, lo si aggiunge al testo e si ripete. Da questa
+        ripetizione nascono frasi, risposte, codice e ragionamenti. Non
+        c&rsquo;&egrave; un piano nascosto: c&rsquo;&egrave; una distribuzione
+        di probabilit&agrave; molto ben calibrata.
+      </p>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-llm-flow.svg" width="1200" height="560"
+             alt="Schema del funzionamento di un modello linguistico: il prompt viene spezzato in token, ogni token diventa un vettore, il transformer calcola le probabilità del token successivo, il token scelto viene aggiunto e il ciclo riparte fino al testo finale.">
+        <figcaption>
+          Il ciclo di generazione: un token alla volta, con il testo prodotto che
+          rientra nel contesto. Illustrazione Adripedia.
+        </figcaption>
+      </figure>
+
+      <h3>Parametri, contesto, temperatura</h3>
+      <p>
+        I <strong>parametri</strong> sono i numeri appresi durante
+        l&rsquo;addestramento: pesi delle connessioni, matrici di attenzione,
+        normalizzazioni. &ldquo;175 miliardi di parametri&rdquo; significa che
+        il modello contiene 175 miliardi di numeri regolabili. Non sono ricordi
+        nel senso umano: sono la forma compressa di regolarit&agrave;
+        statistiche.
+      </p>
+      <p>
+        La <strong>finestra di contesto</strong> &egrave; la quantit&agrave; di
+        token che il modello pu&ograve; vedere in una volta: il prompt, la
+        conversazione precedente, i documenti allegati e la risposta in corso.
+        Tutto ci&ograve; che sta fuori non esiste per il modello. Le finestre
+        moderne vanno da poche migliaia a oltre un milione di token, ma il costo
+        cresce e l&rsquo;attenzione ha un costo quadratico rispetto alla
+        lunghezza: raddoppiare il contesto non raddoppia il lavoro, lo
+        quadruplica.
+      </p>
+      <p>
+        La <strong>temperatura</strong> regola quanto il campionamento sia
+        &ldquo;audace&rdquo;. Vicino a zero il modello sceglie quasi sempre il
+        token pi&ugrave; probabile: risposte pi&ugrave; stabili e ripetitive.
+        Pi&ugrave; alta, esplora alternative meno probabili: pi&ugrave;
+        variet&agrave;, ma anche pi&ugrave; errori. <strong>Top-p</strong> (o
+        <em>nucleus sampling</em>) limita la scelta all&rsquo;insieme di token
+        che copre una certa probabilit&agrave; cumulata. Sono manopole, non
+        garanzie: anche a temperatura zero un modello pu&ograve; variare per via
+        dell&rsquo;aritmetica in virgola mobile e dell&rsquo;hardware.
+      </p>
+      <div class="callout warn">
+        <strong>L&rsquo;allucinazione non &egrave; un caso raro:</strong> se il
+        modello non sa, completa con ci&ograve; che &egrave; plausibile. Non ha
+        un segnale interno affidabile di &ldquo;non lo so&rdquo;. Per questo le
+        risposte vanno verificate, soprattutto su numeri, date, citazioni e nomi
+        propri.
+      </div>
+
+      <h2 id="addestramento">Come si addestra</h2>
+      <p>
+        Addestrare un modello di frontiera &egrave; un progetto industriale, non
+        un singolo comando. Si parte dai dati, si passa mesi su migliaia di
+        acceleratori e si finisce con una fase di allineamento e valutazione. Le
+        fasi hanno nomi diversi e costi molto diversi.
+      </p>
+
+      <h3>1. Dati</h3>
+      <p>
+        Il corpus di pre-addestramento mescola pagine web, libri, articoli,
+        enciclopedie, codice, dati scientifici e, sempre pi&ugrave; spesso, dati
+        sintetici generati da altri modelli. Prima di usarli servono pulizia,
+        deduplicazione, filtri di qualit&agrave; e controlli su licenze e
+        copyright. La qualit&agrave; conta almeno quanto la quantit&agrave;: un
+        corpus enorme ma ripetitivo o pieno di spam insegna poco e costa molto.
+      </p>
+      <p>
+        &Egrave; qui che si decide gran parte del comportamento futuro. Se i
+        dati contengono stereotipi, il modello li assorbe. Se manca una lingua,
+        quella lingua funzioner&agrave; peggio. Se il testo &egrave; stato
+        scritto da persone, il modello ne imita lo stile e i pregiudizi.
+      </p>
+
+      <h3>2. Pre-addestramento</h3>
+      <p>
+        &Egrave; la fase pi&ugrave; costosa. Il modello legge il corpus e impara
+        a prevedere il token successivo, miliardi di volte. Non c&rsquo;&egrave;
+        un supervisore che corregge ogni frase: il testo stesso &egrave; la
+        risposta. Da questo esercizio emergono grammatica, conoscenze,
+        capacit&agrave; di traduzione, di riassunto e di scrittura di codice.
+      </p>
+      <p>
+        La scala si misura in <strong>token</strong> e in <strong>FLOP</strong>
+        (operazioni in virgola mobile). La relazione approssimata &egrave;
+        <code>FLOP &asymp; 6 &times; parametri &times; token</code>: sei
+        operazioni per parametro per token &egrave; una convenzione usata per
+        stimare il costo di training. Non &egrave; una legge esatta, ma d&agrave;
+        l&rsquo;ordine di grandezza.
+      </p>
+
+      <h3>3. Le scaling law</h3>
+      <p>
+        Nel 2020 OpenAI pubblic&ograve; le <em>scaling law</em>: aumentando
+        parametri, dati e calcolo, la loss scende secondo una regolarit&agrave;
+        empirica prevedibile. Nel 2022 DeepMind corresse l&rsquo;interpretazione
+        con <strong>Chinchilla</strong>: per un dato budget di calcolo conviene
+        crescere insieme modello e dati, non solo il modello. La regola pratica
+        che ne deriv&ograve; &egrave; circa <strong>20 token per parametro</strong>:
+        un modello da 70 miliardi di parametri addestrato su 1,4 trilioni di
+        token batteva modelli pi&ugrave; grandi addestrati su meno dati.
+      </p>
+      <p>
+        Attenzione: non sono leggi fisiche. Sono regolarit&agrave; misurate in un
+        certo intervallo, con certi dati e certe architetture. Servono a
+        orientarsi, non a garantire che un modello sar&agrave; migliore. Le
+        aziende le usano per decidere come spendere un budget, poi verificano
+        con esperimenti reali.
+      </p>
+
+      <h3>4. Post-addestramento e allineamento</h3>
+      <p>
+        Un modello pre-addestrato sa completare testo, ma non sa ancora
+        comportarsi come un assistente. La seconda fase lo rende utile, educato
+        e pi&ugrave; sicuro. I passaggi tipici sono tre:
+      </p>
+      <ul>
+        <li><strong>SFT</strong> (<em>supervised fine-tuning</em>): si mostrano
+        al modello migliaia di esempi di istruzione e risposta ben scritta.
+        Impara il formato, il tono e le convenzioni del dialogo.</li>
+        <li><strong>RLHF</strong> (<em>reinforcement learning from human
+        feedback</em>): si addestra un modello di ricompensa sulle preferenze
+        umane (quale risposta &egrave; migliore?) e si usa per ottimizzare il
+        modello con il reinforcement learning. &Egrave; la ricetta resa celebre
+        da InstructGPT nel 2022.</li>
+        <li><strong>DPO</strong> (<em>direct preference optimization</em>): una
+        scorciatoia pi&ugrave; semplice, che ottimizza direttamente sulle coppie
+        di risposte preferite senza un modello di ricompensa separato. Molti
+        modelli recenti la usano al posto o insieme a RLHF.</li>
+      </ul>
+      <p>
+        A queste si aggiungono il <strong>fine-tuning</strong> su un dominio
+        specifico (per esempio documenti legali o codice aziendale) e la
+        <strong>distillation</strong>, in cui un modello grande insegna a uno
+        piccolo a fare le stesse cose con meno parametri. Il fine-tuning non
+        &egrave; la stessa cosa del pre-addestramento: usa molti meno dati e
+        serve a specializzare, non a insegnare la lingua da zero.
+      </p>
+
+      <h3>5. Valutazione</h3>
+      <p>
+        Un modello si misura con benchmark pubblici (domande di cultura
+        generale, matematica, codice, ragionamento), con eval interne costruite
+        sul proprio caso d&rsquo;uso e con valutazioni umane. I benchmark sono
+        utili per confrontare, ma saturano in fretta, possono essere contaminati
+        dai dati di addestramento e non dicono nulla sul tuo dominio. La domanda
+        giusta non &egrave; &ldquo;quanto &egrave; bravo in assoluto?&rdquo;, ma
+        &ldquo;quanto &egrave; affidabile sul mio compito, con i miei dati,
+        sotto il mio carico?&rdquo;.
+      </p>
+
+      <h2 id="risorse">Quanta energia e quanti calcoli</h2>
+      <p>
+        Tre unit&agrave; aiutano a capire la scala: i <strong>parametri</strong>
+        (quanti numeri contiene il modello), i <strong>token</strong> (quanto
+        testo ha letto o genera) e i <strong>FLOP</strong> (quante operazioni
+        servono). Il costo di training dipende da tutti e tre; il costo
+        d&rsquo;uso dipende soprattutto dai token e dall&rsquo;hardware su cui
+        gira il modello.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Modello</th><th>Parametri</th><th>Token di training</th><th>Calcolo stimato</th><th>Nota</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>GPT-3 (2020)</td><td>175 miliardi</td><td>~300 miliardi</td><td>~3&times;10<sup>23</sup> FLOP</td><td>Stima di ~1.287 MWh di elettricit&agrave; per il training.</td></tr>
+            <tr><td>Chinchilla (2022)</td><td>70 miliardi</td><td>1,4 trilioni</td><td>~5,76&times;10<sup>23</sup> FLOP</td><td>Circa 20 token per parametro; batte modelli pi&ugrave; grandi.</td></tr>
+            <tr><td>Llama 3 405B (2024)</td><td>405 miliardi</td><td>15,6 trilioni</td><td>~3,8&times;10<sup>25</sup> FLOP</td><td>Fino a 16.384 GPU H100; circa 54 giorni di calcolo puro (stima).</td></tr>
+            <tr><td>GPT-4 (2023)</td><td>Non dichiarati</td><td>Non dichiarati</td><td>~2&times;10<sup>25</sup> FLOP (stima)</td><td>Stime pubbliche: decine di milioni di dollari di solo calcolo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        I numeri vanno letti come ordini di grandezza, non come bilanci. Le
+        aziende non pubblicano tutto, le stime variano e le architetture
+        cambiano. Ci&ograve; che resta vero &egrave; la distanza tra un modello
+        di ricerca e un modello di frontiera: tra GPT-3 e i modelli del
+        2024&ndash;2026 il calcolo di training &egrave; cresciuto di circa due
+        ordini di grandezza.
+      </p>
+
+      <h3>Training e inferenza non sono la stessa voce</h3>
+      <p>
+        Il training &egrave; un costo una tantum, enorme ma limitato nel tempo.
+        L&rsquo;<strong>inferenza</strong> &egrave; il costo di ogni risposta e
+        cresce con gli utenti, le conversazioni e la lunghezza del contesto. Con
+        un servizio molto usato, l&rsquo;inferenza pu&ograve; superare il costo
+        di training in pochi mesi. Per questo l&rsquo;efficienza dei modelli
+        piccoli, la quantizzazione, il caching del contesto e la scelta del
+        modello giusto per il compito contano pi&ugrave; del record sul
+        benchmark.
+      </p>
+
+      <h3>Elettricit&agrave;, acqua, hardware</h3>
+      <p>
+        Secondo l&rsquo;Agenzia internazionale dell&rsquo;energia (IEA), i data
+        centre hanno consumato circa <strong>415 TWh</strong> nel 2024, intorno
+        all&rsquo;1,5% dell&rsquo;elettricit&agrave; mondiale, e potrebbero
+        arrivare a circa <strong>945 TWh</strong> nel 2030. Non &egrave; tutto
+        AI: dentro ci sono streaming, cloud, database e servizi tradizionali.
+        Ma l&rsquo;AI &egrave; la parte che cresce pi&ugrave; in fretta, e i
+        numeri locali possono essere molto diversi dalla media globale.
+      </p>
+      <p>
+        Il raffreddamento consuma acqua, la fabbricazione delle GPU consuma
+        energia e materiali, e la durata dell&rsquo;hardware conta. Non esiste un
+        numero unico &ldquo;quanto consuma l&rsquo;AI&rdquo;: dipende dal mix
+        elettrico, dal clima, dall&rsquo;efficienza del data centre (PUE), dal
+        modello e dal numero di richieste. Le stime sul training di GPT-3
+        parlano di circa 1.287 MWh e di alcune centinaia di tonnellate di
+        CO<sub>2</sub>, ma sono stime, non misure certificate.
+      </p>
+      <div class="callout ok">
+        <strong>La domanda giusta:</strong> non &ldquo;quanto consuma l&rsquo;AI
+        in generale&rdquo;, ma &ldquo;quanto consuma la mia applicazione, per
+        quanti utenti, per quanto tempo, e posso ottenere lo stesso risultato con
+        un modello pi&ugrave; piccolo?&rdquo;. Un modello da 7 miliardi di
+        parametri ben scelto spesso basta per un compito ristretto, e consuma una
+        frazione di un modello di frontiera.
+      </div>
+
+      <h2 id="famiglie">Le famiglie di modelli</h2>
+      <p>
+        &ldquo;Modello&rdquo; non significa solo chatbot. La stessa tecnologia di
+        base si specializza in compiti diversi, e ogni famiglia ha un modo di
+        funzionare e un costo specifico.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Famiglia</th><th>Cosa produce</th><th>Come funziona, in breve</th><th>Dove si usa</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>LLM</strong></td><td>Testo e codice</td><td>Transformer decoder-only addestrato a prevedere il token successivo.</td><td>Chat, riassunti, traduzione, scrittura, RAG, agenti.</td></tr>
+            <tr><td><strong>Embedding</strong></td><td>Vettori</td><td>Trasforma testo o immagini in punti di uno spazio dove la vicinanza misura la somiglianza.</td><td>Ricerca semantica, clustering, RAG, deduplicazione.</td></tr>
+            <tr><td><strong>Reranker</strong></td><td>Un punteggio</td><td>Riordina una lista di risultati in base alla rilevanza per la query.</td><td>Secondo stadio della ricerca, dopo il retrieval.</td></tr>
+            <tr><td><strong>Diffusion</strong></td><td>Immagini, video</td><td>Parte da rumore e lo riduce passo dopo passo, guidato dal testo o da un&rsquo;immagine.</td><td>Generazione e modifica di immagini, fotoritocco, concept art.</td></tr>
+            <tr><td><strong>Speech</strong></td><td>Testo da audio, audio da testo</td><td>Modelli seq2seq o diffusion per riconoscimento e sintesi vocale.</td><td>Trascrizione, sottotitoli, assistenti vocali, audiolibri.</td></tr>
+            <tr><td><strong>Multimodale</strong></td><td>Testo, immagini, audio</td><td>Un unico modello con encoder separati o token condivisi per pi&ugrave; modalit&agrave;.</td><td>Assistenti che &ldquo;vedono&rdquo;, OCR, analisi di documenti e schermate.</td></tr>
+            <tr><td><strong>Piccoli modelli</strong></td><td>Testo, embedding</td><td>Da pochi milioni a pochi miliardi di parametri, spesso quantizzati.</td><td>On-device, edge, compiti ristretti, bassa latenza.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Pesi aperti e pesi chiusi</h3>
+      <p>
+        Un modello <strong>a pesi aperti</strong> (open weights) si pu&ograve;
+        scaricare ed eseguire in casa, entro i limiti della licenza: Llama,
+        Mistral, Qwen, DeepSeek e altri. Un modello <strong>a pesi chiusi</strong>
+        si usa solo tramite API o prodotto: GPT, Claude, Gemini. I pesi aperti
+        danno controllo, privacy e possibilit&agrave; di personalizzazione; i
+        pesi chiusi offrono di solito qualit&agrave; al vertice, manutenzione e
+        scalabilit&agrave; senza gestire hardware. &ldquo;Aperto&rdquo; non
+        significa automaticamente &ldquo;gratis&rdquo; n&eacute;
+        &ldquo;senza restrizioni&rdquo;: la licenza va letta.
+      </p>
+
+      <h3>Dense e mixture of experts</h3>
+      <p>
+        In un modello <strong>dense</strong> ogni token attraversa tutti i
+        parametri. In un modello <strong>mixture of experts</strong> (MoE) un
+        router sceglie pochi esperti per ogni token: la memoria necessaria segue
+        i parametri totali, il calcolo segue quelli attivi. &Egrave; il motivo
+        per cui si sentono numeri apparentemente contraddittori: Mixtral 8x7B ha
+        46,7 miliardi di parametri totali ma ne attiva circa 12,9 per token;
+        DeepSeek-V3 ne ha 671 totali e 37 attivi. Per capire il costo di
+        inferenza conta la seconda cifra; per capire quanta memoria serve, la
+        prima.
+      </p>
+
+      <h2 id="usare">Usare un modello</h2>
+      <p>
+        Usare un modello non &egrave; solo scrivere una domanda. &Egrave;
+        progettare un&rsquo;interazione: cosa vede il modello, cosa gli chiedi,
+        in che formato risponde, cosa fai con la risposta. Le decisioni
+        importanti sono quattro.
+      </p>
+
+      <h3>Il prompt</h3>
+      <p>
+        Un buon prompt dice <strong>cosa</strong> vuoi, <strong>per chi</strong>,
+        <strong>in che formato</strong> e <strong>con quali criteri</strong> si
+        considera riuscito. Un esempio vale pi&ugrave; di dieci aggettivi. Le
+        istruzioni di sistema (<em>system prompt</em>) definiscono ruolo e
+        vincoli generali; il messaggio dell&rsquo;utente porta il compito
+        specifico. Nei modelli conversazionali la distinzione &egrave;
+        importante: le istruzioni di sistema hanno di solito pi&ugrave; peso, ma
+        non sono una barriera di sicurezza invalicabile.
+      </p>
+      <ul>
+        <li>Dai il contesto che serve, non tutto il contesto possibile.</li>
+        <li>Chiedi il formato: elenco, tabella, JSON con uno schema, citazioni.</li>
+        <li>Separa istruzioni e dati: &ldquo;ecco il documento&rdquo; non
+        &egrave; la stessa cosa di &ldquo;segui queste istruzioni&rdquo;.</li>
+        <li>Se il compito &egrave; verificabile, chiedi di mostrare i passaggi o
+        le fonti, e verifica.</li>
+      </ul>
+
+      <h3>Contesto e RAG</h3>
+      <p>
+        Il modello conosce solo ci&ograve; che sta nella finestra di contesto e
+        ci&ograve; che ha assorbito durante l&rsquo;addestramento. Per conoscenza
+        aggiornata o privata si usa il <strong>RAG</strong>
+        (<em>retrieval-augmented generation</em>): si cercano i documenti
+        rilevanti, si inseriscono nel contesto e si chiede al modello di
+        rispondere citando. Il RAG riduce le allucinazioni e rende verificabile
+        la risposta, ma non le elimina: se il retrieval porta il documento
+        sbagliato, il modello risponder&agrave; male con grande sicurezza.
+      </p>
+
+      <h3>Strumenti e agenti</h3>
+      <p>
+        Con il <strong>tool calling</strong> il modello non esegue codice:
+        propone una chiamata a una funzione (cerca sul web, interroga un
+        database, invia una mail) e l&rsquo;applicazione decide se eseguirla. Un
+        <strong>agente</strong> &egrave; un ciclo: il modello sceglie uno
+        strumento, osserva il risultato, decide il passo successivo. &Egrave;
+        potente e rischioso: pi&ugrave; autonomia significa pi&ugrave; modi di
+        sbagliare. Privilegi minimi e approvazione umana per le azioni
+        irreversibili non sono optional.
+      </p>
+
+      <h3>Prompt, RAG o fine-tuning?</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Bisogno</th><th>Soluzione</th><th>Costo</th><th>Quando</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cambiare tono, formato o comportamento</td><td>Prompt</td><td>Basso</td><td>Sempre, come primo tentativo.</td></tr>
+            <tr><td>Usare conoscenza aggiornata o privata</td><td>RAG</td><td>Medio</td><td>Documenti, manuali, ticket, knowledge base.</td></tr>
+            <tr><td>Specializzare stile o compito ripetitivo</td><td>Fine-tuning</td><td>Alto</td><td>Molti esempi di qualit&agrave; e un compito stabile.</td></tr>
+            <tr><td>Ridurre costo e latenza</td><td>Modello pi&ugrave; piccolo, quantizzazione, caching</td><td>Medio</td><td>Quando il compito &egrave; ben definito.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Parametri pratici</h3>
+      <p>
+        Oltre a temperatura e top-p, in produzione contano
+        <code>max_tokens</code> (quanto pu&ograve; essere lunga la risposta), le
+        sequenze di stop, il formato di output e il numero di tentativi. I costi
+        si misurano in token di input e di output, con prezzi diversi; il
+        caching del contesto e i modelli piccoli sono le leve pi&ugrave;
+        efficaci per un servizio reale. La latenza non dipende solo dal modello:
+        conta la rete, la coda, la lunghezza del contesto e la velocit&agrave; di
+        generazione.
+      </p>
+
+      <h2 id="limiti">Limiti, rischi e buone pratiche</h2>
+      <p>
+        L&rsquo;AI generativa &egrave; uno strumento potente proprio perch&eacute;
+        produce ci&ograve; che sembra giusto. Questa &egrave; anche la sua
+        fragilit&agrave;: l&rsquo;output fluente non &egrave; una prova di
+        correttezza.
+      </p>
+
+      <h3>Allucinazioni</h3>
+      <p>
+        Il modello completa con ci&ograve; che &egrave; plausibile, non con
+        ci&ograve; che &egrave; vero. Pi&ugrave; il compito &egrave; di nicchia,
+        recente o verificabile, pi&ugrave; il rischio cresce. Le contromisure
+        pratiche: chiedere citazioni, usare RAG su fonti affidabili, verificare
+        i numeri, non usare l&rsquo;output come unica fonte per decisioni
+        importanti.
+      </p>
+
+      <h3>Bias e rappresentazione</h3>
+      <p>
+        I dati contengono stereotipi e disuguaglianze; il modello li apprende e
+        li riproduce, a volte in modo sottile. Un test su un solo gruppo non
+        basta: vanno valutati casi diversi, lingue diverse e contesti diversi.
+        Anche la scelta di cosa non dire &egrave; una scelta di progettazione.
+      </p>
+
+      <h3>Privacy e propriet&agrave; intellettuale</h3>
+      <p>
+        Prima di incollare un documento in un chatbot, chiediti dove finisce:
+        viene conservato? usato per addestrare? per quanto tempo? in quale paese?
+        Per dati personali, segreti industriali e codice proprietario servono
+        policy chiare, accordi con il fornitore o un modello eseguito in casa.
+        Sul copyright, la regola varia per giurisdizione e per licenza del
+        modello: &ldquo;l&rsquo;ho generato io&rdquo; non significa
+        automaticamente &ldquo;posso usarlo come voglio&rdquo;.
+      </p>
+
+      <h3>Prompt injection e sicurezza</h3>
+      <p>
+        La <strong>prompt injection</strong> &egrave; la vulnerabilit&agrave;
+        numero uno nella OWASP Top 10 for LLM Applications 2025. Un&rsquo;istruzione
+        nascosta in una pagina web, in un PDF o in un&rsquo;immagine pu&ograve;
+        dirottare il modello: &egrave; indiretta quando arriva da contenuti
+        esterni, diretta quando arriva dall&rsquo;utente. Le mitigazioni non sono
+        perfette: separare contenuto non fidato e istruzioni, dare al modello
+        privilegi minimi, validare l&rsquo;output, chiedere approvazione umana
+        per le azioni irreversibili.
+      </p>
+
+      <h3>Quando &egrave; meglio non usare l&rsquo;AI</h3>
+      <ul>
+        <li>Quando serve una certezza matematica o legale e non c&rsquo;&egrave;
+        un modo semplice di verificare.</li>
+        <li>Quando una regola esplicita basta: un&rsquo;AI aggiunge costo,
+        variabilit&agrave; e superficie d&rsquo;attacco.</li>
+        <li>Quando i dati non possono uscire dal perimetro e non hai un modello
+        locale adeguato.</li>
+        <li>Quando l&rsquo;errore &egrave; irreversibile e non c&rsquo;&egrave;
+        supervisione umana.</li>
+      </ul>
+      <div class="callout warn">
+        <strong>La regola d&rsquo;oro:</strong> l&rsquo;AI &egrave; un ottimo
+        primo draft, non un oracolo. La responsabilit&agrave; di ci&ograve; che
+        pubblichi, firmi o esegui resta di chi lo fa, non del modello.
+      </div>
+
+      <h2 id="glossario">Glossario essenziale</h2>
+      <p>
+        I termini che ricorrono pi&ugrave; spesso, in ordine alfabetico. Le voci
+        sono volutamente brevi: servono a rinfrescare un concetto, non a
+        sostituire i capitoli precedenti.
+      </p>
+      <div class="cmd-search glossary-search">
+        <label class="cmd-search-label" for="glossary-search-input">Cerca nel glossario</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="glossary-search-input" type="search"
+                 placeholder="Per esempio: token, RAG, allucinazione&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 aria-controls="glossary-table" aria-describedby="glossary-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="glossary-search-hint" aria-live="polite">
+          38 voci in ordine alfabetico.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table class="glossary-table" id="glossary-table">
+          <thead><tr><th>Termine</th><th>Significato</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Addestramento</strong></td><td>La fase in cui il modello regola i propri parametri sugli esempi. &ldquo;Training&rdquo; in inglese.</td></tr>
+            <tr><td><strong>Agente</strong></td><td>Un modello che, invece di rispondere una volta, sceglie strumenti e compie pi&ugrave; passi per raggiungere un obiettivo.</td></tr>
+            <tr><td><strong>AGI</strong></td><td><em>Artificial General Intelligence</em>: un sistema capace di svolgere qualsiasi compito cognitivo umano. Non esiste una definizione condivisa n&eacute; un test unico.</td></tr>
+            <tr><td><strong>Allucinazione</strong></td><td>Testo plausibile ma falso prodotto dal modello. &Egrave; una conseguenza del meccanismo di previsione, non un errore raro.</td></tr>
+            <tr><td><strong>Attenzione</strong></td><td>Il meccanismo del transformer che pesa le relazioni tra i token del contesto.</td></tr>
+            <tr><td><strong>Benchmark</strong></td><td>Un insieme di test standardizzato per confrontare modelli. Utile, ma satura e non misura il tuo caso d&rsquo;uso.</td></tr>
+            <tr><td><strong>Bias</strong></td><td>Distorsione sistematica appresa dai dati, che il modello riproduce nelle risposte.</td></tr>
+            <tr><td><strong>Checkpoint</strong></td><td>Una copia salvata dei parametri durante o dopo l&rsquo;addestramento.</td></tr>
+            <tr><td><strong>Contesto</strong></td><td>Tutto ci&ograve; che il modello vede in una generazione: prompt, conversazione, documenti. &Egrave; limitato dalla finestra di contesto.</td></tr>
+            <tr><td><strong>Dense</strong></td><td>Modello in cui ogni token attraversa tutti i parametri, per opposizione a mixture of experts.</td></tr>
+            <tr><td><strong>Diffusion</strong></td><td>Famiglia di modelli generativi che parte da rumore e lo riduce progressivamente, tipica per immagini e video.</td></tr>
+            <tr><td><strong>Distillation</strong></td><td>Tecnica in cui un modello grande insegna a uno piccolo a imitarne il comportamento.</td></tr>
+            <tr><td><strong>DPO</strong></td><td><em>Direct Preference Optimization</em>: allineamento diretto sulle preferenze, senza un modello di ricompensa separato.</td></tr>
+            <tr><td><strong>Embedding</strong></td><td>Rappresentazione di un token, di una frase o di un&rsquo;immagine come vettore di numeri; la vicinanza indica somiglianza.</td></tr>
+            <tr><td><strong>Fine-tuning</strong></td><td>Adattamento di un modello pre-addestrato a un dominio o compito specifico, con molti meno dati del pre-addestramento.</td></tr>
+            <tr><td><strong>FLOP</strong></td><td><em>Floating-point operation</em>: unit&agrave; di misura del calcolo. Il training si stima in FLOP totali.</td></tr>
+            <tr><td><strong>Foundation model</strong></td><td>Modello grande e generale, pre-addestrato su dati vasti e adattabile a molti compiti.</td></tr>
+            <tr><td><strong>Inferenza</strong></td><td>L&rsquo;uso del modello addestrato per produrre una risposta. &Egrave; il costo che cresce con gli utenti.</td></tr>
+            <tr><td><strong>LLM</strong></td><td><em>Large Language Model</em>: modello generativo per il testo con molti parametri.</td></tr>
+            <tr><td><strong>LoRA</strong></td><td><em>Low-Rank Adaptation</em>: fine-tuning efficiente che addestra pochi parametri aggiuntivi invece di tutti.</td></tr>
+            <tr><td><strong>Mixture of experts</strong></td><td>Architettura in cui un router attiva solo alcuni esperti per token. La memoria segue i parametri totali, il calcolo quelli attivi.</td></tr>
+            <tr><td><strong>Multimodale</strong></td><td>Modello che accetta o produce pi&ugrave; tipi di dato: testo, immagini, audio, video.</td></tr>
+            <tr><td><strong>Overfitting</strong></td><td>Quando il modello impara a memoria gli esempi e generalizza male su dati nuovi.</td></tr>
+            <tr><td><strong>Parametro</strong></td><td>Un numero regolabile del modello, appreso durante l&rsquo;addestramento.</td></tr>
+            <tr><td><strong>Pesi aperti</strong></td><td>Modello i cui parametri sono scaricabili ed eseguibili in casa, entro i limiti della licenza.</td></tr>
+            <tr><td><strong>Prompt</strong></td><td>Il testo di input: istruzioni, contesto, esempi e formato richiesto.</td></tr>
+            <tr><td><strong>Prompt injection</strong></td><td>Istruzioni nascoste in contenuti esterni o nell&rsquo;input che dirottano il comportamento del modello.</td></tr>
+            <tr><td><strong>Quantizzazione</strong></td><td>Riduzione della precisione dei numeri (per esempio da 16 a 8 o 4 bit) per occupare meno memoria e girare pi&ugrave; veloce.</td></tr>
+            <tr><td><strong>RAG</strong></td><td><em>Retrieval-Augmented Generation</em>: si cercano documenti rilevanti e si inseriscono nel contesto prima di generare.</td></tr>
+            <tr><td><strong>Reranker</strong></td><td>Modello che riordina i risultati di una ricerca in base alla rilevanza.</td></tr>
+            <tr><td><strong>RLHF</strong></td><td><em>Reinforcement Learning from Human Feedback</em>: allineamento tramite preferenze umane e reinforcement learning.</td></tr>
+            <tr><td><strong>SFT</strong></td><td><em>Supervised Fine-Tuning</em>: addestramento su esempi di istruzione e risposta ben formati.</td></tr>
+            <tr><td><strong>Temperatura</strong></td><td>Parametro di campionamento che regola la variet&agrave; della generazione.</td></tr>
+            <tr><td><strong>Token</strong></td><td>Unit&agrave; di testo usata dal modello: una parola, parte di una parola, un segno o un byte.</td></tr>
+            <tr><td><strong>Tokenizer</strong></td><td>Il programma che spezza il testo in token e li mappa sul vocabolario.</td></tr>
+            <tr><td><strong>Tool calling</strong></td><td>Il modello propone una chiamata a una funzione esterna; &egrave; l&rsquo;applicazione a eseguirla.</td></tr>
+            <tr><td><strong>Transformer</strong></td><td>Architettura basata sull&rsquo;attenzione, introdotta nel 2017, alla base dei modelli linguistici moderni.</td></tr>
+            <tr><td><strong>Zero-shot / few-shot</strong></td><td>Un compito svolto senza esempi (zero-shot) o con pochi esempi nel prompt (few-shot).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="continuare">Da dove continuare</h2>
+      <p>
+        Questa introduzione &egrave; una mappa, non un corso. Se vuoi
+        approfondire, queste sono le fonti primarie che valgono la pena, divise
+        per tipo.
+      </p>
+      <h3>Paper e documenti</h3>
+      <ul>
+        <li><em>Attention Is All You Need</em> (Vaswani et al., 2017) &mdash; il
+        paper che introduce il transformer.</li>
+        <li><em>Language Models are Few-Shot Learners</em> (Brown et al., 2020)
+        &mdash; GPT-3, 175 miliardi di parametri e 300 miliardi di token.</li>
+        <li><em>Training Compute-Optimal Large Language Models</em> (Hoffmann et
+        al., 2022) &mdash; Chinchilla e la regola dei 20 token per parametro.</li>
+        <li><em>Training language models to follow instructions with human
+        feedback</em> (Ouyang et al., 2022) &mdash; InstructGPT e RLHF.</li>
+        <li><em>Direct Preference Optimization</em> (Rafailov et al., 2023)
+        &mdash; DPO.</li>
+        <li><em>Retrieval-Augmented Generation for Knowledge-Intensive NLP
+        Tasks</em> (Lewis et al., 2020) &mdash; RAG.</li>
+        <li><em>The Llama 3 Herd of Models</em> (Meta, 2024) &mdash; un caso di
+        training su larga scala, con numeri dichiarati.</li>
+      </ul>
+      <h3>Rapporti e dati</h3>
+      <ul>
+        <li><strong>Stanford AI Index</strong> &mdash; statistiche annuali su
+        capacit&agrave;, costi, adozione e impatto.</li>
+        <li><strong>IEA, <em>Energy and AI</em></strong> &mdash; consumo
+        elettrico dei data centre e scenari al 2030.</li>
+        <li><strong>OWASP Top 10 for LLM Applications</strong> &mdash; rischi di
+        sicurezza e mitigazioni.</li>
+      </ul>
+      <h3>Documentazione dei fornitori</h3>
+      <p>
+        Per prezzi, limiti di contesto, parametri e policy di privacy,
+        l&rsquo;unica fonte affidabile &egrave; la documentazione del fornitore
+        che usi: cambia spesso e nessun riassunto &egrave; aggiornato quanto la
+        pagina ufficiale.
+      </p>
+      <div class="callout feature">
+        <span class="callout-tag">Prossimamente</span>
+        <h2>Gli approfondimenti</h2>
+        <p>
+          Questa sezione crescer&agrave; con pagine dedicate: i modelli e le
+          loro architetture, l&rsquo;addestramento in dettaglio, le risorse e i
+          costi, e qualche caso pratico con numeri e istruzioni. Se un termine o
+          un passaggio non &egrave; chiaro, &egrave; un buon candidato per il
+          prossimo approfondimento.
+        </p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione AI</span>
+        <span class="footer-right">
+          <span>Introduzione &middot; aggiornata l&rsquo;11 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

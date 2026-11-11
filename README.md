@@ -3,7 +3,8 @@
 Enciclopedia personale: documentazione e appunti, in ogni ambito.
 
 La gerarchia è **area → sezione → pagine**. Le prime due aree sono
-**Informatica** (che contiene le sezioni **OpenCode**, V2, versione `2.2.5`,
+**Informatica** (che contiene le sezioni **AI**, un'introduzione generale senza
+una versione da inseguire, **OpenCode**, V2, versione `2.2.5`,
 **Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Podman**, versione
 `6.1.4`, **Buildah**, versione `1.46.0`, **Kubernetes**, versione `1.37`,
 **Java su Kubernetes**, con Java `25` LTS e Spring Boot `4.1.2`, **k3s**,
@@ -17,6 +18,8 @@ adripedia/
 ├─ index.html                 # home del wiki
 ├─ informatica/               # area Informatica
 │  ├─ index.html              # panoramica dell'area
+│  ├─ ai/                     # sezione AI
+│  │  └─ index.html           # pagina unica discorsiva: dieci parti, indice interno, glossario con ricerca
 │  ├─ git/                    # sezione Git
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ docker/                 # sezione Docker
@@ -53,6 +56,7 @@ adripedia/
 │  ├─ js/site.js              # menu, sottomenu, hamburger, tab, copia codice, torna in cima
 │  └─ img/
 │     ├─ favicon.svg          # marchio "Globo A"
+│     ├─ ai/                  # due diagrammi originali della sezione AI
 │     ├─ docker/              # logo, diagramma e screenshot della sezione Docker
 │     ├─ podman/              # due diagrammi originali della sezione Podman
 │     ├─ buildah/             # due diagrammi originali della sezione Buildah
@@ -101,7 +105,8 @@ lo stesso schema: k3s &egrave; completa con quattro tab, k9s con cinque. Podman 
 Buildah ne hanno cinque: panoramica, installazione, comandi, configurazione e
 approfondimenti. Java su Kubernetes segue lo stesso formato, con tab dedicati a
 panoramica, versioni della JVM, memoria e GC, manifest e Spring Boot, comandi e
-diagnostica.
+diagnostica. La sezione AI fa eccezione: è una pagina unica discorsiva, con
+indice interno e glossario cercabile, senza tab.
 
 ```html
 <div class="tabs" data-tabs>
@@ -205,7 +210,8 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
 - I contenuti sono in italiano e allineati alla documentazione ufficiale
   OpenCode V2, Git 2.56.0, Docker 29.9.3, Podman 6.1.4, Buildah 1.46.0,
   Kubernetes 1.37, Java 25 LTS con Spring Boot 4.1.2, k3s 1.37.2+k3s1,
-  k9s 0.51.0 e WSL 3.0.3.
+  k9s 0.51.0 e WSL 3.0.3. La sezione AI è volutamente divulgativa e generale:
+  non è legata a una versione o a un singolo prodotto.
 
 ## Immagini della sezione Docker
 
@@ -325,3 +331,18 @@ riprendono concetti dalla documentazione HotSpot, Spring Boot e Kubernetes:
 I disegni non usano immagini o marchi delle rispettive aziende. Le didascalie
 nelle pagine riportano la fonte concettuale; se sostituisci un'immagine, aggiorna
 anche la didascalia.
+
+## Immagini della sezione AI
+
+I due diagrammi in `assets/img/ai/` sono originali di Adripedia:
+
+- `ai-landscape.svg`: gerarchia tra intelligenza artificiale, machine learning,
+  deep learning e AI generativa, con il ramo laterale dell'AI simbolica e una
+  nota di lessico su generativo, LLM e modelli di fondazione.
+- `ai-llm-flow.svg`: ciclo di generazione di un modello linguistico, dal prompt
+  ai token, dall'embedding al transformer, dal campionamento al token che
+  rientra nel contesto.
+
+I concetti sono ripresi da fonti pubbliche (paper, documentazione dei fornitori
+e rapporti citati nella pagina). I disegni non usano loghi o marchi. Se
+sostituisci un'immagine, aggiorna anche la didascalia.

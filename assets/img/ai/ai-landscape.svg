@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="1200" height="680" role="img" aria-labelledby="title desc">
+  <title id="title">Mappa concettuale dell'intelligenza artificiale</title>
+  <desc id="desc">L'intelligenza artificiale contiene il machine learning, che contiene il deep learning, che a sua volta comprende l'AI generativa. Dentro l'AI, un ramo laterale &#232; l'AI simbolica, basata su regole scritte a mano. Una nota chiarisce che il generativo non coincide con i modelli linguistici di grandi dimensioni.</desc>
+
+  <defs>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #787774; letter-spacing: 1.4px; }
+      .small { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .tiny { font: 400 13px "Segoe UI", Arial, sans-serif; fill: #787774; }
+      .box-title { font: 600 22px "Segoe UI", Arial, sans-serif; fill: #37352f; }
+      .chip { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #1f6fb2; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="678" rx="26" fill="#ffffff" stroke="#e2e1dd" stroke-width="2"/>
+
+  <text x="56" y="58" class="label">LA MAPPA</text>
+  <text x="56" y="96" class="title">Quattro livelli, non quattro alternative</text>
+  <text x="56" y="124" class="small">Ogni livello contiene il precedente e aggiunge un metodo.</text>
+
+  <!-- Intelligenza artificiale -->
+  <rect x="56" y="160" width="1088" height="460" rx="22" fill="#f7f6f3" stroke="#d8d7d3" stroke-width="2"/>
+  <text x="80" y="196" class="label">INTELLIGENZA ARTIFICIALE</text>
+  <text x="80" y="224" class="small">Il contenitore pi&#249; grande: regole, ricerca, apprendimento.</text>
+
+  <!-- Machine learning -->
+  <rect x="88" y="248" width="636" height="356" rx="18" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="112" y="284" class="label">MACHINE LEARNING</text>
+  <text x="112" y="310" class="small">Impara una funzione dagli esempi, non da regole scritte a mano.</text>
+
+  <!-- Deep learning -->
+  <rect x="120" y="330" width="572" height="248" rx="14" fill="#ffffff" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="144" y="366" class="label">DEEP LEARNING</text>
+  <text x="144" y="392" class="small">Reti neurali profonde: molti strati di trasformazioni.</text>
+
+  <!-- AI generativa -->
+  <rect x="152" y="412" width="508" height="142" rx="12" fill="#eaf3fc" stroke="#b9d7f2" stroke-width="2"/>
+  <text x="176" y="448" class="label">AI GENERATIVA</text>
+  <text x="176" y="474" class="small">Crea contenuti nuovi: testo, immagini, audio, codice.</text>
+  <rect x="176" y="492" width="220" height="44" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="192" y="520" class="chip">LLM &#183; testo e codice</text>
+  <rect x="412" y="492" width="220" height="44" rx="10" fill="#ffffff" stroke="#b9d7f2"/>
+  <text x="428" y="520" class="chip">Diffusion &#183; immagini</text>
+
+  <!-- AI simbolica -->
+  <rect x="748" y="248" width="372" height="180" rx="16" fill="#fdf8ec" stroke="#e6dcc3" stroke-width="2"/>
+  <text x="772" y="284" class="label">AI SIMBOLICA</text>
+  <text x="772" y="314" class="box-title">L&#8217;altro ramo</text>
+  <text x="772" y="342" class="small">Regole scritte a mano, ricerca,</text>
+  <text x="772" y="364" class="small">pianificazione, sistemi esperti.</text>
+  <text x="772" y="394" class="tiny">Ha dominato fino agli anni Ottanta.</text>
+  <text x="772" y="414" class="tiny">Utile dove le regole sono chiare.</text>
+
+  <!-- Nota di lessico -->
+  <rect x="748" y="452" width="372" height="152" rx="16" fill="#ffffff" stroke="#d8d7d3" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="772" y="486" class="label">LESSICO</text>
+  <text x="772" y="516" class="box-title">Generativo non &#232; LLM</text>
+  <text x="772" y="542" class="small">Il generativo comprende testo,</text>
+  <text x="772" y="564" class="small">immagini, audio e video.</text>
+  <text x="772" y="590" class="tiny">L&#8217;LLM &#232; il ramo del testo.</text>
+
+  <text x="56" y="654" class="tiny">I confini sono sfumati: un modello pu&#242; stare in pi&#249; livelli.</text>
+</svg>
