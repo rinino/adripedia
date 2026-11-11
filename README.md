@@ -19,7 +19,13 @@ adripedia/
 ├─ informatica/               # area Informatica
 │  ├─ index.html              # panoramica dell'area
 │  ├─ ai/                     # sezione AI
-│  │  └─ index.html           # pagina unica discorsiva: dieci parti, indice interno, glossario con ricerca
+│  │  ├─ index.html           # introduzione discorsiva: dieci parti, indice interno, glossario con ricerca
+│  │  ├─ modelli.html         # modelli e routing: profili, parametri, cascate, valutazione
+│  │  ├─ prompt.html          # prompt, contesto e comandi: anatomia, pattern, injection
+│  │  ├─ skill.html           # skill e metodi: creare, testare, distribuire, rassegna di framework
+│  │  ├─ mcp.html             # server MCP: architettura, costruzione, sicurezza, distribuzione
+│  │  ├─ agenti.html          # agenti e orchestrazione: pattern, gerarchia, costi, affidabilità
+│  │  └─ laboratorio.html     # otto esercizi neutrali con passi, risultato atteso e varianti
 │  ├─ git/                    # sezione Git
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ docker/                 # sezione Docker
@@ -56,7 +62,7 @@ adripedia/
 │  ├─ js/site.js              # menu, sottomenu, hamburger, tab, copia codice, torna in cima
 │  └─ img/
 │     ├─ favicon.svg          # marchio "Globo A"
-│     ├─ ai/                  # due diagrammi originali della sezione AI
+│     ├─ ai/                  # sette diagrammi originali della sezione AI
 │     ├─ docker/              # logo, diagramma e screenshot della sezione Docker
 │     ├─ podman/              # due diagrammi originali della sezione Podman
 │     ├─ buildah/             # due diagrammi originali della sezione Buildah
@@ -105,8 +111,9 @@ lo stesso schema: k3s &egrave; completa con quattro tab, k9s con cinque. Podman 
 Buildah ne hanno cinque: panoramica, installazione, comandi, configurazione e
 approfondimenti. Java su Kubernetes segue lo stesso formato, con tab dedicati a
 panoramica, versioni della JVM, memoria e GC, manifest e Spring Boot, comandi e
-diagnostica. La sezione AI fa eccezione: è una pagina unica discorsiva, con
-indice interno e glossario cercabile, senza tab.
+diagnostica. La sezione AI fa eccezione: è una pagina introduttiva discorsiva,
+con indice interno e glossario cercabile, più sei approfondimenti senza tab
+(`modelli`, `prompt`, `skill`, `mcp`, `agenti`, `laboratorio`).
 
 ```html
 <div class="tabs" data-tabs>
@@ -334,7 +341,7 @@ anche la didascalia.
 
 ## Immagini della sezione AI
 
-I due diagrammi in `assets/img/ai/` sono originali di Adripedia:
+I sette diagrammi in `assets/img/ai/` sono originali di Adripedia:
 
 - `ai-landscape.svg`: gerarchia tra intelligenza artificiale, machine learning,
   deep learning e AI generativa, con il ramo laterale dell'AI simbolica e una
@@ -342,7 +349,43 @@ I due diagrammi in `assets/img/ai/` sono originali di Adripedia:
 - `ai-llm-flow.svg`: ciclo di generazione di un modello linguistico, dal prompt
   ai token, dall'embedding al transformer, dal campionamento al token che
   rientra nel contesto.
+- `ai-model-routing.svg`: una richiesta classificata e inviata a un modello
+  piccolo, a un modello grande o a un umano, con percorso di fallback.
+- `ai-prompt-anatomy.svg`: i sette strati del prompt, con il contenuto non
+  fidato tenuto fuori dalle istruzioni.
+- `ai-skill-structure.svg`: la cartella di una skill e i tre livelli di
+  caricamento progressivo.
+- `ai-mcp-architecture.svg`: host, client e server con tool, risorse e prompt.
+- `ai-agent-orchestration.svg`: coordinatore, specialisti, revisore e umano,
+  con le frecce di ritorno del fallback.
 
 I concetti sono ripresi da fonti pubbliche (paper, documentazione dei fornitori
-e rapporti citati nella pagina). I disegni non usano loghi o marchi. Se
+e rapporti citati nelle pagine). I disegni non usano loghi o marchi. Se
 sostituisci un'immagine, aggiorna anche la didascalia.
+
+## Mappa della sezione AI
+
+Sette pagine, un solo criterio: esempi neutrali, senza nomi di prodotto nei
+blocchi di codice. I segnaposto sono `provider/model-small`,
+`provider/model-large`, `provider/model-reasoning` e `local-open-weights`.
+
+- `informatica/ai/index.html`: introduzione discorsiva, mappa delle parole,
+  glossario cercabile.
+- `informatica/ai/modelli.html`: profili di modello, parametri, cascate,
+  routing, valutazione.
+- `informatica/ai/prompt.html`: anatomia del prompt, contesto, tecniche,
+  comandi, pattern, injection.
+- `informatica/ai/skill.html`: Agent Skills, creazione e test, rassegna di
+  metodi e framework.
+- `informatica/ai/mcp.html`: architettura MCP, costruzione di un server,
+  permessi e distribuzione.
+- `informatica/ai/agenti.html`: workflow e agenti, pattern, gerarchia, costi,
+  affidabilità.
+- `informatica/ai/laboratorio.html`: otto esercizi con ingredienti, passi,
+  risultato atteso e varianti.
+
+Gli output negli esempi sono etichettati “esempio atteso”: non sono
+trascrizioni di sessioni reali né misure. Stelle, versioni e dichiarazioni dei
+progetti citati (Superpowers, Caveman, BMAD, ECC, Hermes) sono quelle pubblicate
+dai progetti l'11 novembre 2026 e vanno ricontrollate prima di aggiornare le
+pagine.

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill, metodi e framework — Adripedia</title>
+  <meta name="description" content="Come creare, testare e distribuire una skill per agenti AI, e come leggere Superpowers, Caveman, BMAD, ECC e Hermes senza farsi vendere fumo.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/ai/skill.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Skill, metodi e framework</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; AI</p>
+      <h1>Skill, metodi e framework</h1>
+      <p class="lead">
+        Una skill &egrave; un modo per impacchettare una procedura: non un prompt
+        pi&ugrave; lungo, ma un piccolo manuale che l&rsquo;agente apre solo
+        quando serve. La stessa idea sta dietro a Superpowers, Caveman e a molti
+        framework che promettono di rendere un agente pi&ugrave; disciplinato.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Una skill &egrave; conoscenza procedurale
+          scritta una volta e riusata molte. Costa poco finch&eacute; non si
+          attiva, ma pu&ograve; eseguire codice: trattala come codice di terzi,
+          non come una nota a margine.
+        </p>
+      </div>
+
+      <nav class="section-index" aria-labelledby="skill-index-title">
+        <p class="section-index-title" id="skill-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cosa">Che cos&rsquo;&egrave; una skill</a></li>
+          <li><a href="#anatomia">Anatomia e disclosure progressiva</a></li>
+          <li><a href="#creare">Creare una skill, passo per passo</a></li>
+          <li><a href="#testare">Testare una skill</a></li>
+          <li><a href="#distribuire">Distribuire e mantenere</a></li>
+          <li><a href="#metodi">Metodi e framework</a></li>
+          <li><a href="#sicurezza">Sicurezza</a></li>
+          <li><a href="#lessico">Lessico minimo</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="cosa">Che cos&rsquo;&egrave; una skill</h2>
+      <p>
+        Quattro cose vengono spesso confuse. Una <strong>skill</strong> &egrave;
+        conoscenza procedurale: spiega come fare un compito, con quali controlli
+        e in quale formato. Un <strong>tool</strong> &egrave; una funzione che
+        esegue un&rsquo;azione. Un <strong>server MCP</strong> &egrave; il
+        protocollo con cui un&rsquo;applicazione espone tool e risorse. Un
+        <strong>agente</strong> &egrave; il ciclo che decide cosa fare e quando.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Skill</th>
+              <th>Tool</th>
+              <th>Server MCP</th>
+              <th>Agente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cos&rsquo;&egrave;</strong></td>
+              <td>Procedura scritta in Markdown</td>
+              <td>Funzione eseguibile</td>
+              <td>Contratto per esporre capacit&agrave;</td>
+              <td>Ciclo di decisione e azione</td>
+            </tr>
+            <tr>
+              <td><strong>Chi la usa</strong></td>
+              <td>Il modello, quando si attiva</td>
+              <td>Il modello o il codice</td>
+              <td>Un host con i suoi client</td>
+              <td>Il modello, con tool e regole</td>
+            </tr>
+            <tr>
+              <td><strong>Unit&agrave; di riuso</strong></td>
+              <td>Cartella versionabile</td>
+              <td>Firma e comportamento</td>
+              <td>Server e sue primitive</td>
+              <td>Configurazione e prompt</td>
+            </tr>
+            <tr>
+              <td><strong>Rischio principale</strong></td>
+              <td>Attivazione sbagliata, script fragili</td>
+              <td>Effetti collaterali</td>
+              <td>Permessi e injection</td>
+              <td>Loop, costo, autonomia</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Le <strong>Agent Skills</strong> sono uno standard aperto: la specifica
+        &egrave; pubblica e un numero crescente di client le legge. Il formato
+        &egrave; volutamente semplice &mdash; una cartella con un file
+        <code>SKILL.md</code> e, se serve, script e riferimenti &mdash; perch&eacute;
+        il valore non &egrave; nella tecnologia, ma nel fatto che una procedura
+        possa essere letta, revisionata e spostata da uno strumento all&rsquo;altro.
+      </p>
+      <p>
+        La portabilit&agrave; &egrave; il vero argomento a favore dello standard.
+        Se una procedura &egrave; scritta come skill, pu&ograve; essere spostata da
+        un client all&rsquo;altro senza riscriverla; se &egrave; scritta come
+        prompt dentro un prodotto, resta l&igrave;. Non &egrave; una garanzia
+        assoluta &mdash; i client interpretano i dettagli in modo diverso &mdash;
+        ma &egrave; molto meglio di un formato proprietario.
+      </p>
+      <p>
+        C&rsquo;&egrave; anche un vantaggio economico, oltre che organizzativo.
+        Cento skill caricate come metadati costano circa 10.000 token in tutto,
+        una volta; cento prompt completi costerebbero il loro contenuto a ogni
+        chiamata. Il risparmio per&ograve; si paga in latenza di attivazione e in
+        precisione: se la <code>description</code> &egrave; ambigua, il modello
+        apre la skill sbagliata e il risparmio diventa un errore.
+      </p>
+      <p>
+        La differenza con un prompt &egrave; il momento del caricamento. Un prompt
+        entra nel contesto a ogni chiamata; una skill entra solo quando il
+        modello decide che serve, e solo nella parte necessaria. &Egrave; la
+        stessa idea dei manuali di officina: non li leggi tutti, apri la pagina
+        giusta.
+      </p>
+
+      <h2 id="anatomia">Anatomia e disclosure progressiva</h2>
+      <p>
+        Una skill &egrave; una directory. Il nome della directory &egrave; il nome
+        della skill; dentro c&rsquo;&egrave; un file di istruzioni e, se servono,
+        materiali di supporto.
+      </p>
+      <pre><code>mia-skill/
+&#9500;&#9472;&#9472; SKILL.md          # metadati e istruzioni
+&#9500;&#9472;&#9472; scripts/          # logica deterministica
+&#9500;&#9472;&#9472; references/       # dettagli da consultare
+&#9492;&#9472;&#9472; assets/           # modelli e file statici</code></pre>
+      <p>
+        Il frontmatter YAML dichiara i metadati. I limiti non sono decorativi:
+        sono ci&ograve; che permette a un client di caricare cento skill senza
+        esaurire il contesto.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Obbligatorio</th>
+              <th>Limite</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>name</code></td>
+              <td>S&igrave;</td>
+              <td>64 caratteri</td>
+              <td>Minuscole, numeri e trattini; niente trattini iniziali, finali o consecutivi; deve coincidere con il nome della directory.</td>
+            </tr>
+            <tr>
+              <td><code>description</code></td>
+              <td>S&igrave;</td>
+              <td>1.024 caratteri</td>
+              <td>Dice cosa fa e quando usarla. &Egrave; il testo che decide l&rsquo;attivazione.</td>
+            </tr>
+            <tr>
+              <td><code>license</code></td>
+              <td>No</td>
+              <td>&mdash;</td>
+              <td>Utile per la distribuzione e per chi deve approvare.</td>
+            </tr>
+            <tr>
+              <td><code>compatibility</code></td>
+              <td>No</td>
+              <td>500 caratteri</td>
+              <td>Requisiti di ambiente, dipendenze, versioni.</td>
+            </tr>
+            <tr>
+              <td><code>metadata</code></td>
+              <td>No</td>
+              <td>&mdash;</td>
+              <td>Coppie chiave-valore libere: proprietario, versione, contatti.</td>
+            </tr>
+            <tr>
+              <td><code>allowed-tools</code></td>
+              <td>No</td>
+              <td>&mdash;</td>
+              <td>Sperimentale: limita i tool disponibili quando la skill &egrave; attiva.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Il caricamento avviene in tre fasi. All&rsquo;avvio il client legge solo
+        <code>name</code> e <code>description</code> di tutte le skill: circa 100
+        token per skill. Quando una skill si attiva, carica il corpo del
+        <code>SKILL.md</code>, per il quale la specifica consiglia meno di 5.000
+        token e meno di 500 righe. Solo se il compito lo richiede, carica i file
+        in <code>scripts/</code>, <code>references/</code> e
+        <code>assets/</code>. Questa &egrave; la <strong>disclosure
+        progressiva</strong>: paghi il dettaglio solo quando ti serve.
+      </p>
+      <p>
+        La <code>description</code> &egrave; il campo pi&ugrave; difficile e il
+        pi&ugrave; importante. Deve contenere due cose insieme: cosa fa la skill
+        e in quali situazioni va usata. &ldquo;Gestisce report&rdquo; &egrave;
+        troppo vago; &ldquo;Prepara il report settimanale delle vendite dai dati
+        esportati&rdquo; dice cosa, ma non quando. Aggiungi le parole che usa chi
+        chiede: &ldquo;report della settimana&rdquo;, &ldquo;riepilogo
+        vendite&rdquo;, &ldquo;aggiornamento per la riunione&rdquo;. Non
+        elencare tutte le varianti possibili: scegli quelle che distinguono il
+        compito da quelli vicini.
+      </p>
+      <p>
+        Il corpo, invece, deve essere scritto per essere seguito, non per essere
+        ammirato. Frasi brevi, passi numerati, controlli verificabili. Se una
+        parte richiede pi&ugrave; di una pagina, non &egrave; il corpo: &egrave;
+        un riferimento.
+      </p>
+      <p>
+        I riferimenti ai file devono restare a un solo livello di profondit&agrave;.
+        Una catena di link &egrave; facile da scrivere e impossibile da seguire:
+        il modello apre un file, trova un altro riferimento, e nel frattempo ha
+        consumato il contesto che serviva al compito.
+      </p>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-skill-structure.svg" width="1200" height="640"
+             alt="Struttura di una skill: SKILL.md, script, riferimenti e asset, con i tre livelli di caricamento progressivo.">
+        <figcaption>
+          La cartella a sinistra, i tre livelli a destra: metadati sempre,
+          corpo all&rsquo;attivazione, risorse solo su richiesta. Illustrazione
+          Adripedia.
+        </figcaption>
+      </figure>
+
+      <h2 id="creare">Creare una skill, passo per passo</h2>
+      <p>
+        Il punto di partenza non &egrave; &ldquo;scrivo una skill&rdquo;, ma
+        &ldquo;ho un compito che ripeto&rdquo;. Un buon segnale &egrave; la
+        frase &ldquo;l&rsquo;ho gi&agrave; spiegato la settimana scorsa&rdquo;:
+        se la ripeti, merita una skill. Un cattivo segnale &egrave; un compito
+        che hai fatto una volta sola e che forse non rifarai. Sette passi:
+      </p>
+      <ol>
+        <li>Scegli un compito ricorrente, con un inizio e una fine chiari.</li>
+        <li>Scrivi una <code>description</code> che dica cosa fa e quando usarla,
+        con le parole che userebbe chi chiede.</li>
+        <li>Scrivi il corpo con cinque parti: quando usarla, quando non usarla,
+        procedura, controlli, formato di output.</li>
+        <li>Sposta i dettagli lunghi in <code>references/</code>.</li>
+        <li>Metti la logica deterministica in <code>scripts/</code>: non chiedere
+        al modello di fare aritmetica che pu&ograve; fare un programma.</li>
+        <li>Testa l&rsquo;attivazione e il risultato.</li>
+        <li>Versiona e annota le modifiche.</li>
+      </ol>
+      <p>
+        Un esempio completo, neutro e senza comandi di un harness specifico:
+      </p>
+      <pre><code>report-settimanale/
+&#9500;&#9472;&#9472; SKILL.md
+&#9500;&#9472;&#9472; references/
+&#9474;   &#9492;&#9472;&#9472; formato.md
+&#9492;&#9472;&#9472; scripts/
+    &#9492;&#9472;&#9472; aggrega.py</code></pre>
+      <pre><code>---
+name: report-settimanale
+description: Prepara il report settimanale delle vendite dai dati esportati. Usala quando l'utente chiede il report della settimana, il riepilogo vendite o l'aggiornamento per la riunione del luned&igrave;.
+license: MIT
+compatibility: richiede accesso alla cartella dati/ e a Python 3.
+metadata:
+  owner: team-vendite
+  versione: "1.2"
+---
+
+# Report settimanale
+
+## Quando usarla
+Quando esistono file di vendita della settimana e serve un riepilogo
+per regione, con confronto sulla settimana precedente.
+
+## Quando non usarla
+Se i dati sono gi&agrave; aggregati, se manca la settimana precedente
+o se la richiesta riguarda previsioni: in questi casi spiega cosa manca.
+
+## Procedura
+1. Elenca i file in dati/vendite-*.csv della settimana richiesta.
+2. Esegui scripts/aggrega.py con la settimana come argomento.
+3. Controlla che il totale delle righe coincida con il totale dei file.
+4. Compila il report seguendo references/formato.md.
+
+## Controlli
+- Ogni numero deve avere una fonte nel file di origine.
+- Se un file &egrave; illeggibile, fermati e segnala quale.
+- Non arrotondare prima della verifica dei totali.
+
+## Formato di output
+Markdown con: titolo, periodo, tabella per regione, confronto
+percentuale, tre righe di commento. Nessun dato personale.</code></pre>
+      <pre><code># scripts/aggrega.py (pseudocodice)
+leggi i file della settimana
+verifica la presenza della colonna "importo"
+somma per regione e per giorno
+confronta con la settimana precedente
+scrivi report.md con la data nel nome
+se manca un file: esci con codice 2 e indica il percorso</code></pre>
+      <p>
+        Resisti alla tentazione di mettere tutto nella skill. Una skill che
+        spiega tre compiti diversi si attiva a sproposito e confonde il modello.
+        Se ti accorgi che la procedura ha due inizi e due fini, hai due skill. E
+        se il compito cambia ogni settimana, forse non &egrave; una skill: &egrave;
+        una conversazione.
+      </p>
+      <p>
+        Nota cosa non c&rsquo;&egrave;: nessun comando di installazione, nessun
+        nome di prodotto, nessuna istruzione che dipenda dal contesto di chi
+        l&rsquo;ha scritta. La skill deve funzionare per una persona che non ti
+        conosce e che apre la cartella tra sei mesi.
+      </p>
+
+      <h2 id="testare">Testare una skill</h2>
+      <p>
+        Una skill ha due modi di fallire: non si attiva quando dovrebbe, oppure
+        si attiva quando non dovrebbe. Il primo test &egrave; quindi un test di
+        attivazione, non di contenuto.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Test</th>
+              <th>Cosa verifica</th>
+              <th>Come</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Attivazione positiva</td>
+              <td>La skill si carica sulle richieste giuste.</td>
+              <td>10 richieste realistiche, formulate in modi diversi.</td>
+            </tr>
+            <tr>
+              <td>Attivazione negativa</td>
+              <td>La skill resta spenta sulle richieste vicine ma diverse.</td>
+              <td>10 richieste che usano parole simili per altri scopi.</td>
+            </tr>
+            <tr>
+              <td>Compito</td>
+              <td>Il risultato rispetta il formato e i controlli.</td>
+              <td>Esegui la procedura su dati veri e confronta con l&rsquo;atteso.</td>
+            </tr>
+            <tr>
+              <td>Regressione</td>
+              <td>Una modifica non rompe i casi gi&agrave; superati.</td>
+              <td>Riesegui l&rsquo;intera suite a ogni versione.</td>
+            </tr>
+            <tr>
+              <td>Costo</td>
+              <td>Il corpo e le risorse restano entro i budget.</td>
+              <td>Misura i token caricati per attivazione.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Le dieci richieste positive non devono essere variazioni della stessa
+        frase. Cambia il registro, la lunghezza, il livello di dettaglio. Le
+        negative devono essere insidiose: richieste che contengono le stesse
+        parole chiave ma un obiettivo diverso. Se la <code>description</code>
+        &egrave; troppo larga, la skill si attiva sempre; se &egrave; troppo
+        stretta, non si attiva mai.
+      </p>
+      <p>
+        Per il frontmatter esiste un controllo strutturale. Se lo strumento
+        &egrave; installato, il comando &egrave;:
+      </p>
+      <pre><code>skills-ref validate ./report-settimanale</code></pre>
+      <p>
+        Il tasso di attivazione corretto &egrave; una metrica semplice: quante
+        delle dieci richieste positive attivano la skill, quante delle dieci
+        negative restano spente. Un valore come 9/10 e 10/10 &egrave; un buon
+        punto di partenza; 5/10 significa che la <code>description</code> non
+        descrive il compito, 0/10 negative significa che &egrave; troppo larga.
+        Annota i falsi positivi: sono i pi&ugrave; costosi, perch&eacute;
+        consumano contesto e possono portare il modello fuori strada.
+      </p>
+      <p>
+        La validazione dice se il formato &egrave; corretto, non se la skill
+        &egrave; utile. Quella &egrave; una misura sul compito: tasso di
+        attivazione corretto, risultato conforme, costo in token. La lunghezza
+        non &egrave; una misura di qualit&agrave;; spesso &egrave; il contrario.
+      </p>
+
+      <h2 id="distribuire">Distribuire e mantenere</h2>
+      <p>
+        Una skill vive in un repository, come il codice. Pu&ograve; essere
+        distribuita tramite un marketplace di plugin, un installer compatibile o
+        una semplice cartella condivisa. Il metodo conta meno del contratto:
+        chi la installa deve sapere cosa scarica, da quale versione e con quali
+        permessi.
+      </p>
+      <p>
+        Il versionamento deve essere leggibile: un numero di versione e un elenco
+        delle modifiche che spieghino se il comportamento &egrave; cambiato. Una
+        skill che aggiorna la procedura senza dirlo &egrave; peggio di una skill
+        vecchia: ha cambiato il risultato di un flusso che qualcuno dava per
+        stabile.
+      </p>
+      <p>
+        La compatibilit&agrave; tra client non &egrave; garantita dalla sola
+        specifica. Alcuni client leggono i metadati e non eseguono script; altri
+        supportano campi sperimentali; altri ancora applicano regole proprie di
+        attivazione. Dichiara nel <code>compatibility</code> ci&ograve; che serve
+        e prova la skill su pi&ugrave; di un client, se puoi.
+      </p>
+      <p>
+        Prevedi anche la dismissione. Una skill che non serve pi&ugrave; va
+        rimossa o marcata come deprecata, con una nota che dica cosa usare al suo
+        posto. Se resta installata, continua a occupare metadati e a competere
+        per l&rsquo;attivazione con le skill nuove.
+      </p>
+      <p>
+        Infine la governance, la parte che nessuno scrive e che tutti rimpiangono:
+        chi approva una skill nuova, chi la mantiene, con quale frequenza si
+        aggiorna, come si revoca. Una skill senza proprietario &egrave; un debito
+        tecnico con un prompt.
+      </p>
+
+      <h2 id="metodi">Metodi e framework</h2>
+      <p>
+        Esistono progetti che impacchettano metodi interi &mdash; non solo una
+        procedura &mdash; sotto forma di skill, comandi e istruzioni iniziali.
+        Sono interessanti per due motivi: mostrano cosa si pu&ograve; fare con le
+        skill e mostrano quanto velocemente un metodo diventi un&rsquo;opinione.
+        Numeri e dichiarazioni sono quelli pubblicati dai progetti, rilevati
+        l&rsquo;11 novembre 2026.
+      </p>
+
+      <p>
+        Leggi questa sezione come una rassegna, non come una classifica. Ogni
+        progetto risponde a una domanda diversa: come si struttura il lavoro,
+        come si riduce il rumore, come si mantiene il contesto, come si parte
+        velocemente, come si ricorda tra sessioni. La domanda giusta non &egrave;
+        &ldquo;quale &egrave; il migliore&rdquo;, ma &ldquo;quale problema ho&rdquo;.
+      </p>
+
+      <h3>Superpowers</h3>
+      <p>
+        <strong>Che cos&rsquo;&egrave;.</strong> Una metodologia completa di
+        sviluppo per coding agent, costruita su skill componibili e istruzioni
+        iniziali che ne impongono l&rsquo;uso. Il flusso tipico &egrave;
+        brainstorming, design, piano, implementazione, review.
+        <strong>Unit&agrave; di confezione.</strong> Skill, subagenti, hook e
+        istruzioni di avvio, con supporto per molti harness.
+        <strong>Punto forte.</strong> Disciplina e tracciabilit&agrave;: il lavoro
+        lascia documenti intermedi invece di sparire in una chat.
+        <strong>Costo e rischio.</strong> Overhead di token e di processo,
+        opinionato, manutenzione delle skill, supporto variabile tra harness.
+        <strong>Quando usarlo.</strong> Progetti con pi&ugrave; fasi e bisogno di
+        memoria del processo. Repository <code>obra/superpowers</code>, licenza
+        MIT, oltre 316.000 stelle.
+      </p>
+
+      <h3>Caveman</h3>
+      <p>
+        <strong>Che cos&rsquo;&egrave;.</strong> Una skill e un proxy per coding
+        agent che riduce i token facendo parlare l&rsquo;assistente in modo
+        telegrafico, mentre codice, comandi, percorsi ed errori restano esatti.
+        Ha modalit&agrave; caveman, ultracave e megacave, e una funzione di
+        &ldquo;auto-clarity&rdquo; per avvisi di sicurezza e azioni irreversibili.
+        <strong>Unit&agrave; di confezione.</strong> Skill e proxy, con installer
+        dedicato. <strong>Punto forte.</strong> Riduzione dichiarata dei token di
+        input. <strong>Costo e rischio.</strong> La compressione pu&ograve;
+        togliere sfumature; il guadagno dipende dal compito.
+        <strong>Quando usarlo.</strong> Sessioni lunghe in cui la verbosit&agrave;
+        costa pi&ugrave; del dettaglio.
+      </p>
+      <p>
+        Il progetto (<code>JuliusBrussee/caveman</code>, Apache-2.0, oltre 119.000
+        stelle) dichiara il 33,2% in meno di token di input su sessioni intere e
+        una riduzione del 65% in alcune prove. Dichiara anche, con onest&agrave;
+        rara, che &ldquo;Answer concisely&rdquo; &egrave; il vero baseline e che
+        la voce caveman taglia solo il 3% in pi&ugrave; alla mediana, mentre
+        ultracave arriva al 35%. Sono dichiarazioni del progetto, non misure
+        indipendenti. Nota: <code>abczsl520/caveman-agent</code> &egrave; un
+        progetto diverso, non lo stesso Caveman.
+      </p>
+
+      <h3>BMAD</h3>
+      <p>
+        <strong>Che cos&rsquo;&egrave;.</strong> Un metodo agile per lo sviluppo
+        guidato dall&rsquo;AI, in cui i workflow producono brief, specifiche e
+        architettura che diventano contesto per la fase successiva.
+        <strong>Unit&agrave; di confezione.</strong> Workflow, agenti e modelli di
+        documento. <strong>Punto forte.</strong> Continuit&agrave; del contesto e
+        decisioni esplicite. <strong>Costo e rischio.</strong> Processo pesante
+        per i lavoretti, versione in transizione, licenza da verificare.
+        <strong>Quando usarlo.</strong> Progetti con pi&ugrave; persone e fasi che
+        devono lasciare traccia. Repository <code>bmad-code-org/BMAD-METHOD</code>,
+        oltre 55.000 stelle; la release stabile &egrave; la v6.12, la v7 &egrave;
+        in alpha, e il repository non dichiara una licenza SPDX standard.
+      </p>
+
+      <h3>ECC</h3>
+      <p>
+        <strong>Che cos&rsquo;&egrave;.</strong> Un &ldquo;agent harness
+        performance optimization system&rdquo;: un pacchetto di agenti, skill,
+        comandi, hook, regole e convenzioni MCP.
+        <strong>Unit&agrave; di confezione.</strong> Plugin con manifest.
+        <strong>Punto forte.</strong> Una batteria pronta all&rsquo;uso.
+        <strong>Costo e rischio.</strong> Superficie enorme, opinionato,
+        manutenzione e audit continui. <strong>Quando usarlo.</strong> Quando
+        vuoi partire da un insieme ampio e sei disposto a studiarlo.
+        Repository <code>affaan-m/ECC</code>, licenza MIT, oltre 301.000 stelle;
+        il manifest dichiara 67 agenti, 271 skill e 92 shim di comandi legacy.
+        Sono numeri del manifest, non misure indipendenti.
+      </p>
+
+      <h3>Hermes Agent</h3>
+      <p>
+        <strong>Che cos&rsquo;&egrave;.</strong> Un agente &ldquo;self-improving&rdquo;
+        con un loop di apprendimento che crea skill dall&rsquo;esperienza, le
+        migliora durante l&rsquo;uso e costruisce un modello dell&rsquo;utente tra
+        sessioni; supporta pi&ugrave; backend di terminale.
+        <strong>Unit&agrave; di confezione.</strong> Agente e skill generate.
+        <strong>Punto forte.</strong> Memoria e apprendimento.
+        <strong>Costo e rischio.</strong> Autonomia, privacy, evaluation,
+        lock-in. <strong>Quando usarlo.</strong> Sperimentazione su agenti che
+        devono ricordare. Repository <code>NousResearch/hermes-agent</code>,
+        licenza MIT, oltre 262.000 stelle.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Progetto</th>
+              <th>Licenza</th>
+              <th>Stelle</th>
+              <th>Unit&agrave; principale</th>
+              <th>Ideale per</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Superpowers</td>
+              <td>MIT</td>
+              <td>oltre 316.000</td>
+              <td>Skill e flusso di sviluppo</td>
+              <td>Processo tracciabile</td>
+            </tr>
+            <tr>
+              <td>Caveman</td>
+              <td>Apache-2.0</td>
+              <td>oltre 119.000</td>
+              <td>Skill e proxy</td>
+              <td>Ridurre la verbosit&agrave;</td>
+            </tr>
+            <tr>
+              <td>BMAD</td>
+              <td>Da verificare</td>
+              <td>oltre 55.000</td>
+              <td>Workflow e documenti</td>
+              <td>Progetti strutturati</td>
+            </tr>
+            <tr>
+              <td>ECC</td>
+              <td>MIT</td>
+              <td>oltre 301.000</td>
+              <td>Plugin con manifest</td>
+              <td>Batteria pronta</td>
+            </tr>
+            <tr>
+              <td>Hermes Agent</td>
+              <td>MIT</td>
+              <td>oltre 262.000</td>
+              <td>Agente con apprendimento</td>
+              <td>Memoria tra sessioni</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Le stelle misurano popolarit&agrave;, non qualit&agrave;. Un progetto con
+        molte stelle pu&ograve; essere ottimo per un caso e inadatto per un altro;
+        un progetto piccolo pu&ograve; essere pi&ugrave; adatto al tuo. Prima di
+        adottare un metodo, guarda licenza, manutenzione, compatibilit&agrave; con
+        il tuo strumento e costo di uscita. E ricorda che un metodo &egrave; un
+        insieme di abitudini: se non le condividi, nessun framework le impone.
+      </p>
+
+      <h2 id="sicurezza">Sicurezza</h2>
+      <p>
+        Una skill pu&ograve; contenere script eseguibili, leggere file e chiamare
+        la rete. Non &egrave; un documento passivo. Le regole sono le stesse che
+        applicheresti a una dipendenza software:
+      </p>
+      <ul>
+        <li>rivedi il contenuto prima di installare, soprattutto gli script;</li>
+        <li>applica il principio dei privilegi minimi e, dove disponibile,
+        <code>allowed-tools</code>;</li>
+        <li>fissa la versione e aggiorna con consapevolezza;</li>
+        <li>non inserire segreti nel <code>SKILL.md</code> n&eacute; negli
+        esempi;</li>
+        <li>esegui in sandbox ci&ograve; che non conosci;</li>
+        <li>registra le attivazioni e le azioni compiute;</li>
+        <li>prevedi una procedura di revoca, non solo di installazione.</li>
+      </ul>
+      <p>
+        Un controllo che vale la pena fare prima di installare: apri la cartella
+        e guarda i file. Se ci sono script, leggili. Se ci sono URL, guarda dove
+        puntano. Se ci sono istruzioni che chiedono di disattivare controlli,
+        fermati. La maggior parte delle sorprese sta in tre righe che nessuno
+        legge.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Attenzione.</strong> Le skill di terzi sono codice di terzi.
+          Una descrizione innocua non garantisce che lo script dentro faccia
+          quello che dice. Se non puoi leggere il codice, trattalo come
+          sconosciuto: sandbox, permessi limitati e nessun accesso ai segreti.
+        </p>
+      </div>
+
+      <h2 id="lessico">Lessico minimo</h2>
+      <dl>
+        <dt>Skill</dt>
+        <dd>Una procedura impacchettata in una cartella, con metadati e
+        istruzioni, che un agente carica quando serve.</dd>
+        <dt>Disclosure progressiva</dt>
+        <dd>Il caricamento a livelli: prima i metadati, poi il corpo, poi le
+        risorse, solo quando il compito lo richiede.</dd>
+        <dt>Frontmatter</dt>
+        <dd>Il blocco di metadati YAML all&rsquo;inizio di un file Markdown.</dd>
+        <dt>Trigger</dt>
+        <dd>La richiesta o la situazione che fa attivare una skill.</dd>
+        <dt>Harness</dt>
+        <dd>Lo strumento che esegue l&rsquo;agente: interfaccia, modello, tool,
+        permessi.</dd>
+        <dt>Plugin</dt>
+        <dd>Un pacchetto installabile che pu&ograve; contenere pi&ugrave; skill,
+        comandi e configurazione.</dd>
+      </dl>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Agent Skills, <em>Overview</em>, <em>Specification</em>,
+        <em>Best practices</em></strong> &mdash; standard, campi del frontmatter,
+        limiti e disclosure progressiva.</li>
+        <li><strong>Anthropic, <em>Agent Skills</em></strong> &mdash; presentazione
+        del formato e casi d&rsquo;uso.</li>
+        <li><strong>README di <code>obra/superpowers</code></strong> &mdash;
+        flusso, licenza, stelle.</li>
+        <li><strong>README di <code>JuliusBrussee/caveman</code></strong> &mdash;
+        modalit&agrave;, dichiarazioni sui token, baseline.</li>
+        <li><strong>README di <code>bmad-code-org/BMAD-METHOD</code></strong>
+        &mdash; versioni e workflow.</li>
+        <li><strong>Manifest di <code>affaan-m/ECC</code></strong> &mdash; agenti,
+        skill e shim dichiarati.</li>
+        <li><strong>Documentazione di <code>NousResearch/hermes-agent</code></strong>
+        &mdash; loop di apprendimento e memoria.</li>
+      </ul>
+      <p>
+        Fonti consultate l&rsquo;11 novembre 2026. Stelle, versioni e licenze
+        cambiano: ricontrolla prima di adottare un progetto.
+      </p>
+    </main>
+
+        <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione AI</span>
+        <span class="footer-right">
+          <span>Skill e metodi &middot; aggiornata l&rsquo;11 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

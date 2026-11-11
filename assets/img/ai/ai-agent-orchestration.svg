@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="titolo-agenti">
+  <title id="titolo-agenti">Orchestrazione di agenti con revisore e gate umano</title>
+  <defs>
+    <marker id="freccia-agenti" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f6fb3"/>
+    </marker>
+    <marker id="freccia-ritorno" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b8762a"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="1198" height="678" rx="14" fill="#ffffff" stroke="#d7dee8"/>
+
+  <text x="48" y="54" font-family="'Segoe UI', system-ui, sans-serif" font-size="24" font-weight="700" fill="#1f2937">Orchestrazione di agenti</text>
+  <text x="48" y="84" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" fill="#5b6573">Un coordinatore, tre specialisti, un revisore, un umano che approva.</text>
+
+  <rect x="430" y="110" width="340" height="100" rx="10" fill="#eaf2fb" stroke="#2f6fb3"/>
+  <text x="454" y="146" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Orchestratore</text>
+  <text x="454" y="174" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">pianifica, assegna, controlla il budget</text>
+
+  <rect x="60" y="260" width="340" height="100" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="84" y="296" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Ricercatore</text>
+  <text x="84" y="324" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">cerca e raccoglie fonti</text>
+
+  <rect x="430" y="260" width="340" height="100" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="454" y="296" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Analista</text>
+  <text x="454" y="324" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">confronta e sintetizza</text>
+
+  <rect x="800" y="260" width="340" height="100" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="824" y="296" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Redattore</text>
+  <text x="824" y="324" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">scrive il brief</text>
+
+  <rect x="430" y="430" width="340" height="100" rx="10" fill="#eaf6f2" stroke="#2f7d6b"/>
+  <text x="454" y="466" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Revisore</text>
+  <text x="454" y="494" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">verifica criteri e citazioni</text>
+
+  <rect x="60" y="570" width="340" height="80" rx="10" fill="#fdf3e7" stroke="#b8762a"/>
+  <text x="84" y="602" font-family="'Segoe UI', system-ui, sans-serif" font-size="15" font-weight="700" fill="#1f2937">Gate umano</text>
+  <text x="84" y="626" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">approva le azioni sensibili</text>
+
+  <rect x="430" y="570" width="340" height="80" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="454" y="602" font-family="'Segoe UI', system-ui, sans-serif" font-size="15" font-weight="700" fill="#1f2937">Memoria e stato</text>
+  <text x="454" y="626" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">contesto condiviso e traccia</text>
+
+  <rect x="800" y="570" width="340" height="80" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="824" y="602" font-family="'Segoe UI', system-ui, sans-serif" font-size="15" font-weight="700" fill="#1f2937">Budget</text>
+  <text x="824" y="626" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">token, tempo, costo</text>
+
+  <line x1="600" y1="210" x2="230" y2="256" stroke="#2f6fb3" stroke-width="2" marker-end="url(#freccia-agenti)"/>
+  <line x1="600" y1="210" x2="600" y2="256" stroke="#2f6fb3" stroke-width="2" marker-end="url(#freccia-agenti)"/>
+  <line x1="600" y1="210" x2="970" y2="256" stroke="#2f6fb3" stroke-width="2" marker-end="url(#freccia-agenti)"/>
+
+  <line x1="230" y1="360" x2="520" y2="426" stroke="#2f6fb3" stroke-width="2" marker-end="url(#freccia-agenti)"/>
+  <line x1="600" y1="360" x2="600" y2="426" stroke="#2f6fb3" stroke-width="2" marker-end="url(#freccia-agenti)"/>
+  <line x1="970" y1="360" x2="680" y2="426" stroke="#2f6fb3" stroke-width="2" marker-end="url(#freccia-agenti)"/>
+
+  <line x1="520" y1="530" x2="230" y2="566" stroke="#b8762a" stroke-width="2" marker-end="url(#freccia-ritorno)"/>
+
+  <polyline points="770,480 1170,480 1170,160 774,160" fill="none" stroke="#b8762a" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#freccia-ritorno)"/>
+
+  <text x="230" y="240" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#2f6fb3">task</text>
+  <text x="610" y="240" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#2f6fb3">task</text>
+  <text x="970" y="240" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#2f6fb3">task</text>
+
+  <text x="230" y="400" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#2f6fb3">risultato</text>
+  <text x="610" y="400" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#2f6fb3">risultato</text>
+  <text x="970" y="400" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#2f6fb3">risultato</text>
+
+  <text x="330" y="552" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#b8762a">approvazione</text>
+  <text x="1050" y="100" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#b8762a">feedback</text>
+</svg>

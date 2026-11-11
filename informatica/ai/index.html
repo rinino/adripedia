@@ -40,7 +40,13 @@
         discorsiva, pensata per essere letta dall&rsquo;inizio alla fine. I numeri
         sono ordini di grandezza verificati su fonti pubbliche e cambiano in
         fretta: servono a capire la scala, non a fare previsioni. Gli
-        approfondimenti e i casi pratici arriveranno come pagine separate.
+        approfondimenti operativi sono sei pagine separate:
+        <a href="modelli.html">Modelli e routing</a>,
+        <a href="prompt.html">Prompt e comandi</a>,
+        <a href="skill.html">Skill e metodi</a>,
+        <a href="mcp.html">Server MCP</a>,
+        <a href="agenti.html">Agenti e orchestrazione</a> e il
+        <a href="laboratorio.html">Laboratorio</a>.
       </div>
 
       <nav class="section-index" aria-labelledby="ai-index-title">
@@ -566,7 +572,10 @@
         caching del contesto e i modelli piccoli sono le leve pi&ugrave;
         efficaci per un servizio reale. La latenza non dipende solo dal modello:
         conta la rete, la coda, la lunghezza del contesto e la velocit&agrave; di
-        generazione.
+        generazione. Le leve sono spiegate una per una in
+        <a href="modelli.html#parametri">Modelli e routing</a>, e il modo di
+        impacchettarle in un comando riutilizzabile &egrave; in
+        <a href="prompt.html#comandi">Prompt e comandi</a>.
       </p>
 
       <h2 id="limiti">Limiti, rischi e buone pratiche</h2>
@@ -615,7 +624,9 @@
         esterni, diretta quando arriva dall&rsquo;utente. Le mitigazioni non sono
         perfette: separare contenuto non fidato e istruzioni, dare al modello
         privilegi minimi, validare l&rsquo;output, chiedere approvazione umana
-        per le azioni irreversibili.
+        per le azioni irreversibili. Le difese lato prompt sono in
+        <a href="prompt.html#sicurezza">Prompt e comandi</a>, quelle lato
+        permessi e server in <a href="mcp.html#sicurezza">Server MCP</a>.
       </p>
 
       <h3>Quando &egrave; meglio non usare l&rsquo;AI</h3>
@@ -745,15 +756,45 @@
         pagina ufficiale.
       </p>
       <div class="callout feature">
-        <span class="callout-tag">Prossimamente</span>
+        <span class="callout-tag">Approfondimenti</span>
         <h2>Gli approfondimenti</h2>
         <p>
-          Questa sezione crescer&agrave; con pagine dedicate: i modelli e le
-          loro architetture, l&rsquo;addestramento in dettaglio, le risorse e i
-          costi, e qualche caso pratico con numeri e istruzioni. Se un termine o
-          un passaggio non &egrave; chiaro, &egrave; un buon candidato per il
-          prossimo approfondimento.
+          Sei pagine operative, ognuna con esempi, numeri e modi di sbagliare.
+          Si leggono nell&rsquo;ordine che preferisci, ma chi parte da zero
+          guadagna a leggere prima modelli e prompt.
         </p>
+      </div>
+      <div class="cards">
+        <a class="card" href="modelli.html">
+          <h3>Modelli e routing</h3>
+          <p>Scegliere il modello per compito, budget e vincoli: profili, parametri, cascate e valutazione.</p>
+          <div class="card-chips"><span>modelli</span><span>costi</span><span>routing</span></div>
+        </a>
+        <a class="card" href="prompt.html">
+          <h3>Prompt e comandi</h3>
+          <p>Anatomia del prompt, gestione del contesto, pattern pronti e comandi riutilizzabili.</p>
+          <div class="card-chips"><span>prompt</span><span>contesto</span><span>comandi</span></div>
+        </a>
+        <a class="card" href="skill.html">
+          <h3>Skill e metodi</h3>
+          <p>Creare, testare e distribuire una skill, con una rassegna di metodi e framework.</p>
+          <div class="card-chips"><span>skill</span><span>metodi</span><span>standard</span></div>
+        </a>
+        <a class="card" href="mcp.html">
+          <h3>Server MCP</h3>
+          <p>Esporre tool e risorse a un&rsquo;applicazione AI, con permessi e sicurezza.</p>
+          <div class="card-chips"><span>MCP</span><span>tool</span><span>sicurezza</span></div>
+        </a>
+        <a class="card" href="agenti.html">
+          <h3>Agenti e orchestrazione</h3>
+          <p>Workflow e agenti, pattern, gerarchie con contratti, budget e affidabilit&agrave;.</p>
+          <div class="card-chips"><span>agenti</span><span>orchestrazione</span><span>costi</span></div>
+        </a>
+        <a class="card" href="laboratorio.html">
+          <h3>Laboratorio</h3>
+          <p>Otto esercizi neutrali con ingredienti, passi, risultato atteso e varianti.</p>
+          <div class="card-chips"><span>esercizi</span><span>eval</span><span>sicurezza</span></div>
+        </a>
       </div>
     </main>
 

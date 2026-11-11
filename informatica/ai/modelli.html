@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modelli e routing — Adripedia</title>
+  <meta name="description" content="Come scegliere un modello AI per compito, budget e vincoli: profili, parametri, pattern di collaborazione, routing e valutazione.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/ai/modelli.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Modelli e routing</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; AI</p>
+      <h1>Modelli e routing</h1>
+      <p class="lead">
+        Il modello migliore non esiste. Esiste il modello giusto per un compito,
+        un budget e un vincolo. Questa pagina spiega come sceglierlo, come farlo
+        collaborare con altri e come instradare le richieste senza sprecare
+        denaro.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Scegliere un modello &egrave; un problema di
+          ingegneria, non di tifo. Servono una griglia di scelta, qualche numero
+          misurato sul proprio caso e la possibilit&agrave; di cambiare idea
+          quando i prezzi o le versioni cambiano. Il resto &egrave; marketing.
+        </p>
+      </div>
+
+      <nav class="section-index" aria-labelledby="modelli-index-title">
+        <p class="section-index-title" id="modelli-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#mappa">Non esiste il modello migliore</a></li>
+          <li><a href="#profili">I profili di modello</a></li>
+          <li><a href="#scegliere">Scegliere per ambito</a></li>
+          <li><a href="#parametri">Le leve pratiche</a></li>
+          <li><a href="#insieme">Modelli che lavorano insieme</a></li>
+          <li><a href="#routing">Instradare le richieste</a></li>
+          <li><a href="#valutare">Misurare, non indovinare</a></li>
+          <li><a href="#errori">Errori comuni</a></li>
+          <li><a href="#lessico">Lessico minimo</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="mappa">Non esiste il modello migliore</h2>
+      <p>
+        Ogni classifica di modelli &egrave; una fotografia scattata da un certo
+        angolo. Un modello pu&ograve; essere fortissimo in codice e mediocre in
+        una lingua poco rappresentata nei dati di addestramento; pu&ograve;
+        vincere un benchmark di matematica e perdersi su un documento di venti
+        pagine. Il confine tra le capacit&agrave; &egrave; frastagliato, e non
+        coincide con il prezzo.
+      </p>
+      <p>
+        I benchmark, poi, saturano. Quando un test viene superato dal 90% dei
+        modelli, non distingue pi&ugrave; nulla: misura quanto bene i modelli
+        sono stati ottimizzati su quel test. Un benchmark pubblico non dice
+        niente sul tuo caso d&rsquo;uso, sui tuoi documenti, sul tuo tono, sui
+        tuoi errori accettabili.
+      </p>
+      <p>
+        Le dimensioni che contano davvero sono tre. La <strong>capacit&agrave;</strong>:
+        quanto il modello &egrave; bravo sul compito, non in generale. Il
+        <strong>costo e la latenza</strong>: quanto costa ogni richiesta e quanto
+        tempo impiega a rispondere, comprese le code e la rete. Il
+        <strong>controllo</strong>: dove girano i dati, chi li vede, quale
+        versione del modello resta ferma, quali garanzie hai sul trattamento.
+      </p>
+      <p>
+        Un&rsquo;ultima distinzione, spesso confusa: <strong>modello grande</strong>
+        non &egrave; sinonimo di <strong>modello di ragionamento</strong>. Il
+        ragionamento &egrave; sempre pi&ugrave; spesso una modalit&agrave; o un
+        parametro &mdash; una profondit&agrave; di calcolo, un budget di pensiero
+        &mdash; che si attiva sullo stesso modello. Un modello piccolo in
+        modalit&agrave; ragionamento pu&ograve; costare meno di un modello grande
+        in modalit&agrave; normale, e viceversa. Trattale come due leve separate.
+      </p>
+
+      <h2 id="profili">I profili di modello</h2>
+      <p>
+        Invece di memorizzare nomi e versioni, conviene ragionare per profili.
+        Un profilo &egrave; un insieme di caratteristiche che resta valido anche
+        quando il modello specifico cambia.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Profilo</th>
+              <th>Punti di forza</th>
+              <th>Limiti</th>
+              <th>Uso tipico</th>
+              <th>Cosa verificare</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Generalista frontier</strong></td>
+              <td>Buono quasi ovunque, regge compiti ambigui e istruzioni lunghe.</td>
+              <td>Costo alto, latenza variabile, versioni che cambiano.</td>
+              <td>Compiti misti, prototipi, casi difficili.</td>
+              <td>Prezzo effettivo, limiti di contesto, policy sui dati.</td>
+            </tr>
+            <tr>
+              <td><strong>Piccolo e veloce</strong></td>
+              <td>Costo basso, latenza bassa, adatto a volumi alti.</td>
+              <td>Fatica su ragionamenti lunghi e istruzioni intricate.</td>
+              <td>Classificazione, estrazione semplice, risposte brevi.</td>
+              <td>Qualit&agrave; sul tuo set, non sul benchmark.</td>
+            </tr>
+            <tr>
+              <td><strong>Ragionamento</strong></td>
+              <td>Migliore su problemi a pi&ugrave; passaggi e verifiche.</td>
+              <td>Costo e latenza maggiori, pi&ugrave; token di output.</td>
+              <td>Analisi, debug, pianificazione, matematica.</td>
+              <td>Che il guadagno giustifichi il conto.</td>
+            </tr>
+            <tr>
+              <td><strong>Contesto lungo</strong></td>
+              <td>Legge interi contratti, repository o archivi.</td>
+              <td>Qualit&agrave; non uniforme sul centro del documento; costo per token.</td>
+              <td>Revisione documentale, confronto tra testi.</td>
+              <td>Il punto di perdita dell&rsquo;informazione, con un test.</td>
+            </tr>
+            <tr>
+              <td><strong>Multimodale</strong></td>
+              <td>Legge immagini, schermate, PDF scansionati, audio.</td>
+              <td>Dettagli piccoli e tabelle complesse restano fragili.</td>
+              <td>Estrazione da fatture, controllo di interfacce, trascrizioni.</td>
+              <td>Risoluzione minima e formato accettati.</td>
+            </tr>
+            <tr>
+              <td><strong>Pesi aperti</strong></td>
+              <td>Eseguito in casa, personalizzabile, nessun costo per token.</td>
+              <td>Serve hardware, competenza e manutenzione.</td>
+              <td>Dati sensibili, volumi costanti, ambienti offline.</td>
+              <td>Costo totale reale: macchina, energia, persone.</td>
+            </tr>
+            <tr>
+              <td><strong>Embedding e reranker</strong></td>
+              <td>Trasformano testi in vettori e riordinano i risultati.</td>
+              <td>Non generano testo; vanno valutati sul retrieval.</td>
+              <td>Ricerca interna, RAG, deduplicazione.</td>
+              <td>Recall sui documenti giusti, non solo similarit&agrave;.</td>
+            </tr>
+            <tr>
+              <td><strong>Classificatore o router</strong></td>
+              <td>Decide in fretta etichetta o destinazione.</td>
+              <td>Sbaglia con sicurezza; va misurato con matrici di confusione.</td>
+              <td>Instradamento, triage, filtri economici.</td>
+              <td>Precisione sulle classi rare e costo degli errori.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Tre dettagli tecnici cambiano il conto pi&ugrave; di quanto sembri. La
+        <strong>finestra di contesto</strong> non &egrave; il
+        <strong>contesto utile</strong>: dichiarare un milione di token non
+        significa usarlo bene. I <strong>token di output costano pi&ugrave;</strong>
+        di quelli di input, spesso diverse volte tanto, e un modello prolisso
+        pu&ograve; annullare un risparmio sull&rsquo;input. La
+        <strong>cache del contesto</strong>, dove disponibile, riduce il prezzo
+        della parte ripetuta, ma solo se il fornitore la offre e se il prefisso
+        resta identico.
+      </p>
+
+      <h2 id="scegliere">Scegliere per ambito</h2>
+      <p>
+        Una matrice non decide al posto tuo, ma impedisce di dimenticare una
+        colonna. Guardala come un punto di partenza: la colonna &ldquo;da
+        verificare&rdquo; &egrave; quella che conta.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ambito</th>
+              <th>Requisito dominante</th>
+              <th>Profilo di partenza</th>
+              <th>Da verificare</th>
+              <th>Rischio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Coding</td>
+              <td>Correttezza e contesto del repository</td>
+              <td>Generalista o ragionamento</td>
+              <td>Test eseguiti, non solo codice plausibile</td>
+              <td>Codice che compila e sbaglia</td>
+            </tr>
+            <tr>
+              <td>Documenti lunghi</td>
+              <td>Recupero di dettagli sparsi</td>
+              <td>Contesto lungo, con retrieval</td>
+              <td>Accuratezza su centro e fondo del testo</td>
+              <td>Dettagli inventati con tono sicuro</td>
+            </tr>
+            <tr>
+              <td>Estrazione e classificazione</td>
+              <td>Formato e ripetibilit&agrave;</td>
+              <td>Piccolo, con schema rigido</td>
+              <td>Validazione automatica dell&rsquo;output</td>
+              <td>Campi mancanti riempiti a caso</td>
+            </tr>
+            <tr>
+              <td>Assistenza clienti</td>
+              <td>Latenza e tono</td>
+              <td>Piccolo, con escalation</td>
+              <td>Frasi fuori policy, prezzi, promesse</td>
+              <td>Risposte sicure e sbagliate</td>
+            </tr>
+            <tr>
+              <td>Scrittura creativa</td>
+              <td>Voce e variet&agrave;</td>
+              <td>Generalista</td>
+              <td>Originalit&agrave;, diritti, revisione umana</td>
+              <td>Testi piatti e clich&eacute;</td>
+            </tr>
+            <tr>
+              <td>Immagini e audio</td>
+              <td>Qualit&agrave; percettiva</td>
+              <td>Multimodale</td>
+              <td>Formati, risoluzione, lingue</td>
+              <td>Dettagli illeggibili presi per buoni</td>
+            </tr>
+            <tr>
+              <td>Dati sensibili</td>
+              <td>Confine dei dati</td>
+              <td>Pesi aperti o contratto dedicato</td>
+              <td>Dove finiscono i dati e per quanto</td>
+              <td>Violazione di obblighi e fiducia</td>
+            </tr>
+            <tr>
+              <td>Decisioni ad alto impatto</td>
+              <td>Responsabilit&agrave; e tracciabilit&agrave;</td>
+              <td>Modello + revisore umano</td>
+              <td>Criteri, log, possibilit&agrave; di appello</td>
+              <td>Automazione di una decisione non delegabile</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Prima di provare qualsiasi modello, rispondi a tre domande. <strong>Quanto
+        costa un errore?</strong> Se costa poco, un modello piccolo con
+        validazione automatica basta. <strong>Quale latenza &egrave;
+        accettabile?</strong> Una risposta perfetta dopo quaranta secondi
+        &egrave; inutile in una chat, preziosa in un&rsquo;analisi notturna.
+        <strong>Quali dati possono uscire dal perimetro?</strong> Questa risposta
+        elimina intere categorie di fornitori prima ancora di guardare i prezzi.
+      </p>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-model-routing.svg" width="1200" height="560"
+             alt="Schema di routing: una richiesta viene classificata e inviata a un modello piccolo, a un modello grande o a un umano, con un percorso di fallback.">
+        <figcaption>
+          Il routing non &egrave; un imbuto: &egrave; un albero con ritorni. La
+          linea tratteggiata &egrave; il fallback, cio&egrave; ci&ograve; che
+          succede quando la prima scelta non basta. Illustrazione Adripedia.
+        </figcaption>
+      </figure>
+
+      <h2 id="parametri">Le leve pratiche</h2>
+      <p>
+        I parametri non rendono intelligente un modello, ma cambiano molto il
+        risultato e il conto. Questi sono quelli che vale la pena conoscere,
+        indipendentemente dal fornitore.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Leva</th>
+              <th>Effetto</th>
+              <th>Rischio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Temperatura</td>
+              <td>Pi&ugrave; alta, pi&ugrave; varia l&rsquo;output.</td>
+              <td>Instabilit&agrave; su estrazione e classificazione.</td>
+            </tr>
+            <tr>
+              <td>Top-p</td>
+              <td>Limita la scelta ai token pi&ugrave; probabili.</td>
+              <td>Interagisce con la temperatura: non muoverli insieme.</td>
+            </tr>
+            <tr>
+              <td><code>max_tokens</code></td>
+              <td>Tetto alla lunghezza della risposta.</td>
+              <td>Troncamento silenzioso di JSON e frasi.</td>
+            </tr>
+            <tr>
+              <td>Sequenze di stop</td>
+              <td>Chiudono la generazione a un marcatore.</td>
+              <td>Stop troppo generici troncano il contenuto.</td>
+            </tr>
+            <tr>
+              <td>Output strutturato</td>
+              <td>Forza schema e tipi.</td>
+              <td>Schema troppo rigido produce rifiuti o vuoti.</td>
+            </tr>
+            <tr>
+              <td>Effort o profondit&agrave;</td>
+              <td>Pi&ugrave; calcolo per risposte difficili.</td>
+              <td>Costo nascosto nei token di ragionamento.</td>
+            </tr>
+            <tr>
+              <td>Caching del contesto</td>
+              <td>Riduce il prezzo della parte ripetuta.</td>
+              <td>Si rompe se il prefisso cambia anche di poco.</td>
+            </tr>
+            <tr>
+              <td>Batch</td>
+              <td>Sconto in cambio di tempi pi&ugrave; lunghi.</td>
+              <td>Non adatto a flussi interattivi.</td>
+            </tr>
+            <tr>
+              <td>Retry</td>
+              <td>Recupera errori transitori.</td>
+              <td>Duplica effetti se l&rsquo;operazione non &egrave; idempotente.</td>
+            </tr>
+            <tr>
+              <td>Timeout</td>
+              <td>Evita attese infinite.</td>
+              <td>Taglia risposte lunghe ma valide.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Il costo di una richiesta si stima cos&igrave;:
+        <strong>(token di input &divide; 1.000.000 &times; prezzo input) +
+        (token di output &divide; 1.000.000 &times; prezzo output)</strong>,
+        con i prezzi del fornitore. Ma il numero che conta &egrave; un altro: il
+        <strong>costo per compito riuscito</strong>. Un modello economico che
+        sbaglia una volta su tre costa pi&ugrave; di un modello caro che sbaglia
+        una volta su venti, se ogni errore richiede una persona che corregge.
+      </p>
+      <p>
+        Anche la latenza non dipende solo dal modello. Contano la rete tra te e
+        il fornitore, la coda condivisa, la lunghezza del contesto da elaborare e
+        la velocit&agrave; di generazione, che si paga token per token. Un
+        modello veloce su risposte brevi pu&ograve; diventare lento su risposte
+        lunghe. Misura il tempo totale, non il tempo del primo token.
+      </p>
+      <p>
+        Quando hai una policy di parametri che funziona, il passo successivo
+        &egrave; trasformarla in un comando riutilizzabile: ne parliamo in
+        <a href="prompt.html#comandi">Prompt e comandi</a>.
+      </p>
+
+      <h2 id="insieme">Modelli che lavorano insieme</h2>
+      <p>
+        Qui non cambia il ruolo degli agenti: cambia il modello. Sono pattern di
+        composizione, utili quando un solo modello non copre bene costo e
+        qualit&agrave; insieme.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Beneficio</th>
+              <th>Costo</th>
+              <th>Quando</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Cascata</td>
+              <td>Il piccolo risolve la maggior parte dei casi.</td>
+              <td>Il grande paga solo per i casi dubbi.</td>
+              <td>Quando esiste un segnale di confidenza affidabile.</td>
+            </tr>
+            <tr>
+              <td>Router</td>
+              <td>Una sola chiamata, alla destinazione giusta.</td>
+              <td>Un classificatore da addestrare o valutare.</td>
+              <td>Quando i tipi di richiesta sono pochi e distinguibili.</td>
+            </tr>
+            <tr>
+              <td>Verificatore</td>
+              <td>Un secondo modello controlla il primo.</td>
+              <td>Raddoppia le chiamate e la latenza.</td>
+              <td>Quando l&rsquo;errore costa pi&ugrave; della verifica.</td>
+            </tr>
+            <tr>
+              <td>Planner / esecutore</td>
+              <td>Un modello pianifica, uno esegue passi semplici.</td>
+              <td>Pi&ugrave; passaggi e stato da gestire.</td>
+              <td>Compiti scomponibili in sottoproblemi chiari.</td>
+            </tr>
+            <tr>
+              <td>Ensemble o dibattito</td>
+              <td>Riduce la varianza su giudizi incerti.</td>
+              <td>Moltiplica i costi per ogni risposta.</td>
+              <td>Solo su decisioni rare e ad alto valore.</td>
+            </tr>
+            <tr>
+              <td>Distillazione</td>
+              <td>Un modello piccolo impara dal grande.</td>
+              <td>Serve un dataset e un ciclo di addestramento.</td>
+              <td>Quando il volume &egrave; alto e il compito stabile.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La ricerca offre due punti di riferimento utili. <strong>RouteLLM</strong>
+        mostra che un router addestrato pu&ograve; mantenere gran parte della
+        qualit&agrave; del modello forte spendendo molto meno.
+        <strong>FrugalGPT</strong> mostra che una cascata con un criterio di
+        uscita ben calibrato pu&ograve; ridurre il costo mantenendo la
+        qualit&agrave;. Sono risultati misurati su certi dataset, con certi
+        modelli: non si trasferiscono automaticamente al tuo caso. Trattali come
+        ipotesi da verificare, non come promesse.
+      </p>
+      <p>
+        Quando i modelli hanno ruoli diversi e si passano il lavoro, non sei
+        pi&ugrave; nel routing: sei nell&rsquo;orchestrazione. La trovi in
+        <a href="agenti.html#gerarchia">Agenti e orchestrazione</a>.
+      </p>
+
+      <h2 id="routing">Instradare le richieste</h2>
+      <p>
+        Un router &egrave; una funzione che, data una richiesta, sceglie dove
+        mandarla. Pu&ograve; essere statico &mdash; una regola per tipo di
+        compito &mdash; oppure dinamico, con un classificatore che guarda il
+        contenuto. La versione pi&ugrave; robusta &egrave; spesso un ibrido:
+        regole esplicite per i casi noti, un classificatore per il resto, un
+        fallback per quando il classificatore non &egrave; sicuro.
+      </p>
+      <p>
+        Una policy leggibile vale pi&ugrave; di un prompt scritto in fretta. Questo
+        esempio &egrave; neutro: i nomi dei modelli sono segnaposto.
+      </p>
+      <pre><code>{
+  "policy": "routing-2026-11",
+  "default": "small",
+  "rules": [
+    { "when": "task in [coding, analisi-legale]", "route": "large" },
+    { "when": "confidence &lt; 0.6", "route": "reasoning" },
+    { "when": "documento.riservato == true", "route": "local-open-weights" },
+    { "when": "budget.giornaliero_consumato &gt; 0.8", "route": "small" }
+  ],
+  "fallback": ["small", "large", "reasoning", "umano"],
+  "budget": {
+    "per_richiesta_usd": 0.05,
+    "per_giorno_usd": 50
+  }
+}</code></pre>
+      <p>
+        Le regole vanno lette come decisioni di prodotto. &ldquo;Se il budget
+        &egrave; all&rsquo;80%, usa il piccolo&rdquo; significa che la qualit&agrave;
+        scende a fine giornata: &egrave; una scelta accettabile solo se lo hai
+        deciso tu, non se lo scopre l&rsquo;utente.
+      </p>
+      <p>
+        Le metriche da guardare sono poche e concrete:
+      </p>
+      <ul>
+        <li><strong>quota al modello piccolo</strong>: se &egrave; troppo bassa, il
+        router non sta risparmiando;</li>
+        <li><strong>qualit&agrave; rispetto al baseline</strong>: il baseline
+        &egrave; il modello forte su tutti i casi;</li>
+        <li><strong>costo per richiesta riuscita</strong>, non per chiamata;</li>
+        <li><strong>p50 e p95 di latenza</strong>: la coda &egrave; ci&ograve; che
+        l&rsquo;utente ricorda;</li>
+        <li><strong>tasso di fallback</strong>: un fallback sempre attivo &egrave;
+        un router inutile.</li>
+      </ul>
+      <p>
+        Strumenti come LiteLLM Router o il routing tra provider di OpenRouter
+        fanno questo lavoro a un livello infrastrutturale. Sono esempi, non
+        scelte obbligate: la stessa logica si pu&ograve; scrivere in cinquanta
+        righe.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Attenzione.</strong> Il routing &egrave; anche una decisione di
+          prodotto. Cambiare modello a met&agrave; conversazione pu&ograve;
+          cambiare tono, formato e perfino policy. Se l&rsquo;utente nota la
+          differenza, hai un problema di coerenza, non di costo. E se i dati
+          sensibili finiscono su un ramo che non doveva vederli, hai un problema
+          pi&ugrave; grande di entrambi.
+        </p>
+      </div>
+
+      <h2 id="valutare">Misurare, non indovinare</h2>
+      <p>
+        Un set di valutazione non deve essere grande: deve essere
+        <strong>rappresentativo</strong>. Venti o cinquanta casi ben scelti, con
+        gli errori che gi&agrave; conosci, battono mille casi casuali. Costruiscilo
+        prendendo richieste reali, non inventate, e annota per ognuna la risposta
+        attesa o i criteri con cui giudicarla.
+      </p>
+      <p>
+        La rubrica deve essere abbastanza concreta da poter essere applicata da
+        due persone diverse con lo stesso risultato. &ldquo;Buona
+        risposta&rdquo; non &egrave; una rubrica. &ldquo;Cita la fonte, non
+        inventa numeri, resta sotto le 150 parole, segnala i dati mancanti&rdquo;
+        lo &egrave;.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Misura</th>
+              <th>Come si calcola</th>
+              <th>Soglia di allarme</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Pass rate</td>
+              <td>Casi superati &divide; casi totali.</td>
+              <td>Calo di 5 punti rispetto alla versione precedente.</td>
+            </tr>
+            <tr>
+              <td>Costo per compito riuscito</td>
+              <td>Costo totale &divide; casi superati.</td>
+              <td>Crescita senza aumento di qualit&agrave;.</td>
+            </tr>
+            <tr>
+              <td>p50 di latenza</td>
+              <td>Mediana dei tempi di risposta.</td>
+              <td>Oltre il limite percepito dall&rsquo;utente.</td>
+            </tr>
+            <tr>
+              <td>p95 di latenza</td>
+              <td>Il 95% delle risposte &egrave; pi&ugrave; veloce.</td>
+              <td>Coda doppia rispetto al p50.</td>
+            </tr>
+            <tr>
+              <td>Regressione</td>
+              <td>Confronto con la versione precedente sullo stesso set.</td>
+              <td>Qualsiasi caso prima superato e ora fallito.</td>
+            </tr>
+            <tr>
+              <td>Canary</td>
+              <td>Una quota di traffico reale sul nuovo modello.</td>
+              <td>Metriche di business peggiori del gruppo di controllo.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Il canary non &egrave; un interruttore: &egrave; un confronto. Prima di
+        accenderlo, decidi quale metrica deve restare stabile, quale pu&ograve;
+        peggiorare e per quanto tempo osservare. Un cambio di modello che
+        migliora la media ma peggiora i reclami &egrave; un peggioramento, anche
+        se il punteggio di valutazione sale. E se non puoi tornare indietro in
+        pochi minuti, non &egrave; un canary: &egrave; un salto.
+      </p>
+      <p>
+        Distingui la <strong>qualit&agrave; media</strong> dalla <strong>coda
+        peggiore</strong>. Un modello pu&ograve; avere una media eccellente e
+        fallire proprio sui casi limite che ti costano di pi&ugrave;. Guarda
+        sempre la distribuzione, non solo il numero singolo. Un esempio completo
+        di misura &egrave; in <a href="laboratorio.html#lab-eval">Laboratorio</a>.
+      </p>
+
+      <h2 id="errori">Errori comuni</h2>
+      <ul>
+        <li><strong>Usare sempre il modello pi&ugrave; grande.</strong> &Egrave; la
+        scelta pi&ugrave; semplice e quasi mai quella giusta.</li>
+        <li><strong>Inseguire i benchmark.</strong> Misurano il test, non il tuo
+        compito.</li>
+        <li><strong>Un solo modello per tutto.</strong> Costo e latenza si pagano
+        su ogni richiesta, anche su quelle banali.</li>
+        <li><strong>Ignorare i token di output.</strong> Sono la voce che cresce
+        con la verbosit&agrave; del modello.</li>
+        <li><strong>Confondere finestra di contesto e contesto utile.</strong>
+        Riempire la finestra non migliora la risposta.</li>
+        <li><strong>Nessun fallback.</strong> Un modello che non risponde blocca
+        tutto il flusso.</li>
+        <li><strong>Nessuna eval.</strong> Senza un set di riferimento, ogni
+        cambio &egrave; una scommessa.</li>
+        <li><strong>Routing senza osservabilit&agrave;.</strong> Se non sai quale
+        ramo ha risposto, non puoi correggere niente.</li>
+      </ul>
+      <div class="callout ok">
+        <p>
+          <strong>Regola.</strong> Scegli il modello pi&ugrave; piccolo che
+          supera il tuo set di valutazione, poi sali di un gradino solo se i
+          numeri lo giustificano. Il resto &egrave; margine che puoi spendere in
+          verifica, non in token.
+        </p>
+      </div>
+
+      <h2 id="lessico">Lessico minimo</h2>
+      <dl>
+        <dt>Routing</dt>
+        <dd>La scelta della destinazione di una richiesta: un modello, un altro
+        modello, un servizio, una persona.</dd>
+        <dt>Cascata</dt>
+        <dd>Una sequenza di tentativi: si parte dal modello pi&ugrave; economico e
+        si sale solo se il risultato non basta.</dd>
+        <dt>Fallback</dt>
+        <dd>Il percorso alternativo quando la prima scelta fallisce, rifiuta o
+        non &egrave; abbastanza sicura.</dd>
+        <dt>Eval</dt>
+        <dd>Un insieme di casi e criteri con cui misurare la qualit&agrave; di un
+        sistema AI, invece di giudicarla a impressione.</dd>
+        <dt>p95</dt>
+        <dd>Il valore sotto il quale cade il 95% delle misure: serve a guardare
+        la coda lenta, non la media.</dd>
+        <dt>Modello di ragionamento</dt>
+        <dd>Un modello, o una modalit&agrave;, che spende pi&ugrave; calcolo
+        prima di rispondere. Non &egrave; automaticamente migliore su tutto.</dd>
+      </dl>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Anthropic, <em>Choosing the right model</em></strong> &mdash;
+        criteri di scelta tra modelli e compromessi tra costo, qualit&agrave; e
+        latenza.</li>
+        <li><strong>LiteLLM, <em>Router</em></strong> &mdash; documentazione sul
+        routing tra deployment, fallback e load balancing.</li>
+        <li><strong>OpenRouter, <em>Provider Routing</em></strong> &mdash; esempio
+        di instradamento tra fornitori diversi.</li>
+        <li><strong>RouteLLM</strong> (arXiv 2406.18665) &mdash; router addestrato
+        per scegliere tra modello forte e modello debole.</li>
+        <li><strong>FrugalGPT</strong> (arXiv 2305.05176) &mdash; cascate di
+        modelli con criteri di uscita.</li>
+        <li><strong>Anthropic, <em>Building effective agents</em></strong> &mdash;
+        pattern di composizione e quando non servono.</li>
+      </ul>
+      <p>
+        Fonti consultate l&rsquo;11 novembre 2026. Prezzi, nomi e versioni
+        cambiano: per i numeri esatti vale solo la documentazione del fornitore
+        che usi.
+      </p>
+    </main>
+
+        <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione AI</span>
+        <span class="footer-right">
+          <span>Modelli e routing &middot; aggiornata l&rsquo;11 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

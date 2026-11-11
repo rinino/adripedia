@@ -39,9 +39,12 @@
               text: "AI",
               children: [
                 { text: "Introduzione", href: "informatica/ai/index.html" },
-                { text: "Come funziona un LLM", href: "informatica/ai/index.html#llm" },
-                { text: "Addestramento", href: "informatica/ai/index.html#addestramento" },
-                { text: "Risorse e calcolo", href: "informatica/ai/index.html#risorse" },
+                { text: "Modelli e routing", href: "informatica/ai/modelli.html" },
+                { text: "Prompt e comandi", href: "informatica/ai/prompt.html" },
+                { text: "Skill e metodi", href: "informatica/ai/skill.html" },
+                { text: "Server MCP", href: "informatica/ai/mcp.html" },
+                { text: "Agenti e orchestrazione", href: "informatica/ai/agenti.html" },
+                { text: "Laboratorio", href: "informatica/ai/laboratorio.html" },
                 { text: "Glossario", href: "informatica/ai/index.html#glossario" }
               ]
             },

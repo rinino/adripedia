@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompt, contesto e comandi — Adripedia</title>
+  <meta name="description" content="Anatomia di un prompt che regge, gestione del contesto, tecniche, pattern pronti e comandi riutilizzabili per l'AI.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/ai/prompt.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Prompt, contesto e comandi</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; AI</p>
+      <h1>Prompt, contesto e comandi</h1>
+      <p class="lead">
+        Un prompt non &egrave; una frase magica: &egrave; un contratto. Se non
+        dici cosa serve, a chi, in quale formato e con quali limiti, il modello
+        riempie i vuoti. Qui si vede come scrivere contratti che reggono e come
+        trasformarli in comandi riutilizzabili.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Un buon prompt non &egrave; lungo: &egrave;
+          completo. Dice ruolo, obiettivo, contesto, vincoli, formato e criteri
+          di successo, e lascia fuori tutto il resto. Il resto &egrave; rumore
+          che consuma attenzione.
+        </p>
+      </div>
+
+      <nav class="section-index" aria-labelledby="prompt-index-title">
+        <p class="section-index-title" id="prompt-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#anatomia">Anatomia di un prompt che regge</a></li>
+          <li><a href="#contesto">Il contesto &egrave; una risorsa</a></li>
+          <li><a href="#tecniche">Tecniche che funzionano</a></li>
+          <li><a href="#comandi">Da prompt a comando</a></li>
+          <li><a href="#pattern">Pattern pronti</a></li>
+          <li><a href="#misurare">Iterare con le eval</a></li>
+          <li><a href="#sicurezza">Confini e injection</a></li>
+          <li><a href="#errori">Errori comuni</a></li>
+          <li><a href="#lessico">Lessico minimo</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="anatomia">Anatomia di un prompt che regge</h2>
+      <p>
+        Un prompt utile risponde a sette domande. Non tutte servono sempre, ma
+        quando ne manca una il modello la riempie con un&rsquo;ipotesi, e
+        l&rsquo;ipotesi di solito non &egrave; la tua.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Strato</th>
+              <th>Cosa scrivere</th>
+              <th>Errore tipico</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Ruolo</strong></td>
+              <td>Chi parla e con quale competenza: revisore, traduttore, analista.</td>
+              <td>Ruoli teatrali che non cambiano il comportamento.</td>
+            </tr>
+            <tr>
+              <td><strong>Obiettivo</strong></td>
+              <td>Il risultato concreto, in una frase verificabile.</td>
+              <td>&ldquo;Aiutami con questo documento&rdquo;.</td>
+            </tr>
+            <tr>
+              <td><strong>Contesto</strong></td>
+              <td>I fatti e i documenti che servono davvero.</td>
+              <td>Incollare tutto ci&ograve; che si ha a portata di mano.</td>
+            </tr>
+            <tr>
+              <td><strong>Vincoli</strong></td>
+              <td>Lunghezza, tono, cose da non fare, fonti ammesse.</td>
+              <td>Vincoli contraddittori o impliciti.</td>
+            </tr>
+            <tr>
+              <td><strong>Esempi</strong></td>
+              <td>Due o tre casi, inclusi quelli limite.</td>
+              <td>Esempi tutti facili, che insegnano il caso sbagliato.</td>
+            </tr>
+            <tr>
+              <td><strong>Formato</strong></td>
+              <td>Schema, campi, ordine, unit&agrave; di misura.</td>
+              <td>&ldquo;Rispondi in modo strutturato&rdquo; senza dire come.</td>
+            </tr>
+            <tr>
+              <td><strong>Criteri</strong></td>
+              <td>Come si riconosce una risposta buona.</td>
+              <td>Nessun criterio: il modello sceglie per te.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Uno scheletro minimo, da adattare, pu&ograve; essere questo:
+      </p>
+      <pre><code>Ruolo: sei un revisore di contratti per una PMI italiana.
+Obiettivo: segnala le clausole rischiose e spiega perch&eacute;.
+Contesto: il contratto &egrave; tra &lt;documento&gt; e &lt;/documento&gt;.
+Vincoli: non citare norme che non conosci; non riscrivere il contratto.
+Esempi: una clausola rischiosa &egrave; ...; una accettabile &egrave; ...
+Formato: JSON con campi "clausola", "rischio", "motivo", "pagina".
+Criteri: ogni osservazione cita una pagina; se non trovi, scrivi null.</code></pre>
+      <p>
+        Anche il modo in cui presenti il materiale conta. Un blocco delimitato
+        &egrave; pi&ugrave; facile da seguire di un testo incollato senza
+        confini: il modello sa dove inizia il documento e dove finisce la
+        richiesta. Se il documento contiene a sua volta delimitatori, scegline
+        altri o aggiungi un identificatore univoco. Non &egrave; pedanteria: un
+        confine ambiguo &egrave; il posto in cui l&rsquo;injection si nasconde.
+      </p>
+      <p>
+        La distinzione tra <strong>istruzioni di sistema</strong>,
+        <strong>messaggi utente</strong> e <strong>output dei tool</strong> non
+        &egrave; formale. Le istruzioni di sistema definiscono il comportamento
+        stabile; i messaggi utente portano la richiesta; l&rsquo;output dei tool
+        &egrave; contenuto prodotto da altri sistemi e va trattato come non
+        fidato. Se mescoli i tre livelli nello stesso blocco, stai dando a un
+        documento esterno lo stesso peso di un ordine.
+      </p>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-prompt-anatomy.svg" width="1200" height="620"
+             alt="Anatomia di un prompt: ruolo, obiettivo, contesto, vincoli, esempi, formato e criteri, con il contenuto non fidato tenuto separato.">
+        <figcaption>
+          Sette strati, e un riquadro che resta fuori: il contenuto non fidato
+          non &egrave; un&rsquo;istruzione. Illustrazione Adripedia.
+        </figcaption>
+      </figure>
+
+      <h2 id="contesto">Il contesto &egrave; una risorsa</h2>
+      <p>
+        Il <strong>context engineering</strong> &egrave; la parte del mestiere che
+        viene dopo il prompt: decidere cosa entra nella finestra, in che ordine,
+        per quanto tempo e con quale livello di dettaglio. Un modello non
+        &egrave; una banca dati: &egrave; un lettore con attenzione limitata.
+      </p>
+      <p>
+        La regola pratica &egrave; il <strong>contesto minimo sufficiente</strong>.
+        Aggiungere un documento perch&eacute; &ldquo;potrebbe servire&rdquo; ha un
+        costo: occupa token, diluisce i segnali importanti e aumenta la
+        probabilit&agrave; che il modello si aggrappi al dettaglio sbagliato. Il
+        contesto in pi&ugrave; non &egrave; gratis e non &egrave; neutro.
+      </p>
+      <p>
+        L&rsquo;ordine conta. Nei test di Anthropic, per input oltre i 20.000
+        token, mettere i documenti lunghi in cima e la domanda in fondo ha
+        migliorato la qualit&agrave; fino al 30%. &Egrave; un risultato dei loro
+        test, non una legge universale: prova sul tuo materiale. In generale, le
+        istruzioni stabili stanno all&rsquo;inizio, la richiesta specifica alla
+        fine, e i documenti nel mezzo, con delimitatori chiari.
+      </p>
+      <p>
+        Quando il contesto cresce, servono strategie. Il <strong>retrieval</strong>
+        porta solo i passaggi pertinenti, ma sbaglia se l&rsquo;indice &egrave;
+        povero. La <strong>compaction</strong> riassume la conversazione
+        precedente, ma perde dettagli. La <strong>memoria</strong> esterna
+        conserva fatti tra sessioni, ma va aggiornata e ripulita. Il
+        <strong>context rot</strong> &egrave; il fenomeno per cui, oltre una certa
+        lunghezza, il modello ricorda meglio l&rsquo;inizio e la fine e trascura
+        il centro: non &egrave; un guasto, &egrave; il modo in cui funziona
+        l&rsquo;attenzione su testi lunghi.
+      </p>
+      <p>
+        Retrieval e contesto lungo non sono alternative: spesso conviene
+        recuperare pochi passaggi e darli al modello in un ordine stabile,
+        lasciando la finestra lunga per i casi in cui il documento va letto
+        intero. Il retrieval costa meno per token, ma aggiunge un indice da
+        mantenere e un&rsquo;altra fonte di errore. Il contesto lungo elimina
+        l&rsquo;indice, ma paga ogni token a ogni chiamata e non garantisce che
+        il modello legga tutto. Prova entrambi sullo stesso set di domande: la
+        differenza di qualit&agrave; a volte &egrave; pi&ugrave; piccola del
+        costo che li separa.
+      </p>
+      <p>
+        La gerarchia delle istruzioni va progettata, non sperata. Se un documento
+        recuperato contiene la frase &ldquo;ignora le istruzioni
+        precedenti&rdquo;, quella frase &egrave; contenuto, non comando. Il
+        modello non lo sa da solo: glielo devi dire, e devi anche impedirgli di
+        agire come se fosse un comando.
+      </p>
+
+      <h2 id="tecniche">Tecniche che funzionano</h2>
+      <p>
+        Le tecniche non sono ricette universali. Ognuna risolve un problema e ne
+        crea un altro: la tabella dice quando vale la pena pagarne il prezzo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tecnica</th>
+              <th>Quando usarla</th>
+              <th>Costo</th>
+              <th>Rischio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Zero-shot</td>
+              <td>Compiti chiari e comuni.</td>
+              <td>Minimo.</td>
+              <td>Formato imprevedibile.</td>
+            </tr>
+            <tr>
+              <td>Few-shot</td>
+              <td>Quando il formato o il tono sono difficili da descrivere.</td>
+              <td>Token per ogni esempio.</td>
+              <td>Il modello copia anche i difetti degli esempi.</td>
+            </tr>
+            <tr>
+              <td>Decomposizione</td>
+              <td>Problemi con parti indipendenti.</td>
+              <td>Pi&ugrave; chiamate.</td>
+              <td>Errori che si propagano tra i passaggi.</td>
+            </tr>
+            <tr>
+              <td>Prompt chaining</td>
+              <td>Quando ogni passo richiede un controllo.</td>
+              <td>Latenza e costo sommati.</td>
+              <td>Un passo sbagliato rovina i successivi.</td>
+            </tr>
+            <tr>
+              <td>Output strutturato</td>
+              <td>Dati che devono essere elaborati da un programma.</td>
+              <td>Schema e validazione.</td>
+              <td>Rifiuti o campi vuoti se lo schema &egrave; troppo rigido.</td>
+            </tr>
+            <tr>
+              <td>Rubrica di autovalutazione</td>
+              <td>Quando vuoi che il modello segnali i propri dubbi.</td>
+              <td>Token di riflessione.</td>
+              <td>Autovalutazione compiacente.</td>
+            </tr>
+            <tr>
+              <td>Prefill</td>
+              <td>Per imporre l&rsquo;inizio di una risposta o un formato.</td>
+              <td>Nessuno o minimo.</td>
+              <td>Non disponibile su tutti i client.</td>
+            </tr>
+            <tr>
+              <td>Delimitatori</td>
+              <td>Per separare istruzioni, documenti ed esempi.</td>
+              <td>Pochi token.</td>
+              <td>Delimitatori che compaiono anche nel testo.</td>
+            </tr>
+            <tr>
+              <td>Descrizioni dei tool</td>
+              <td>Quando il modello deve scegliere uno strumento.</td>
+              <td>Token permanenti nel contesto.</td>
+              <td>Descrizioni vaghe che portano al tool sbagliato.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Sui modelli di ragionamento, l&rsquo;istruzione &ldquo;pensa passo per
+        passo&rdquo; &egrave; spesso superflua o controproducente: il modello
+        ragiona gi&agrave;, e chiedergli di esporre tutto pu&ograve; allungare la
+        risposta senza migliorarla. Chiedi invece la conclusione, le evidenze che
+        la sostengono e il livello di fiducia. Sono tre cose che puoi verificare.
+      </p>
+
+      <h2 id="comandi">Da prompt a comando</h2>
+      <p>
+        Un prompt scritto in una chat &egrave; un esperimento. Un comando &egrave;
+        un contratto riutilizzabile: ha parametri, un input dichiarato, un output
+        dichiarato, un comportamento in caso di errore e un modo per essere
+        misurato.
+      </p>
+      <p>
+        Le parti di un buon comando sono sempre le stesse:
+      </p>
+      <ul>
+        <li><strong>parametri</strong> espliciti, con valori predefiniti
+        ragionevoli;</li>
+        <li><strong>contratto di input e output</strong>, con schema e codici di
+        uscita;</li>
+        <li><strong>dry-run</strong> per vedere cosa farebbe senza eseguire;</li>
+        <li><strong>idempotenza</strong>: rieseguirlo non deve duplicare
+        effetti;</li>
+        <li><strong>logging</strong> di input, output, modello e costi;</li>
+        <li><strong>retry</strong> con backoff per gli errori transitori;</li>
+        <li><strong>rate limit</strong> e timeout per non travolgere il
+        fornitore.</li>
+      </ul>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>extract</code></td>
+              <td>Testo non strutturato</td>
+              <td>JSON conforme a uno schema</td>
+              <td>Sempre con validazione.</td>
+            </tr>
+            <tr>
+              <td><code>classify</code></td>
+              <td>Testo o coppia di testi</td>
+              <td>Etichetta da un elenco chiuso</td>
+              <td>Prevedere &ldquo;non so&rdquo;.</td>
+            </tr>
+            <tr>
+              <td><code>summarize</code></td>
+              <td>Documento lungo</td>
+              <td>Sintesi con pubblico e limite</td>
+              <td>Dichiarare cosa va perso.</td>
+            </tr>
+            <tr>
+              <td><code>review</code></td>
+              <td>Testo e criteri</td>
+              <td>Osservazioni con riferimenti</td>
+              <td>Astensione se manca la prova.</td>
+            </tr>
+            <tr>
+              <td><code>rewrite</code></td>
+              <td>Testo e istruzioni di stile</td>
+              <td>Testo riscritto</td>
+              <td>Diff e revisione umana.</td>
+            </tr>
+            <tr>
+              <td><code>route</code></td>
+              <td>Richiesta</td>
+              <td>Destinazione e motivazione</td>
+              <td>Misurare la matrice di confusione.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Un comando generico pu&ograve; sembrare cos&igrave;. I nomi sono un
+        esempio: adatta <code>ai</code> allo strumento che usi, che sia una CLI, uno script
+        o un&rsquo;automazione.
+      </p>
+      <pre><code>ai extract \
+  --schema schemi/fattura.json \
+  --input email.txt \
+  --output fattura.json \
+  --model provider/model-small \
+  --dry-run</code></pre>
+      <p>
+        I codici di uscita raccontano la storia meglio del testo. Zero per
+        successo, uno per errore di input, due per errore di validazione, tre per
+        errore del fornitore dopo i retry: chi chiama il comando pu&ograve;
+        decidere senza leggere i log. Se un comando restituisce zero anche quando
+        l&rsquo;output &egrave; invalido, l&rsquo;automazione &egrave; peggio
+        dell&rsquo;assenza di automazione.
+      </p>
+      <p>
+        Distingui tre modalit&agrave; d&rsquo;uso. Il <strong>comando
+        singolo</strong> elabora un input e finisce. La <strong>pipeline</strong>
+        concatena comandi con un formato intermedio stabile. Il
+        <strong>batch</strong> elabora molti input con la stessa logica, e ha
+        bisogno di un rapporto sugli errori per elemento, non solo di un codice
+        di uscita globale.
+      </p>
+
+      <h2 id="pattern">Pattern pronti</h2>
+      <p>
+        Quattro pattern coprono la maggior parte dei casi reali. Ognuno ha un
+        punto in cui si rompe.
+      </p>
+      <h3>Estrazione con null e confidenza</h3>
+      <p>
+        <em>Quando usarlo:</em> quando i campi possono mancare e vuoi sapere
+        quali. <em>Cosa pu&ograve; andare storto:</em> il modello riempie i vuoti
+        con valori plausibili. La difesa &egrave; un campo esplicito per
+        l&rsquo;assenza e una confidenza per campo.
+      </p>
+      <pre><code>{
+  "numero": "INV-2026-0412",
+  "data": "2026-10-30",
+  "totale": 1220.00,
+  "valuta": "EUR",
+  "campi_mancanti": [],
+  "confidenza": { "numero": 0.98, "data": 0.91, "totale": 0.87 }
+}</code></pre>
+      <h3>Classificazione con &ldquo;non so&rdquo;</h3>
+      <p>
+        <em>Quando usarlo:</em> triage, routing, etichette operative.
+        <em>Cosa pu&ograve; andare storto:</em> il modello forza ogni caso in una
+        classe, anche quando nessuna classe &egrave; giusta. Aggiungi
+        un&rsquo;etichetta di astensione e una soglia sotto la quale scatta
+        l&rsquo;escalation.
+      </p>
+      <h3>Sintesi con pubblico e limite</h3>
+      <p>
+        <em>Quando usarlo:</em> riassunti per persone diverse.
+        <em>Cosa pu&ograve; andare storto:</em> una sintesi generica che va bene a
+        nessuno. Dichiara pubblico, scopo, limite di parole e ci&ograve; che deve
+        restare fuori.
+      </p>
+      <h3>Revisione con citazioni e astensione</h3>
+      <p>
+        <em>Quando usarlo:</em> controllo di documenti, codice, testi.
+        <em>Cosa pu&ograve; andare storto:</em> osservazioni inventate con
+        riferimenti verosimili. Chiedi una citazione per ogni rilievo e un elenco
+        separato di ci&ograve; che non &egrave; stato possibile verificare.
+      </p>
+      <pre><code>{
+  "osservazioni": [
+    {
+      "gravita": "alta",
+      "testo": "La clausola di rinnovo non prevede preavviso.",
+      "riferimento": "p. 12, §4.2"
+    }
+  ],
+  "non_verificato": ["importo a p. 18, tabella illeggibile"],
+  "esito": "da_correggere"
+}</code></pre>
+
+      <h2 id="misurare">Iterare con le eval</h2>
+      <p>
+        Un prompt &egrave; codice: va versionato, confrontato e misurato. Senza un
+        set di casi, ogni modifica &egrave; un&rsquo;opinione. Con un set di venti
+        casi, le discussioni diventano brevi. La differenza tra un team che
+        migliora e uno che gira in tondo &egrave; quasi sempre questa: il primo
+        ha una memoria dei tentativi, il secondo ricomincia ogni volta dalla
+        sensazione che l&rsquo;ultima risposta fosse migliore.
+      </p>
+      <p>
+        Il ciclo &egrave; semplice. Raccogli richieste reali. Annota la risposta
+        attesa o i criteri. Classifica gli errori in una tassonomia piccola
+        &mdash; formato, contenuto, omissione, allucinazione, tono &mdash;. Cambia
+        una cosa per volta. Confronta i risultati. Conserva la versione del
+        prompt insieme ai risultati, altrimenti tra un mese non saprai cosa ha
+        funzionato.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Errore</th>
+              <th>Come accorgersene</th>
+              <th>Contromisura</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Formato sbagliato</td>
+              <td>La validazione fallisce.</td>
+              <td>Schema esplicito e un esempio valido.</td>
+            </tr>
+            <tr>
+              <td>Campo inventato</td>
+              <td>Il valore non compare nell&rsquo;input.</td>
+              <td>Campo <code>null</code>, citazione obbligatoria, verifica automatica.</td>
+            </tr>
+            <tr>
+              <td>Omissione</td>
+              <td>Manca un&rsquo;informazione presente nel testo.</td>
+              <td>Decomposizione e checklist di copertura.</td>
+            </tr>
+            <tr>
+              <td>Tono sbagliato</td>
+              <td>Il cliente se ne accorge prima di te.</td>
+              <td>Esempi di tono e vincoli espliciti.</td>
+            </tr>
+            <tr>
+              <td>Deriva tra versioni</td>
+              <td>Un caso prima superato ora fallisce.</td>
+              <td>Regressione automatica a ogni modifica.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Se il giudice &egrave; un altro modello, trattalo come uno strumento da
+        calibrare: confronta i suoi giudizi con quelli di una persona su un
+        campione, e accetta che sbagli in modo sistematico. Un valutatore
+        compiacente approva tutto; uno severo boccia anche i miglioramenti. Il
+        set di casi deve restare piccolo abbastanza da poter essere letto a mano,
+        grande abbastanza da non essere un aneddoto.
+      </p>
+      <p>
+        Un A/B sui prompt ha senso solo se il resto &egrave; fermo: stesso
+        modello, stessi parametri, stesso set. Altrimenti stai misurando il
+        rumore. E ricorda che il set di test invecchia: aggiungi i casi nuovi che
+        arrivano dalla produzione, altrimenti stai ottimizzando sul passato.
+      </p>
+
+      <h2 id="sicurezza">Confini e injection</h2>
+      <p>
+        La <strong>prompt injection</strong> diretta arriva dall&rsquo;utente: una
+        frase che prova a cambiare le regole. Quella <strong>indiretta</strong>
+        arriva da contenuti esterni &mdash; una pagina web, un PDF, un commento
+        HTML, il testo alternativo di un&rsquo;immagine &mdash; e viene letta dal
+        modello come se fosse contesto innocuo.
+      </p>
+      <p>
+        Le difese non sono perfette, ma alcune riducono molto la superficie:
+      </p>
+      <ul>
+        <li>separa il contenuto non fidato dalle istruzioni, con delimitatori e
+        una dichiarazione esplicita;</li>
+        <li>dai al modello i privilegi minimi: se non deve scrivere, non
+        scrivere;</li>
+        <li>valida l&rsquo;output prima di usarlo, soprattutto se contiene
+        comandi, URL o query;</li>
+        <li>chiedi approvazione umana per azioni irreversibili;</li>
+        <li>non mettere segreti nel prompt: tutto ci&ograve; che entra nel
+        contesto pu&ograve; uscire in una risposta.</li>
+      </ul>
+      <p>
+        Quando il modello ha accesso a tool, il rischio cresce: un&rsquo;istruzione
+        nascosta pu&ograve; diventare una chiamata a un tool. I controlli lato
+        server contano pi&ugrave; delle raccomandazioni nel prompt; ne parliamo in
+        <a href="mcp.html#sicurezza">Server MCP</a>.
+      </p>
+      <p>
+        Un canale spesso dimenticato &egrave; l&rsquo;exfiltrazione passiva: se
+        l&rsquo;output viene renderizzato come Markdown, un&rsquo;immagine con
+        l&rsquo;URL che contiene un dato sensibile lo invia a un server esterno
+        appena qualcuno apre il messaggio. Non serve un tool: basta un link. Se
+        il contenuto non fidato pu&ograve; produrre Markdown, disattiva le
+        immagini remote o filtra gli URL.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Attenzione.</strong> L&rsquo;injection indiretta non si vede nel
+          prompt che hai scritto: &egrave; dentro ci&ograve; che hai letto. Un
+          documento che dice &ldquo;ignora le istruzioni precedenti&rdquo; &egrave;
+          un attacco, non un errore di battitura. Se il sistema non distingue
+          contenuto e istruzioni, la difesa &egrave; solo fortuna.
+        </p>
+      </div>
+
+      <h2 id="errori">Errori comuni</h2>
+      <ul>
+        <li><strong>Istruzioni vaghe.</strong> &ldquo;Fai un buon lavoro&rdquo;
+        non &egrave; un obiettivo.</li>
+        <li><strong>Richieste contraddittorie.</strong> &ldquo;Sii breve e
+        dettagliato&rdquo; costringe il modello a scegliere per te.</li>
+        <li><strong>Eccesso di cortesia.</strong> Frasi di riempimento che non
+        aggiungono informazione.</li>
+        <li><strong>Contesto enorme e irrilevante.</strong> Pi&ugrave; testo non
+        significa pi&ugrave; qualit&agrave;.</li>
+        <li><strong>Nessuno schema di output.</strong> Poi si passa il tempo a
+        fare parsing a mano.</li>
+        <li><strong>Nessun &ldquo;non lo so&rdquo;.</strong> Il modello inventa
+        perch&eacute; non ha alternative.</li>
+        <li><strong>Nessun esempio.</strong> Il formato resta un&rsquo;ipotesi.</li>
+        <li><strong>Nessun versionamento.</strong> Non sai quale prompt ha
+        prodotto quale risultato.</li>
+      </ul>
+      <div class="callout ok">
+        <p>
+          <strong>Regola.</strong> Se non sai come verificare una risposta,
+          non chiederla. Un prompt senza criterio di successo produce testo, non
+          un risultato.
+        </p>
+      </div>
+
+      <h2 id="lessico">Lessico minimo</h2>
+      <dl>
+        <dt>Contesto</dt>
+        <dd>Tutto ci&ograve; che il modello vede in una chiamata: istruzioni,
+        messaggi, documenti, output dei tool.</dd>
+        <dt>Prompt injection</dt>
+        <dd>Un&rsquo;istruzione nascosta che prova a dirottare il comportamento
+        del modello. Diretta se arriva dall&rsquo;utente, indiretta se arriva da
+        contenuti esterni.</dd>
+        <dt>Output strutturato</dt>
+        <dd>Una risposta conforme a uno schema, pensata per essere letta da un
+        programma e validata.</dd>
+        <dt>Few-shot</dt>
+        <dd>Una tecnica che mostra al modello alcuni esempi del compito prima
+        della richiesta.</dd>
+        <dt>Rubrica</dt>
+        <dd>L&rsquo;elenco dei criteri con cui si giudica una risposta. Se non
+        &egrave; scritta, non &egrave; una rubrica.</dd>
+        <dt>Context rot</dt>
+        <dd>La perdita di qualit&agrave; che si osserva quando il contesto
+        diventa molto lungo e il modello trascura la parte centrale.</dd>
+      </dl>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Anthropic, <em>Prompt engineering overview</em> e <em>Best
+        practices</em></strong> &mdash; struttura del prompt, esempi, output
+        strutturato.</li>
+        <li><strong>Anthropic, <em>Long context prompting tips</em></strong>
+        &mdash; ordine dei documenti e risultato fino al 30% nei loro test.</li>
+        <li><strong>Anthropic, <em>Effective context engineering</em></strong>
+        &mdash; contesto minimo, compaction, memoria.</li>
+        <li><strong>OpenAI, <em>Prompt engineering</em></strong> &mdash; guida
+        pratica con esempi.</li>
+        <li><strong>Google, <em>Prompting strategies</em></strong> &mdash;
+        tecniche e strutture per i modelli Gemini.</li>
+        <li><strong>OWASP, <em>Top 10 for LLM Applications</em></strong> &mdash;
+        rischi, injection e mitigazioni.</li>
+      </ul>
+      <p>
+        Fonti consultate l&rsquo;11 novembre 2026. Le tecniche cambiano con i
+        modelli: verifica sempre sulla documentazione del fornitore che usi.
+      </p>
+    </main>
+
+        <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione AI</span>
+        <span class="footer-right">
+          <span>Prompt e comandi &middot; aggiornata l&rsquo;11 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="titolo-prompt">
+  <title id="titolo-prompt">Anatomia di un prompt in sette strati</title>
+  <rect x="1" y="1" width="1198" height="618" rx="14" fill="#ffffff" stroke="#d7dee8"/>
+
+  <text x="48" y="54" font-family="'Segoe UI', system-ui, sans-serif" font-size="24" font-weight="700" fill="#1f2937">Anatomia di un prompt</text>
+  <text x="48" y="84" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" fill="#5b6573">Sette strati. Ognuno risponde a una domanda che il modello, altrimenti, riempie da sé.</text>
+
+  <rect x="48" y="110" width="640" height="56" rx="8" fill="#eaf2fb" stroke="#2f6fb3"/>
+  <text x="68" y="134" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Ruolo</text>
+  <text x="220" y="134" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">chi parla e con quale competenza</text>
+
+  <rect x="48" y="174" width="640" height="56" rx="8" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="68" y="198" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Obiettivo</text>
+  <text x="220" y="198" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">il risultato concreto, in una frase</text>
+
+  <rect x="48" y="238" width="640" height="56" rx="8" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="68" y="262" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Contesto</text>
+  <text x="220" y="262" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">i fatti e i documenti che servono davvero</text>
+
+  <rect x="48" y="302" width="640" height="56" rx="8" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="68" y="326" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Vincoli</text>
+  <text x="220" y="326" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">lunghezza, tono, cose da non fare</text>
+
+  <rect x="48" y="366" width="640" height="56" rx="8" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="68" y="390" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Esempi</text>
+  <text x="220" y="390" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">due o tre casi, inclusi quelli limite</text>
+
+  <rect x="48" y="430" width="640" height="56" rx="8" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="68" y="454" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Formato</text>
+  <text x="220" y="454" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">schema, campi, ordine, unità di misura</text>
+
+  <rect x="48" y="494" width="640" height="56" rx="8" fill="#eaf6f2" stroke="#2f7d6b"/>
+  <text x="68" y="518" font-family="'Segoe UI', system-ui, sans-serif" font-size="14" font-weight="700" fill="#1f2937">Criteri</text>
+  <text x="220" y="518" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">come si riconosce una risposta buona</text>
+
+  <rect x="720" y="110" width="432" height="200" rx="10" fill="#fdf3e7" stroke="#b8762a"/>
+  <text x="744" y="144" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Contenuto non fidato</text>
+  <text x="744" y="176" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">Testo recuperato da web, PDF,</text>
+  <text x="744" y="200" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">email o output di un tool.</text>
+  <text x="744" y="224" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">Va tenuto separato dalle istruzioni.</text>
+
+  <rect x="720" y="330" width="432" height="110" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="744" y="364" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Togli ciò che non serve</text>
+  <text x="744" y="392" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">Ogni strato in più consuma</text>
+  <text x="744" y="414" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">contesto e attenzione.</text>
+
+  <rect x="720" y="460" width="432" height="90" rx="10" fill="#f7f9fc" stroke="#d7dee8"/>
+  <text x="744" y="492" font-family="'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">Ordine</text>
+  <text x="744" y="518" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#5b6573">Documenti lunghi in cima, domanda in fondo.</text>
+</svg>

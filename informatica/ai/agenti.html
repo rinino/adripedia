@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenti e orchestrazione — Adripedia</title>
+  <meta name="description" content="Workflow e agenti, cinque pattern di orchestrazione, gerarchie con contratti e budget, costi reali e criteri di affidabilità.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/ai/agenti.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Agenti e orchestrazione</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; AI</p>
+      <h1>Agenti e orchestrazione</h1>
+      <p class="lead">
+        Un agente non &egrave; un modello pi&ugrave; intelligente: &egrave; un
+        modello che pu&ograve; agire, osservare il risultato e riprovare.
+        L&rsquo;orchestrazione aggiunge altri agenti, ma anche costo, latenza e
+        modi nuovi di sbagliare. Qui c&rsquo;&egrave; come progettare la gerarchia
+        senza costruire una fabbrica di token.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Un workflow segue percorsi che hai scritto
+          tu. Un agente decide il percorso. Il secondo &egrave; pi&ugrave;
+          flessibile e pi&ugrave; costoso; spesso il primo basta. La domanda non
+          &egrave; &ldquo;posso usare un agente?&rdquo;, ma &ldquo;mi serve che
+          decida?&rdquo;.
+        </p>
+      </div>
+
+      <nav class="section-index" aria-labelledby="agenti-index-title">
+        <p class="section-index-title" id="agenti-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cosa">Agente o workflow</a></li>
+          <li><a href="#pattern">I cinque pattern</a></li>
+          <li><a href="#gerarchia">Costruire una gerarchia</a></li>
+          <li><a href="#economia">Quanto costa davvero</a></li>
+          <li><a href="#affidabilita">Affidabilit&agrave; e controllo</a></li>
+          <li><a href="#framework">Framework e strumenti</a></li>
+          <li><a href="#progettare">Checklist e anti-pattern</a></li>
+          <li><a href="#lessico">Lessico minimo</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="cosa">Agente o workflow</h2>
+      <p>
+        Un <strong>workflow</strong> &egrave; una sequenza di passi decisa da te:
+        leggi, estrai, valida, scrivi, invia. Il modello pu&ograve; partecipare a
+        ogni passo, ma non decide l&rsquo;ordine. Un <strong>agente</strong> ha un
+        ciclo: osserva lo stato, decide la prossima azione, la esegue, verifica
+        il risultato. L&rsquo;ordine emerge dal ciclo, non da un diagramma.
+      </p>
+      <p>
+        Il ciclo ha bisogno di tre cose per non diventare un problema. I
+        <strong>tool</strong>: cosa pu&ograve; fare. Le <strong>stop
+        condition</strong>: quando fermarsi. Il <strong>budget</strong>: quanto
+        pu&ograve; spendere in token, tempo e denaro. Senza una delle tre,
+        l&rsquo;agente &egrave; un&rsquo;automazione che non sai controllare.
+      </p>
+      <p>
+        La maggior parte dei compiti non richiede un agente. Se puoi scrivere una
+        funzione, fallo invece di usare un agente: &egrave; la regola che
+        Microsoft Agent Framework ripete, ed &egrave; anche la conclusione di
+        Anthropic in <em>Building effective agents</em>. Una regola, una query,
+        una singola chiamata con retrieval: sono tutte soluzioni pi&ugrave;
+        semplici, pi&ugrave; veloci e pi&ugrave; facili da testare.
+      </p>
+      <p>
+        Un esempio concreto. Un workflow di assistenza clienti: leggi il
+        messaggio, classifica la richiesta, cerca nella knowledge base, proponi
+        una risposta, chiedi conferma se l&rsquo;importo supera una soglia. Ogni
+        passo &egrave; prevedibile e testabile. Un agente per lo stesso compito
+        deciderebbe da s&eacute; se cercare, quante volte, e quando fermarsi: pi&ugrave;
+        flessibile, ma molto pi&ugrave; difficile da misurare. Se il 90% delle
+        richieste segue cinque percorsi, il workflow &egrave; la scelta giusta e
+        l&rsquo;agente &egrave; un lusso.
+      </p>
+      <p>
+        Il confine tra i due mondi non &egrave; una linea netta: molti sistemi
+        sono workflow con un passo agentico dentro, di solito il pi&ugrave;
+        incerto. Questa &egrave; spesso la forma pi&ugrave; sana, perch&eacute;
+        lascia il controllo dove serve e l&rsquo;autonomia dove il percorso non
+        &egrave; prevedibile. Il resto &egrave; una scommessa sul fatto che il
+        modello indovini l&rsquo;ordine giusto.
+      </p>
+      <p>
+        Un agente conviene quando il percorso non &egrave; noto in anticipo e le
+        decisioni dipendono da ci&ograve; che si trova strada facendo. Conviene
+        anche quando il numero di passi &egrave; variabile: un workflow con
+        venti rami &egrave; difficile da mantenere, un agente con un buon
+        criterio di stop pu&ograve; essere pi&ugrave; semplice. Il confine non
+        &egrave; filosofico: &egrave; una stima di quanto costa scrivere e
+        mantenere i rami.
+      </p>
+
+      <h2 id="pattern">I cinque pattern</h2>
+      <p>
+        Questi pattern vengono da Anthropic e sono diventati un vocabolario
+        comune. Non sono esclusivi: un sistema reale ne combina due o tre.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Uso tipico</th>
+              <th>Costo</th>
+              <th>Rischio</th>
+              <th>Quando evitarlo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Prompt chaining</strong></td>
+              <td>Passi in sequenza, ognuno con un controllo.</td>
+              <td>Latenza e token sommati.</td>
+              <td>Un passo sbagliato rovina i successivi.</td>
+              <td>Quando i passi sono indipendenti.</td>
+            </tr>
+            <tr>
+              <td><strong>Routing</strong></td>
+              <td>Tipi di richiesta diversi verso gestori diversi.</td>
+              <td>Un classificatore da valutare.</td>
+              <td>Classificazione sbagliata e silenziosa.</td>
+              <td>Quando le richieste sono omogenee.</td>
+            </tr>
+            <tr>
+              <td><strong>Parallelization</strong></td>
+              <td>Sottocompiti indipendenti o voti multipli.</td>
+              <td>Molte chiamate insieme.</td>
+              <td>Risultati da riconciliare.</td>
+              <td>Quando c&rsquo;&egrave; una dipendenza stretta.</td>
+            </tr>
+            <tr>
+              <td><strong>Orchestrator-workers</strong></td>
+              <td>Un coordinatore assegna a specialisti.</td>
+              <td>Token e coordinamento.</td>
+              <td>Lavoro duplicato, contesto perso.</td>
+              <td>Quando il compito sta in una chiamata.</td>
+            </tr>
+            <tr>
+              <td><strong>Evaluator-optimizer</strong></td>
+              <td>Un modello produce, un altro valuta e corregge.</td>
+              <td>Almeno due chiamate per giro.</td>
+              <td>Loop senza criterio di uscita.</td>
+              <td>Quando non esiste una rubrica chiara.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        I pattern si combinano. Un orchestratore usa il routing per scegliere lo
+        specialista, la parallelizzazione per raccogliere fonti, il ciclo
+        evaluator per controllare la bozza. Il rischio &egrave; che ogni aggiunta sembri
+        piccola e l&rsquo;insieme diventi un sistema che nessuno riesce a
+        spiegare. La regola &egrave; tenere un diagramma aggiornato e un test per
+        ogni freccia: se non sai dire cosa succede quando una freccia si rompe,
+        non hai capito il sistema.
+      </p>
+      <p>
+        L&rsquo;<strong>human-in-the-loop</strong> non &egrave; un pattern a
+        s&eacute;: &egrave; un controllo trasversale. Pu&ograve; essere
+        un&rsquo;approvazione prima di un&rsquo;azione irreversibile, una revisione
+        a campione o un pulsante di stop. Va progettato insieme al resto, non
+        aggiunto dopo il primo incidente.
+      </p>
+
+      <h2 id="gerarchia">Costruire una gerarchia</h2>
+      <p>
+        Una gerarchia utile ha sei livelli, non uno. L&rsquo;<strong>orchestratore</strong>
+        pianifica e assegna. Gli <strong>specialisti</strong> fanno un lavoro
+        ciascuno. I <strong>tool</strong> eseguono azioni. La <strong>memoria e
+        stato</strong> conservano ci&ograve; che serve tra i passi. Il
+        <strong>revisore</strong> verifica criteri e fonti. L&rsquo;<strong>umano</strong>
+        approva ci&ograve; che non &egrave; reversibile.
+      </p>
+      <p>
+        Un esempio leggibile: <em>Coordinatore &rarr; Ricercatore / Analista /
+        Redattore &rarr; Revisore &rarr; Umano</em>. Il coordinatore non scrive:
+        assegna. Il ricercatore non decide: raccoglie. L&rsquo;analista non
+        inventa: confronta. Il redattore non approva: scrive. Il revisore non
+        produce: controlla. L&rsquo;umano non esegue: decide.
+      </p>
+      <p>
+        Tra un livello e l&rsquo;altro serve un contratto. Non basta dire
+        &ldquo;passa il risultato&rdquo;: il risultato deve avere una forma
+        verificabile. Un contratto JSON minimo:
+      </p>
+      <pre><code>{
+  "task_id": "brief-2026-11-11",
+  "obiettivo": "Produrre un brief di 800 parole sulle fonti raccolte.",
+  "input": {
+    "fonti": ["fonte-1", "fonte-2"],
+    "vincoli": ["citare ogni fonte", "nessun dato personale"]
+  },
+  "schema_output": {
+    "testo": "string",
+    "citazioni": ["string"],
+    "incertezze": ["string"]
+  },
+  "budget": { "token": 120000, "minuti": 20, "costo_usd": 2.5 },
+  "scadenza": "2026-11-11T18:00:00Z"
+}</code></pre>
+      <p>
+        Le <strong>stop condition</strong> vanno scritte prima di iniziare. Le
+        pi&ugrave; comuni: output validato, budget esaurito, conflitto non
+        risolvibile, richiesta di approvazione. Ognuna deve essere verificabile
+        da un controllo, non dalla buona volont&agrave; del modello.
+      </p>
+      <p>
+        L&rsquo;<strong>escalation</strong> &egrave; la valvola di sicurezza:
+        incertezza alta, azione irreversibile, dati sensibili, evidenze
+        contraddittorie. In quei casi l&rsquo;agente si ferma e chiede. Non
+        &egrave; una sconfitta: &egrave; il comportamento corretto di un sistema
+        che sa di non sapere.
+      </p>
+      <p>
+        La memoria &egrave; la parte pi&ugrave; sottovalutata. Un agente che
+        ricomincia da zero a ogni passo non &egrave; un agente: &egrave; una
+        funzione con la memoria corta. Ma una memoria troppo grande &egrave;
+        altrettanto dannosa: porta dentro dettagli vecchi, aumenta il costo e
+        confonde il compito. La memoria giusta &egrave; un riassunto dello stato
+        &mdash; obiettivo, decisioni prese, fatti verificati, domande aperte
+        &mdash; non una trascrizione integrale.
+      </p>
+      <p>
+        Lo pseudocodice dell&rsquo;orchestratore tiene insieme tutto:
+      </p>
+      <pre><code>funzione orchestratore(obiettivo, budget):
+    piano = pianifica(obiettivo)
+    risultati = []
+
+    per ogni task in piano:
+        se budget.esaurito():
+            interrompi("budget")
+        risultato = assegna(task)
+        se non valido(risultato):
+            risultato = riprova(task, una_volta)
+        se non valido(risultato):
+            interrompi("output_non_valido")
+        risultati.aggiungi(risultato)
+
+    bozza = redigi(risultati)
+    revisione = revisa(bozza, criteri)
+    se revisione.esito == "bloccato":
+        chiedi_umano(revisione)
+    restituisci bozza</code></pre>
+      <p>
+        Nota cosa non c&rsquo;&egrave;: nessun framework, nessun nome di prodotto,
+        nessuna magia. La gerarchia &egrave; un contratto tra parti che possono
+        fallire, e il codice che la implementa deve gestire i fallimenti.
+      </p>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-agent-orchestration.svg" width="1200" height="680"
+             alt="Orchestrazione di agenti: un coordinatore assegna compiti a tre specialisti, un revisore controlla e un umano approva le azioni sensibili.">
+        <figcaption>
+          Il coordinatore assegna, gli specialisti producono, il revisore
+          controlla, l&rsquo;umano approva. Le frecce di ritorno sono il
+          fallback. Illustrazione Adripedia.
+        </figcaption>
+      </figure>
+
+      <h2 id="economia">Quanto costa davvero</h2>
+      <p>
+        I numeri di Anthropic sono utili perch&eacute; danno l&rsquo;ordine di
+        grandezza. Un agente usa circa 4&times; i token di una chat; un sistema
+        multi-agente circa 15&times;. Il consumo di token spiega l&rsquo;80% della
+        varianza nei risultati di BrowseComp. In un loro eval interno di ricerca,
+        un sistema multi-agente ha superato un singolo agente del 90,2%.
+      </p>
+      <p>
+        Sono risultati di Anthropic, su compiti di ricerca ampia e
+        parallelizzabile, non una legge universale. Il messaggio operativo
+        &egrave; per&ograve; chiaro: il multi-agente paga quando il compito
+        &egrave; di alto valore, parallelo e con contesti che non stanno in una
+        finestra. Non paga per tutto il resto.
+      </p>
+      <p>
+        Le leve per tenere il conto sotto controllo sono quattro. La
+        <strong>context isolation</strong>: ogni worker vede solo ci&ograve; che
+        gli serve. Il <strong>caching</strong>: le parti stabili non si pagano due
+        volte. I <strong>modelli piccoli per i worker</strong>: il coordinatore
+        pu&ograve; essere forte, i lavori meccanici no. Il <strong>budget per
+        task</strong>: un tetto esplicito, verificato dal codice, non stimato a
+        fine giornata.
+      </p>
+      <p>
+        Un sistema multi-agente senza queste leve &egrave; un modo elegante di
+        moltiplicare una bolletta. Se non sai dire quale agente ha consumato
+        cosa, non hai un sistema: hai un conto aperto. La metrica da guardare non
+        &egrave; il costo per chiamata, ma il costo per compito riuscito: un
+        sistema che costa il doppio e riesce il triplo delle volte &egrave; un
+        affare; uno che costa il doppio e riesce uguale &egrave; un esperimento
+        che non ha funzionato.
+      </p>
+      <p>
+        Vale anche per la latenza. Un multi-agente che risponde in due minuti
+        quando l&rsquo;utente ne aspetta venti secondi &egrave; un sistema
+        inutilizzabile, anche se il risultato &egrave; migliore. La latenza si
+        progetta: parallelizzare i worker, usare il modello piccolo per i passi
+        meccanici, mostrare un avanzamento invece di una schermata ferma.
+      </p>
+      <h2 id="affidabilita">Affidabilit&agrave; e controllo</h2>
+      <p>
+        Gli errori non sono tutti uguali. Un <strong>errore di modello</strong>
+        &egrave; una risposta sbagliata o incompleta. Un <strong>errore di
+        tool</strong> &egrave; una chiamata che fallisce o restituisce dati
+        inattesi. Un <strong>errore di coordinamento</strong> &egrave; un lavoro
+        duplicato, un contesto perso, un ordine sbagliato. Le contromisure sono
+        diverse, e vanno distinte nei log.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rischio</th>
+              <th>Controllo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Loop infinito</td>
+              <td>Stop condition e numero massimo di iterazioni.</td>
+            </tr>
+            <tr>
+              <td>Costo fuori controllo</td>
+              <td>Budget per task, cap giornaliero, allarme al superamento.</td>
+            </tr>
+            <tr>
+              <td>Azione irreversibile</td>
+              <td>Approvazione umana e idempotenza.</td>
+            </tr>
+            <tr>
+              <td>Tool troppo potenti</td>
+              <td>Permessi minimi e allowlist.</td>
+            </tr>
+            <tr>
+              <td>Dati sensibili</td>
+              <td>Redazione, sandbox, nessun segreto nel contesto.</td>
+            </tr>
+            <tr>
+              <td>Errore silenzioso</td>
+              <td>Tracing, log strutturati, campionamento delle risposte.</td>
+            </tr>
+            <tr>
+              <td>Regressione</td>
+              <td>Eval prima e dopo ogni modifica.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Per un agente la valutazione cambia forma: non basta giudicare la
+        risposta finale, bisogna guardare la traiettoria. Due esecuzioni possono
+        produrre lo stesso output, una con tre passi corretti e una con dodici
+        passi fortunati; la seconda costa quattro volte tanto e si romper&agrave;
+        al primo cambiamento. Registra la sequenza delle azioni e confrontala
+        con una traiettoria attesa, non solo con il risultato.
+      </p>
+      <p>
+        Il retry &egrave; utile solo se l&rsquo;operazione &egrave; idempotente.
+        Ripetere una lettura non cambia nulla; ripetere un&rsquo;email la invia
+        due volte. Per le scritture serve una chiave di idempotenza che il
+        destinatario riconosca. Lo stesso vale per i tool: un tool che crea un
+        ordine deve accettare un identificativo di richiesta e restituire lo
+        stesso risultato se lo riceve di nuovo.
+      </p>
+      <p>
+        I permessi vanno pensati per agente, non per sistema. Il ricercatore
+        legge; il redattore scrive su una bozza; nessuno dei due invia. Il
+        revisore non modifica. L&rsquo;umano &egrave; l&rsquo;unico che approva.
+        Se un agente ha pi&ugrave; permessi di quelli che gli servono, un errore
+        di modello diventa un incidente.
+      </p>
+      <p>
+        Il <strong>tracing</strong> &egrave; la differenza tra &ldquo;ha
+        funzionato&rdquo; e &ldquo;sappiamo perch&eacute;&rdquo;. Una traccia
+        completa registra il task, l&rsquo;agente, il tool, l&rsquo;input,
+        l&rsquo;output, la durata e il costo. Senza traccia, ogni incidente
+        diventa un&rsquo;indagine.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Attenzione.</strong> Un agente senza stop condition &egrave; un
+          ciclo infinito che paga. Il modello non sa quando smettere se non gli
+          hai detto come riconoscerlo. La stop condition &egrave; parte del
+          progetto, non un&rsquo;opzione.
+        </p>
+      </div>
+
+      <h2 id="framework">Framework e strumenti</h2>
+      <p>
+        I framework risolvono problemi diversi. Sceglierne uno &egrave; meno
+        importante che capire quale problema hai: stato, ruoli, permessi,
+        tracciamento, integrazione con il linguaggio che usi.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Framework</th>
+              <th>Modello</th>
+              <th>Punto forte</th>
+              <th>Costo e rischio</th>
+              <th>Quando</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>LangGraph</strong></td>
+              <td>Grafo di stato con nodi e archi.</td>
+              <td>Orchestrazione low-level, durable execution, streaming, human-in-the-loop.</td>
+              <td>Non prescrive prompt n&eacute; architettura: devi progettare tu.</td>
+              <td>Agenti stateful di lunga durata.</td>
+            </tr>
+            <tr>
+              <td><strong>CrewAI</strong></td>
+              <td>Crew con ruoli e task; processi sequenziali o gerarchici.</td>
+              <td>Modello mentale semplice, Flows event-driven.</td>
+              <td>Il manager LLM aggiunge costo e imprevedibilit&agrave;.</td>
+              <td>Team di agenti con ruoli chiari.</td>
+            </tr>
+            <tr>
+              <td><strong>OpenAI Agents SDK</strong></td>
+              <td>Agenti, handoff, guardrail, tracing.</td>
+              <td>Leggero, Python e TypeScript, tracing incluso.</td>
+              <td>Ecosistema legato al fornitore.</td>
+              <td>Workflow multi-agente snelli.</td>
+            </tr>
+            <tr>
+              <td><strong>Claude Agent SDK</strong></td>
+              <td>Il loop di Claude Code come libreria.</td>
+              <td>Tool, permessi, sessioni, hook gi&agrave; risolti.</td>
+              <td>Opinionato sul loop e sull&rsquo;ambiente.</td>
+              <td>Agenti che lavorano su file e comandi.</td>
+            </tr>
+            <tr>
+              <td><strong>Microsoft Agent Framework</strong></td>
+              <td>Agenti e workflow multi-agente in .NET, Python e Go.</td>
+              <td>Workflow espliciti, stato, human-in-the-loop.</td>
+              <td>Superficie ampia, ecosistema in evoluzione.</td>
+              <td>Contesti enterprise con pi&ugrave; linguaggi.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Microsoft Agent Framework &egrave; il successore diretto di AutoGen e
+        Semantic Kernel: chi arriva da quei progetti trova un percorso di
+        migrazione, non un&rsquo;alternativa in pi&ugrave;.
+      </p>
+      <p>
+        Un criterio pratico: scegli il framework che ti lascia ispezionare lo
+        stato. Se non puoi vedere a che punto &egrave; un&rsquo;esecuzione, cosa ha
+        prodotto ogni passo e quanto &egrave; costato, il framework ti sta
+        nascondendo la parte che ti serve di pi&ugrave;. Il secondo criterio
+        &egrave; il costo di uscita: quanto codice tuo dipende dalle sue
+        astrazioni? Un framework che avvolge tutto &egrave; comodo per un
+        prototipo e doloroso in produzione.
+      </p>
+      <p>
+        Altri strumenti, in una riga ciascuno: <strong>Mastra</strong> per agenti
+        in TypeScript con workflow e memoria; <strong>Vercel AI SDK</strong> per
+        interfacce e streaming nel mondo JavaScript; <strong>Pydantic AI</strong>
+        per chi vuole tipi e validazione in Python; <strong>n8n</strong> per
+        automazioni visuali con nodi AI; <strong>OpenHands</strong> per un agente
+        di sviluppo open source.
+      </p>
+
+      <h2 id="progettare">Checklist e anti-pattern</h2>
+      <p>
+        Procedi in ordine di semplicit&agrave;. Fermati al primo gradino che
+        risolve il problema.
+      </p>
+      <ol>
+        <li>Una chiamata con retrieval.</li>
+        <li>Un agente singolo con pochi tool.</li>
+        <li>Un workflow esplicito con passi e controlli.</li>
+        <li>Un orchestratore con worker specializzati.</li>
+        <li>Un multi-agente con revisore.</li>
+      </ol>
+      <p>
+        La checklist non dice che il gradino successivo sia meglio. Dice che
+        ogni gradino va giustificato dal fallimento misurato di quello
+        precedente. Se un agente singolo con tre tool supera il tuo set di
+        valutazione, un orchestratore &egrave; solo una spesa in pi&ugrave;. Il
+        multi-agente si introduce quando il compito non sta in un contesto, non
+        quando il risultato &egrave; deludente: quello &egrave; un problema di
+        prompt, di tool o di dati.
+      </p>
+      <p>
+        Gli anti-pattern sono altrettanto prevedibili: partire da multi-agente
+        perch&eacute; &egrave; pi&ugrave; impressionante; agenti che si passano
+        contesto enorme; un revisore senza criteri; nessun budget; nessun log;
+        tool troppo potenti. Ognuno di questi trasforma un prototipo in un
+        sistema che nessuno vuole mantenere.
+      </p>
+      <p>
+        Il rilascio va fatto per gradi. Prima in ombra: l&rsquo;agente lavora ma
+        non agisce, e il suo output viene confrontato con quello umano. Poi in
+        affiancamento: propone, l&rsquo;umano approva. Infine in autonomia, solo
+        sulle azioni reversibili. Ogni gradino ha una metrica di uscita; se non
+        la raggiungi, resti al gradino precedente. &Egrave; pi&ugrave; lento e
+        molto meno costoso di un incidente.
+      </p>
+      <p>
+        Un&rsquo;ultima abitudine: progetta il fallimento prima del successo.
+        Cosa succede se un worker non risponde? Se due worker si contraddicono?
+        Se il revisore blocca tutto? Se l&rsquo;umano non c&rsquo;&egrave;? Le
+        risposte a queste domande sono il progetto, non le eccezioni.
+      </p>
+
+      <h2 id="lessico">Lessico minimo</h2>
+      <dl>
+        <dt>Agente</dt>
+        <dd>Un sistema che osserva, decide, agisce e verifica, con tool e un
+        criterio di stop.</dd>
+        <dt>Workflow</dt>
+        <dd>Una sequenza di passi decisa a monte, con percorsi predefiniti.</dd>
+        <dt>Orchestratore</dt>
+        <dd>Il componente che pianifica, assegna e controlla il budget.</dd>
+        <dt>Handoff</dt>
+        <dd>Il passaggio di un compito o di una conversazione da un agente a un
+        altro.</dd>
+        <dt>Stop condition</dt>
+        <dd>La condizione verificabile che ferma il ciclo di un agente.</dd>
+        <dt>Tracing</dt>
+        <dd>La registrazione dei passi, degli input, degli output e dei costi di
+        un&rsquo;esecuzione.</dd>
+      </dl>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Anthropic, <em>Building effective agents</em></strong> &mdash;
+        workflow, pattern e quando non usare un agente.</li>
+        <li><strong>Anthropic, <em>How we built our multi-agent research
+        system</em></strong> &mdash; 4&times;, 15&times;, 80% e 90,2%.</li>
+        <li><strong>LangGraph, <em>Overview</em></strong> &mdash; grafo di stato,
+        durable execution, human-in-the-loop.</li>
+        <li><strong>CrewAI, <em>Crews e Flows</em></strong> &mdash; ruoli, task,
+        processi.</li>
+        <li><strong>OpenAI Agents SDK</strong> &mdash; agenti, handoff,
+        guardrail, tracing.</li>
+        <li><strong>Claude Agent SDK</strong> &mdash; loop, tool, permessi,
+        sessioni.</li>
+        <li><strong>Microsoft Agent Framework</strong> &mdash; agenti, workflow,
+        migrazione da AutoGen e Semantic Kernel.</li>
+      </ul>
+      <p>
+        Fonti consultate l&rsquo;11 novembre 2026. I numeri di Anthropic sono
+        risultati dei loro test: vanno citati con la fonte, non generalizzati.
+      </p>
+    </main>
+
+        <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione AI</span>
+        <span class="footer-right">
+          <span>Agenti e orchestrazione &middot; aggiornata l&rsquo;11 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

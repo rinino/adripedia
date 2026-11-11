@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Server MCP — Adripedia</title>
+  <meta name="description" content="Che cos'è MCP, quando conviene, come costruire un server minimo in Python e come proteggerlo da confused deputy e prompt injection.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/ai/mcp.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Server MCP</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; AI</p>
+      <h1>Server MCP</h1>
+      <p class="lead">
+        MCP &egrave; il modo standard con cui un&rsquo;applicazione AI scopre e usa
+        strumenti esterni. Non &egrave; un modello, non &egrave; un agente:
+        &egrave; un contratto. Questa pagina spiega com&rsquo;&egrave; fatto,
+        quando conviene e come costruirne un server senza aprire buchi di
+        sicurezza.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Un server MCP espone capacit&agrave; a un
+          host: tool che il modello pu&ograve; chiamare, risorse che
+          l&rsquo;applicazione pu&ograve; leggere, prompt che l&rsquo;utente
+          pu&ograve; scegliere. Il valore &egrave; il confine standard; il rischio
+          &egrave; che quel confine venga attraversato con troppi permessi.
+        </p>
+      </div>
+
+      <nav class="section-index" aria-labelledby="mcp-index-title">
+        <p class="section-index-title" id="mcp-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cosa">Che cos&rsquo;&egrave; MCP</a></li>
+          <li><a href="#quando">Quando usarlo (e quando no)</a></li>
+          <li><a href="#costruire">Costruire un server minimo</a></li>
+          <li><a href="#progettare">Progettare i tool</a></li>
+          <li><a href="#sicurezza">Sicurezza</a></li>
+          <li><a href="#testare">Testare e debuggare</a></li>
+          <li><a href="#distribuire">Distribuire</a></li>
+          <li><a href="#lessico">Lessico minimo</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="cosa">Che cos&rsquo;&egrave; MCP</h2>
+      <p>
+        L&rsquo;architettura ha tre ruoli. L&rsquo;<strong>host</strong> &egrave;
+        l&rsquo;applicazione che l&rsquo;utente usa: un editor, un assistente,
+        una chat. Il <strong>client</strong> &egrave; il componente che parla con
+        un server: ogni client &egrave; collegato a un solo server. Il
+        <strong>server</strong> espone capacit&agrave;. Un host pu&ograve; avere
+        pi&ugrave; client, quindi pi&ugrave; server.
+      </p>
+      <p>
+        Il dialogo &egrave; JSON-RPC. Il server pu&ograve; essere locale, avviato
+        come processo e collegato via <strong>stdio</strong>, oppure remoto,
+        raggiunto via <strong>Streamable HTTP</strong>. Nel primo caso eredita i
+        permessi del processo che lo avvia; nel secondo serve autenticazione e
+        autorizzazione esplicite.
+      </p>
+      <p>
+        Le primitive sono tre, e la differenza sta in chi decide.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Primitiva</th>
+              <th>Chi decide</th>
+              <th>A cosa serve</th>
+              <th>Esempio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Tool</strong></td>
+              <td>Il modello</td>
+              <td>Eseguire un&rsquo;azione o una query.</td>
+              <td>Cercare un articolo, inviare un messaggio.</td>
+            </tr>
+            <tr>
+              <td><strong>Resource</strong></td>
+              <td>L&rsquo;applicazione</td>
+              <td>Leggere dati identificati da un URI.</td>
+              <td><code>catalogo://schema</code>, un file, una pagina.</td>
+            </tr>
+            <tr>
+              <td><strong>Prompt</strong></td>
+              <td>L&rsquo;utente</td>
+              <td>Scegliere un modello di richiesta preconfezionato.</td>
+              <td>&ldquo;Riassumi questo documento&rdquo;.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        JSON-RPC significa che ogni messaggio &egrave; un oggetto con un metodo,
+        dei parametri e un identificativo. La risposta riporta lo stesso
+        identificativo, cos&igrave; le due parti sanno a cosa corrisponde. Non
+        &egrave; un protocollo di streaming di testo: &egrave; una sequenza di
+        richieste e risposte, e questo lo rende facile da ispezionare e da
+        proxare.
+      </p>
+      <p>
+        Lo stato, nella revisione 2026-07-28, non vive nella connessione: vive
+        nelle richieste. &Egrave; una scelta che semplifica il deployment &mdash;
+        un server pu&ograve; essere replicato, riavviato, messo dietro un
+        bilanciatore &mdash; ma sposta la responsabilit&agrave; della sessione
+        sull&rsquo;applicazione. Se ti serve memoria tra una chiamata e
+        l&rsquo;altra, devi progettarla tu.
+      </p>
+      <p>
+        Vale la pena dire cosa MCP non &egrave;. Non &egrave; un formato per
+        scrivere prompt: quelli restano testo. Non &egrave; un modello: non
+        genera nulla. Non &egrave; un agente: non decide quando usare un tool,
+        lo espone soltanto. Non &egrave; nemmeno un sostituto delle API: &egrave;
+        un modo standard di presentarle a un&rsquo;applicazione AI. Se confondi
+        questi livelli, finisci per chiedere al protocollo cose che non pu&ograve;
+        fare.
+      </p>
+      <p>
+        La revisione <strong>2026-07-28</strong> ha cambiato il protocollo in
+        modo sostanziale: &egrave; diventato <strong>stateless</strong>. Non
+        esiste pi&ugrave; l&rsquo;handshake <code>initialize</code>: ogni
+        richiesta porta con s&eacute; versione e capability nei
+        <code>_meta</code>. Esistono <code>server/discover</code> per conoscere
+        le capacit&agrave; e <code>subscriptions/listen</code> per le
+        sottoscrizioni; le richieste avviate dal server usano un pattern
+        <strong>multi round-trip</strong> invece di un canale permanente. Non
+        &egrave; una semplificazione: &egrave; un modello diverso, pi&ugrave;
+        adatto a deployment distribuiti.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Attenzione.</strong> Molti client e server usano ancora la
+          revisione <strong>2025-11-25</strong>. Prima di scrivere codice,
+          verifica quale generazione supporta l&rsquo;host che hai davanti: un
+          server moderno pu&ograve; non essere visto da un client vecchio, e
+          viceversa.
+        </p>
+      </div>
+
+      <figure class="figure">
+        <img src="../../assets/img/ai/ai-mcp-architecture.svg" width="1200" height="600"
+             alt="Architettura MCP: un host con più client, ciascuno collegato a un server che espone tool, risorse e prompt.">
+        <figcaption>
+          Un host, pi&ugrave; client, un server per client. Il tratteggio
+          separa ci&ograve; che gira in locale da ci&ograve; che attraversa la
+          rete. Illustrazione Adripedia.
+        </figcaption>
+      </figure>
+
+      <h2 id="quando">Quando usarlo (e quando no)</h2>
+      <p>
+        MCP non &egrave; sempre la risposta. &Egrave; un&rsquo;infrastruttura, e
+        come tutte le infrastrutture ha un costo di adozione. La domanda giusta
+        &egrave; chi deve usare la stessa capacit&agrave; e con quale grado di
+        riuso.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Approccio</th>
+              <th>Quando usarlo</th>
+              <th>Limite</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>MCP</strong></td>
+              <td>Pi&ugrave; host devono usare la stessa capacit&agrave;, o serve un confine standard e riutilizzabile.</td>
+              <td>Costo di implementazione e di sicurezza.</td>
+            </tr>
+            <tr>
+              <td><strong>Function calling diretto</strong></td>
+              <td>Una sola applicazione, pochi tool, nessun riuso previsto.</td>
+              <td>Ogni host reimplementa tutto.</td>
+            </tr>
+            <tr>
+              <td><strong>CLI</strong></td>
+              <td>L&rsquo;agente ha gi&agrave; accesso alla shell e i comandi sono gi&agrave; scritti.</td>
+              <td>Permessi ampi, output non strutturato.</td>
+            </tr>
+            <tr>
+              <td><strong>RAG</strong></td>
+              <td>Servono documenti in lettura, non azioni.</td>
+              <td>Non esegue nulla e non sostituisce un&rsquo;API.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        MCP conviene quando la stessa capacit&agrave; &egrave; utile a pi&ugrave;
+        strumenti o quando vuoi separare chi espone i dati da chi li consuma.
+        Non conviene se stai costruendo una singola applicazione con tre
+        funzioni: in quel caso il function calling diretto &egrave; pi&ugrave;
+        semplice e ha meno superficie d&rsquo;attacco.
+      </p>
+      <p>
+        C&rsquo;&egrave; un costo che spesso si sottovaluta: un server MCP va
+        scritto, testato, distribuito, aggiornato e protetto. Se lo usano due
+        persone, quel costo difficilmente si recupera. Se lo usano duecento, o
+        se lo usano tre strumenti diversi, il calcolo cambia. La domanda non
+        &egrave; &ldquo;&egrave; moderno?&rdquo;, ma &ldquo;chi lo mantiene per i
+        prossimi due anni?&rdquo;.
+      </p>
+      <p>
+        Un&rsquo;avvertenza che vale sempre: MCP non sostituisce una buona API.
+        Se l&rsquo;API &egrave; lenta, incoerente o insicura, incapsularla in un
+        server MCP non la migliora: aggiunge un livello. Il server &egrave; un
+        adattatore, non una cura.
+      </p>
+
+      <h2 id="costruire">Costruire un server minimo</h2>
+      <p>
+        La SDK ufficiale Python nella versione 2.x espone la classe
+        <code>MCPServer</code>. Questo server espone due tool e una resource su
+        un catalogo di articoli. &Egrave; volutamente piccolo: un tool, un
+        lavoro.
+      </p>
+      <pre><code>import json
+import logging
+from mcp.server import MCPServer
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("catalogo")
+
+mcp = MCPServer("catalogo")
+
+ARTICOLI = {
+    "A-101": {"titolo": "Router e cascate", "testo": "..."},
+    "A-102": {"titolo": "Valutare un modello", "testo": "..."},
+}
+
+@mcp.tool()
+def cerca_articoli(testo: str, limite: int = 5) -&gt; list[dict]:
+    """Cerca articoli per parola chiave. Restituisce al massimo `limite` risultati."""
+    testo = testo.lower().strip()
+    trovati = [
+        {"id": k, "titolo": v["titolo"]}
+        for k, v in ARTICOLI.items()
+        if testo in v["titolo"].lower()
+    ]
+    log.info("ricerca %r: %d risultati", testo, len(trovati))
+    return trovati[:limite]
+
+@mcp.tool()
+def leggi_articolo(id: str) -&gt; dict:
+    """Legge un articolo per ID. Se l'ID non esiste, restituisce un errore strutturato."""
+    articolo = ARTICOLI.get(id)
+    if articolo is None:
+        return {
+            "errore": "articolo_non_trovato",
+            "id": id,
+            "suggerimento": "usa cerca_articoli per trovare un ID valido",
+        }
+    return {"id": id, **articolo}
+
+@mcp.resource("catalogo://schema")
+def schema_catalogo() -&gt; str:
+    """Schema del catalogo, in JSON."""
+    return json.dumps({
+        "campi": ["id", "titolo", "testo"],
+        "esempio_id": "A-101",
+    })
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")</code></pre>
+      <p>
+        Tre dettagli non sono decorativi. I <strong>docstring</strong> diventano
+        la descrizione che il modello legge per scegliere il tool: vanno scritti
+        come istruzioni, non come note per sviluppatori. I <strong>type
+        hint</strong> diventano lo schema dei parametri. E i <strong>log</strong>
+        vanno su stderr: su stdio, stdout &egrave; il canale del protocollo, e
+        una riga di log scritta l&igrave; rompe la comunicazione.
+      </p>
+      <p>
+        Il server &egrave; piccolo abbastanza da essere letto in cinque minuti, ma
+        mostra tutti i punti che contano: due tool con docstring e type hint, una
+        resource con URI, un errore strutturato, i log su stderr. Se lo esegui in
+        locale, la prima cosa da verificare &egrave; che l&rsquo;avvio non scriva
+        nulla su stdout. La seconda &egrave; che <code>cerca_articoli</code> con
+        una parola inesistente restituisca una lista vuota, non un errore: una
+        ricerca senza risultati &egrave; un risultato valido.
+      </p>
+      <p>
+        La configurazione lato client &egrave; un oggetto con comando, argomenti
+        e variabili d&rsquo;ambiente. I nomi dei campi variano tra client, ma la
+        sostanza &egrave; questa:
+      </p>
+      <pre><code>{
+  "mcpServers": {
+    "catalogo": {
+      "command": "python",
+      "args": ["catalogo.py"],
+      "env": {
+        "CATALOGO_DB": "dati/catalogo.json"
+      }
+    }
+  }
+}</code></pre>
+      <p>
+        Un errore strutturato &egrave; pi&ugrave; utile di un&rsquo;eccezione
+        generica, perch&eacute; il modello pu&ograve; leggerlo e correggere la
+        chiamata. Ma non deve contenere dettagli interni, stack trace o
+        credenziali: &egrave; contenuto che finisce nel contesto.
+      </p>
+
+      <h2 id="progettare">Progettare i tool</h2>
+      <p>
+        La descrizione di un tool &egrave; parte del prompt. Se &egrave; vaga, il
+        modello sceglie il tool sbagliato o inventa parametri. La regola
+        &egrave; semplice: un tool, un lavoro.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Cosa fare</th>
+              <th>Cosa evitare</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Nome</td>
+              <td>Verbo e oggetto: <code>cerca_articoli</code>.</td>
+              <td>Nomi generici come <code>gestisci</code>.</td>
+            </tr>
+            <tr>
+              <td>Descrizione</td>
+              <td>Dire cosa fa, quando usarlo e cosa restituisce.</td>
+              <td>Ripetere il nome o lasciare il docstring vuoto.</td>
+            </tr>
+            <tr>
+              <td>Schema</td>
+              <td>Tipi espliciti, valori ammessi, campi obbligatori.</td>
+              <td>Stringhe libere dove serve un enum.</td>
+            </tr>
+            <tr>
+              <td>Output</td>
+              <td>Limitato, paginato, con un campo per il totale.</td>
+              <td>Restituire migliaia di righe in una volta.</td>
+            </tr>
+            <tr>
+              <td>Scritture</td>
+              <td>Idempotenti, con una chiave di richiesta.</td>
+              <td>Creare duplicati a ogni retry.</td>
+            </tr>
+            <tr>
+              <td>Errori</td>
+              <td>Codice, messaggio, suggerimento.</td>
+              <td>Stack trace o dettagli interni.</td>
+            </tr>
+            <tr>
+              <td>Azioni distruttive</td>
+              <td>Richiedono approvazione umana.</td>
+              <td>Eliminare o inviare senza conferma.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Paginare non &egrave; un dettaglio da fare dopo. Un tool che restituisce
+        tutto il catalogo occupa il contesto, costa token e nasconde
+        l&rsquo;informazione utile. Restituisci i primi N risultati, un
+        identificatore per continuare e il totale. Il modello pu&ograve; sempre
+        chiedere la pagina successiva.
+      </p>
+      <p>
+        Prendi una descrizione reale e peggiorala, per vedere l&rsquo;effetto.
+        &ldquo;Cerca articoli&rdquo; non dice se la ricerca &egrave; per titolo,
+        per testo, per autore, n&eacute; cosa restituisce. &ldquo;Cerca articoli
+        per parola chiave nel titolo; restituisce id e titolo, al massimo cinque,
+        ordinati per rilevanza&rdquo; dice tutto ci&ograve; che serve al modello
+        per decidere. La differenza tra le due frasi &egrave; la differenza tra
+        un tool usato bene e un tool usato a caso.
+      </p>
+      <p>
+        La stessa logica vale per i nomi dei parametri. <code>id</code>,
+        <code>limite</code>, <code>formato</code> sono chiari;
+        <code>param1</code>, <code>opzioni</code>, <code>dati</code> no. Se il
+        modello deve indovinare, hai gi&agrave; perso.
+      </p>
+
+      <h2 id="sicurezza">Sicurezza</h2>
+      <p>
+        Due attacchi ricorrenti hanno un nome. Il <strong>confused deputy</strong>
+        &egrave; un server che ha pi&ugrave; permessi di chi lo chiama e li usa
+        per conto di un altro: l&rsquo;utente chiede una cosa innocua, il server
+        la esegue con i propri privilegi e ne combina una pi&ugrave; grande. Il
+        <strong>token passthrough</strong> &egrave; un server che inoltra il token
+        ricevuto a un servizio a valle senza verificarlo: il token finisce dove
+        non doveva.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rischio</th>
+              <th>Mitigazione</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Confused deputy</td>
+              <td>Permessi per chiamante, non per server; consenso esplicito; scope minimi.</td>
+            </tr>
+            <tr>
+              <td>Token passthrough</td>
+              <td>Non inoltrare token; usare credenziali proprie con audience corretta.</td>
+            </tr>
+            <tr>
+              <td>Accesso non autorizzato</td>
+              <td>OAuth 2.0, verifica dell&rsquo;audience, scadenza breve.</td>
+            </tr>
+            <tr>
+              <td>Injection via output</td>
+              <td>Trattare l&rsquo;output come non fidato; separarlo dalle istruzioni.</td>
+            </tr>
+            <tr>
+              <td>Tool troppo potenti</td>
+              <td>Un tool, un&rsquo;azione; niente shell generica se basta una query.</td>
+            </tr>
+            <tr>
+              <td>Dati in eccesso</td>
+              <td>Filtrare, paginare, non restituire segreti.</td>
+            </tr>
+            <tr>
+              <td>Abuso e picchi</td>
+              <td>Rate limit, quote, timeout, audit log.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La differenza tra server locale e remoto &egrave; sostanziale. Un server
+        stdio gira con i permessi del processo che lo avvia: se quel processo
+        pu&ograve; leggere un file, anche il server pu&ograve;. Un server HTTP
+        remoto &egrave; raggiungibile da altri: senza autenticazione, chiunque
+        pu&ograve; chiamarlo. Non &egrave; una differenza di configurazione,
+        &egrave; una differenza di modello di fiducia.
+      </p>
+      <p>
+        Per un server remoto, OAuth 2.0 &egrave; il punto di partenza, non un
+        dettaglio da aggiungere dopo. L&rsquo;utente autorizza il client, il
+        client ottiene un token con un&rsquo;audience precisa, il server verifica
+        il token e i suoi scope a ogni chiamata. Il consenso deve dire cosa
+        l&rsquo;utente sta autorizzando, non &ldquo;accedi&rdquo;. E il token non
+        va mai inoltrato a un servizio a valle come se fosse una credenziale
+        generica.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Attenzione.</strong> Confused deputy e token passthrough non si
+          risolvono con una frase nel prompt. Servono controlli nel server:
+          autorizzazione per chiamante, scope limitati, nessun inoltro di token,
+          approvazione umana per le azioni distruttive. Il modello non
+          &egrave; un confine di sicurezza.
+        </p>
+      </div>
+      <p>
+        Un&rsquo;ultima regola: l&rsquo;output di un tool &egrave; contenuto non
+        fidato. Se un tool legge una pagina web, quella pagina pu&ograve;
+        contenere istruzioni. Trattala come dati, non come comandi. Le difese
+        lato prompt aiutano, ma il controllo vero sta nel server e nei permessi.
+      </p>
+
+      <h2 id="testare">Testare e debuggare</h2>
+      <p>
+        MCP Inspector &egrave; lo strumento di riferimento per guardare un server
+        dall&rsquo;esterno: elenca tool, risorse e prompt, permette di chiamarli e
+        mostra il traffico. Serve anche a verificare la compatibilit&agrave; tra
+        generazioni del protocollo:
+      </p>
+      <pre><code>mcp-inspector --protocol-era modern
+mcp-inspector --protocol-era legacy</code></pre>
+      <p>
+        I due comandi aprono lo stesso server con due aspettative diverse. Se
+        funziona solo con uno, hai un problema di compatibilit&agrave; da
+        dichiarare, non da nascondere.
+      </p>
+      <p>
+        Oltre all&rsquo;Inspector, servono test veri:
+      </p>
+      <ul>
+        <li><strong>unitari</strong> per ogni tool, con input validi e invalidi;</li>
+        <li><strong>di contratto</strong> sullo schema: nomi, tipi, campi
+        obbligatori;</li>
+        <li><strong>di errore</strong>: ID mancante, file assente, timeout,
+        risposta troppo grande;</li>
+        <li><strong>di latenza</strong>, con il 95&deg; percentile;</li>
+        <li><strong>di dimensione</strong>: l&rsquo;output resta sotto una soglia
+        concordata?</li>
+      </ul>
+      <p>
+        Quando un client rifiuta una chiamata, la domanda &egrave; sempre la
+        stessa: il server non risponde, risponde con un errore, o risponde con
+        qualcosa che il client non capisce? L&rsquo;Inspector separa i tre casi.
+        Senza di lui si finisce a modificare il codice a caso, che &egrave; il
+        modo pi&ugrave; costoso di fare debugging.
+      </p>
+      <p>
+        Il caso &ldquo;tool che restituisce troppo&rdquo; &egrave; quello che
+        sfugge pi&ugrave; spesso. Un test che misura i byte o i token
+        dell&rsquo;output lo intercetta prima che il problema arrivi in
+        produzione.
+      </p>
+
+      <h2 id="distribuire">Distribuire</h2>
+      <p>
+        La scelta del trasporto decide il modello operativo. <strong>stdio</strong>
+        &egrave; la scelta giusta per uno strumento locale: semplice, veloce,
+        nessuna rete. <strong>Streamable HTTP</strong> &egrave; la scelta giusta
+        per un servizio condiviso: serve autenticazione, deployment, osservabilit&agrave;.
+      </p>
+      <p>
+        Una checklist di rilascio, in ordine di importanza:
+      </p>
+      <ol>
+        <li>autenticazione e autorizzazione verificate, con scope minimi;</li>
+        <li>nessun segreto nei log, negli errori o nelle risposte;</li>
+        <li>rate limit e timeout configurati;</li>
+        <li>output paginato e limitato per dimensione;</li>
+        <li>versionamento del server e delle sue primitive;</li>
+        <li>compatibilit&agrave; dichiarata con le revisioni supportate;</li>
+        <li>log e metriche per chiamata, senza dati personali;</li>
+        <li>procedura di revoca e rotazione delle credenziali.</li>
+      </ol>
+      <p>
+        La checklist non &egrave; un documento da firmare una volta. Va riletta a
+        ogni modifica che tocchi permessi, trasporto o forma dell&rsquo;output,
+        perch&eacute; sono le tre cose che cambiano il rischio senza cambiare il
+        codice applicativo. Se un rilascio non tocca nessuna delle tre, pu&ograve;
+        bastare un controllo pi&ugrave; leggero; se le tocca tutte, serve una
+        revisione vera.
+      </p>
+      <p>
+        L&rsquo;osservabilit&agrave; non &egrave; un lusso: senza sapere quali tool
+        vengono chiamati, con quale esito e in quanto tempo, non puoi n&eacute;
+        difendere n&eacute; migliorare il server. Registra l&rsquo;identificativo
+        della richiesta, il tool, la durata e l&rsquo;esito; non registrare il
+        contenuto se non serve.
+      </p>
+      <p>
+        Un server remoto ha anche un problema di versione del deployment: se
+        aggiorni il codice ma non la documentazione delle capacit&agrave;, i
+        client continuano a chiamare tool che non esistono. Dichiara la versione
+        del server in una resource o in una risposta di scoperta, e cambiala
+        quando cambia il contratto. Un numero di versione visibile vale pi&ugrave;
+        di un changelog che nessuno legge.
+      </p>
+      <p>
+        Infine, ricorda che un server MCP &egrave; un&rsquo;interfaccia pubblica
+        anche quando &egrave; interno. Cambiare il nome di un tool o il tipo di un
+        parametro rompe i client. Tratta il contratto come tale.
+      </p>
+
+      <h2 id="lessico">Lessico minimo</h2>
+      <dl>
+        <dt>Host</dt>
+        <dd>L&rsquo;applicazione che l&rsquo;utente usa e che ospita uno o
+        pi&ugrave; client MCP.</dd>
+        <dt>Client</dt>
+        <dd>Il componente dell&rsquo;host che mantiene la connessione con un
+        singolo server.</dd>
+        <dt>Server</dt>
+        <dd>Il processo o servizio che espone tool, risorse e prompt.</dd>
+        <dt>Tool</dt>
+        <dd>Una funzione che il modello pu&ograve; decidere di chiamare.</dd>
+        <dt>Resource</dt>
+        <dd>Un dato identificato da un URI, che l&rsquo;applicazione pu&ograve;
+        leggere.</dd>
+        <dt>Confused deputy</dt>
+        <dd>Un server con pi&ugrave; permessi di chi lo chiama, che li usa per
+        conto di un altro.</dd>
+      </dl>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Model Context Protocol, <em>Architecture</em></strong>
+        &mdash; host, client, server e primitive.</li>
+        <li><strong>Model Context Protocol, <em>Changelog 2026-07-28</em></strong>
+        &mdash; protocollo stateless, <code>server/discover</code>,
+        <code>subscriptions/listen</code>, multi round-trip.</li>
+        <li><strong>Model Context Protocol, <em>Server concepts</em></strong>
+        &mdash; tool, risorse, prompt.</li>
+        <li><strong>Model Context Protocol, <em>Build a server</em></strong>
+        &mdash; struttura minima e trasporti.</li>
+        <li><strong>Model Context Protocol, <em>Security best
+        practices</em></strong> &mdash; confused deputy, token passthrough,
+        OAuth.</li>
+        <li><strong>MCP Python SDK 2.x</strong> &mdash; <code>MCPServer</code>,
+        decoratori, trasporto stdio.</li>
+      </ul>
+      <p>
+        Fonti consultate l&rsquo;11 novembre 2026. La specifica evolve: verifica
+        la revisione supportata dal client che usi.
+      </p>
+    </main>
+
+        <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione AI</span>
+        <span class="footer-right">
+          <span>Server MCP &middot; aggiornata l&rsquo;11 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>
