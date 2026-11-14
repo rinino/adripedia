@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kernel e gestione — Adripedia</title>
+  <meta name="description" content="Il kernel Linux e la sua gestione: versioni mainline, stable e LTS, moduli, parametri di boot, sysctl, aggiornamenti, initramfs, DKMS, compilazione, Secure Boot, livepatch, PREEMPT_RT e diagnostica.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/kernel.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Kernel</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; Linux</p>
+      <h1>Il kernel e la sua gestione</h1>
+      <p class="lead">
+        Il kernel &egrave; il pezzo di software che parla con l&rsquo;hardware,
+        decide chi usa la CPU, gestisce memoria e file system e media ogni
+        accesso alle periferiche. &Egrave; anche il componente pi&ugrave;
+        delicato da aggiornare: un errore qui non fa crashare un programma, ma
+        il sistema intero. Questa pagina spiega come &egrave; fatto, come si
+        legge, come si aggiorna e come si ripara, con i comandi separati per
+        Debian/Ubuntu e Red Hat/Fedora dove le differenze contano.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Non &ldquo;ottimizzare il kernel&rdquo; a
+          caso: prima si misura, poi si cambia un parametro, poi si verifica.
+          La maggior parte dei problemi nasce da un modulo mancante, da un
+          initramfs non rigenerato o da un bootloader che punta al kernel
+          sbagliato, non da un parametro esotico.
+        </p>
+      </div>
+
+      <p>
+        Per preparare il disco e installare un sistema da zero, la pagina
+        <a href="installazione.html">Installazione da riga di comando</a> copre
+        ISO, USB, partizionamento e primo avvio; qui il kernel si presume
+        gi&agrave; installato.
+      </p>
+
+      <nav class="section-index" aria-labelledby="kernel-index-title">
+        <p class="section-index-title" id="kernel-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#modello">Che cosa gestisce il kernel</a></li>
+          <li><a href="#versioni">Mainline, stable e LTS</a></li>
+          <li><a href="#anatomia">Cosa c&rsquo;&egrave; in <code>/boot</code> e <code>/lib/modules</code></a></li>
+          <li><a href="#leggere">Leggere lo stato del sistema</a></li>
+          <li><a href="#moduli">Moduli, dipendenze e blacklist</a></li>
+          <li><a href="#parametri">Parametri di boot e <code>sysctl</code></a></li>
+          <li><a href="#aggiornare">Aggiornare il kernel</a></li>
+          <li><a href="#initramfs">initramfs</a></li>
+          <li><a href="#dkms">DKMS e moduli fuori dall&rsquo;albero</a></li>
+          <li><a href="#secure-boot">Secure Boot e firma dei moduli</a></li>
+          <li><a href="#compilare">Compilare un kernel</a></li>
+          <li><a href="#livepatch">Livepatch e realtime</a></li>
+          <li><a href="#diagnostica">Diagnostica e recovery</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="modello">Che cosa gestisce il kernel</h2>
+      <p>
+        Il kernel gira in kernel space, con privilegi pieni sulla macchina, e
+        offre ai processi un&rsquo;interfaccia controllata: le chiamate di
+        sistema. Tutto ci&ograve; che un programma fa passa da l&igrave; o da
+        un file descriptor gi&agrave; aperto. Le responsabilit&agrave;
+        principali sono cinque.
+      </p>
+      <ul>
+        <li><strong>Scheduler.</strong> Decide quale processo usa la CPU e per
+        quanto. Dal kernel 6.6 il default &egrave; EEVDF (Earliest Eligible
+        Virtual Deadline First), che sostituisce il CFS.</li>
+        <li><strong>Memoria.</strong> Gestisce memoria virtuale, page cache,
+        swap, mappature e page fault. &Egrave; anche il livello dove nascono
+        <code>zswap</code>, <code>zram</code> e l&rsquo;OOM killer.</li>
+        <li><strong>File system.</strong> Il VFS offre un&rsquo;interfaccia
+        comune a ext4, XFS, Btrfs, overlayfs, NFS e decine di altri. Il kernel
+        non &ldquo;conosce&rdquo; i file: conosce inode, dentry e operazioni.</li>
+        <li><strong>Rete.</strong> Stack TCP/IP, netfilter, socket, driver delle
+        schede e namespace di rete.</li>
+        <li><strong>Driver e sicurezza.</strong> Moduli per hardware, firmware,
+        LSM come SELinux e AppArmor, seccomp, capability, namespace e cgroup.</li>
+      </ul>
+      <p>
+        &Egrave; monolitico ma modulare: le funzioni usate all&rsquo;avvio sono
+        compilate dentro l&rsquo;immagine, il resto sta in moduli
+        <code>.ko</code> caricati quando servono. Questa distinzione spiega
+        perch&eacute; un sistema pu&ograve; avere lo stesso kernel e
+        comportarsi diversamente: cambiano i moduli caricati, i parametri e il
+        firmware.
+      </p>
+      <p>
+        La versione si legge con <code>uname</code>. Il formato &egrave;
+        <code>MAJOR.MINOR.PATCH</code>, seguito da un suffisso che dice chi ha
+        costruito il pacchetto:
+      </p>
+      <pre><code>uname -r      # 7.3.4-arch1-1, 6.12.0-55.9.1.el10_0, 6.14.0-24-generic
+uname -v      # data e configurazione di build
+uname -m      # architettura: x86_64, aarch64, riscv64
+uname -a      # tutto insieme</code></pre>
+      <p>
+        Il suffisso non &egrave; decorativo: <code>-generic</code> &egrave; il
+        kernel Ubuntu, <code>-amd64</code> quello Debian,
+        <code>-arch1-1</code> quello Arch, <code>.el10</code> quello RHEL 10.
+        Due macchine con lo stesso <code>7.3.4</code> possono avere patch,
+        configurazioni e driver molto diversi.
+      </p>
+
+      <h2 id="versioni">Mainline, stable e LTS</h2>
+      <p>
+        Il kernel non ha un unico ramo. Linus Torvalds pubblica la
+        <strong>mainline</strong>: ogni due settimane si apre la merge window,
+        poi seguono circa sette release candidate e una versione finale, con un
+        ciclo di nove-dieci settimane. Le <strong>stable</strong> sono
+        manutenzioni della mainline: ricevono solo correzioni, non nuove
+        funzionalit&agrave;, e hanno un numero di patch che cresce
+        (<code>7.3.1</code>, <code>7.3.2</code>, ...). Le <strong>longterm</strong>
+        o <strong>LTS</strong> sono stable scelte per durare di pi&ugrave;,
+        in genere almeno due anni, e vengono mantenute anche oltre quando
+        servono a distribuzioni e produttori.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Ramo</th><th>Versione al 14 novembre 2026</th><th>A cosa serve</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mainline</td>
+              <td>7.3 (18 ottobre 2026)</td>
+              <td>Nuove funzionalit&agrave;, sviluppo, test</td>
+            </tr>
+            <tr>
+              <td>Stable</td>
+              <td>7.3.4 (10 novembre 2026)</td>
+              <td>Correzioni sopra la mainline, per chi vuole il nuovo</td>
+            </tr>
+            <tr>
+              <td>Longterm</td>
+              <td>6.18.63, 6.12.117</td>
+              <td>Base per server e distribuzioni con supporto lungo</td>
+            </tr>
+            <tr>
+              <td>Longterm precedenti</td>
+              <td>6.6, 6.1</td>
+              <td>Hardware e prodotti che restano su una base vecchia</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La 7.0 &egrave; uscita il 12 aprile 2026; la 7.3 &egrave; la stable
+        corrente a novembre. Ogni distribuzione, per&ograve;, non insegue
+        kernel.org: congela una base e applica le proprie patch. Debian 13 usa
+        la serie 6.12, RHEL 10 la 6.12, Ubuntu 24.04 parte dalla 6.8 e riceve
+        kernel HWE con le point release, Mint 22.3 usa la 6.14 (o la 7.0 sulle
+        ISO HWE), Kali 2026.3 la 7.1.5. Il numero che conta per la sicurezza
+        &egrave; quello del pacchetto della distribuzione, non quello di
+        kernel.org.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>LTS non significa eterno.</strong> Anche una longterm riceve
+          solo correzioni mirate e, prima o poi, va in fine vita. Se un
+          fornitore promette &ldquo;supporto fino al 2035&rdquo;, sta parlando
+          del proprio contratto, non del ramo kernel.org. La domanda giusta
+          &egrave;: chi applica le patch, e con quale ritardo?
+        </p>
+      </div>
+
+      <h2 id="anatomia">Cosa c&rsquo;&egrave; in <code>/boot</code> e <code>/lib/modules</code></h2>
+      <p>
+        Un kernel installato lascia tracce in due posti. In <code>/boot</code>
+        stanno gli artefatti che servono al bootloader; in
+        <code>/lib/modules/&lt;release&gt;</code> stanno i moduli e i metadati
+        che il kernel carica dopo. Conoscere questi file evita di
+        &ldquo;reinstallare tutto&rdquo; quando basta rigenerare un initramfs.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Percorso</th><th>Contenuto</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/boot/vmlinuz-&lt;release&gt;</code></td>
+              <td>Immagine compressa del kernel (bzImage su x86)</td>
+            </tr>
+            <tr>
+              <td><code>/boot/initrd.img-&lt;release&gt;</code></td>
+              <td>initramfs su Debian/Ubuntu/Mint/Kali</td>
+            </tr>
+            <tr>
+              <td><code>/boot/initramfs-&lt;release&gt;.img</code></td>
+              <td>initramfs su RHEL/Fedora</td>
+            </tr>
+            <tr>
+              <td><code>/boot/config-&lt;release&gt;</code></td>
+              <td>Configurazione con cui &egrave; stato compilato</td>
+            </tr>
+            <tr>
+              <td><code>/boot/System.map-&lt;release&gt;</code></td>
+              <td>Simboli del kernel, utili per debug e crash dump</td>
+            </tr>
+            <tr>
+              <td><code>/lib/modules/&lt;release&gt;/kernel/</code></td>
+              <td>Albero dei moduli <code>.ko</code> (o <code>.ko.zst</code>)</td>
+            </tr>
+            <tr>
+              <td><code>/lib/modules/&lt;release&gt;/modules.dep</code></td>
+              <td>Dipendenze tra moduli, generate da <code>depmod</code></td>
+            </tr>
+            <tr>
+              <td><code>/lib/modules/&lt;release&gt;/build</code></td>
+              <td>Symlink ai sorgenti/header per compilare moduli esterni</td>
+            </tr>
+            <tr>
+              <td><code>/lib/firmware</code></td>
+              <td>Firmware caricato dai driver (Wi-Fi, GPU, NIC)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Su alcune distribuzioni i moduli stanno in
+        <code>/usr/lib/modules</code> e <code>/lib</code> &egrave; un symlink;
+        il percorso logico resta lo stesso. <code>vmlinuz</code> &egrave;
+        l&rsquo;immagine avviabile, <code>vmlinux</code> &egrave; il file ELF
+        non compresso che si usa per il debug. Se <code>/boot</code> &egrave;
+        una partizione separata, tienila almeno 1 GiB: con pi&ugrave; kernel e
+        initramfs da 100&ndash;200 MiB lo spazio finisce in fretta.
+      </p>
+      <pre><code>ls -lh /boot/
+file /boot/vmlinuz-$(uname -r)
+ls /lib/modules/$(uname -r)/kernel/
+du -sh /lib/modules/$(uname -r)</code></pre>
+
+      <h2 id="leggere">Leggere lo stato del sistema</h2>
+      <p>
+        Prima di cambiare qualcosa, guarda. Questi comandi rispondono alle
+        domande pi&ugrave; frequenti: che kernel sto usando, con quali
+        parametri, quali moduli sono caricati, quali driver stanno gestendo
+        l&rsquo;hardware e che cosa ha detto il kernel all&rsquo;avvio.
+      </p>
+      <pre><code>cat /proc/version
+cat /proc/cmdline
+cat /proc/sys/kernel/ostype
+getconf LONG_BIT
+
+# Configurazione del kernel in uso
+grep CONFIG_PREEMPT /boot/config-$(uname -r)
+zcat /proc/config.gz | grep CONFIG_MODULE_SIG   # se CONFIG_IKCONFIG_PROC &egrave; attivo
+
+# Moduli e driver
+lsmod
+lspci -k
+lsusb -t
+
+# Messaggi del kernel
+dmesg -T | head -n 40
+journalctl -k -b
+journalctl --list-boots</code></pre>
+      <p>
+        <code>dmesg</code> mostra il ring buffer del kernel; con
+        <code>-T</code> aggiunge timestamp leggibili, con
+        <code>--level=err,warn</code> filtra i messaggi importanti.
+        <code>journalctl -k</code> legge lo stesso contenuto dal journal, che
+        sopravvive al riavvio e permette di vedere il boot precedente con
+        <code>-b -1</code>. <code>lspci -k</code> &egrave; spesso la risposta
+        pi&ugrave; rapida a &ldquo;quale driver sta usando questa scheda?&rdquo;.
+      </p>
+      <p>
+        Un&rsquo;altra informazione utile &egrave; il <em>taint</em>: un
+        bitmask che dice se il kernel &egrave; &ldquo;sporco&rdquo;. I valori
+        comuni sono 1 (modulo proprietario), 4096 (modulo fuori
+        dall&rsquo;albero) e 8192 (modulo non firmato). Un kernel taint non
+        &egrave; rotto, ma le segnalazioni di bug su un kernel taint vengono
+        spesso ignorate dagli sviluppatori.
+      </p>
+      <pre><code>cat /proc/sys/kernel/tainted
+dmesg | grep -i taint
+modinfo -F vermagic modulo
+modinfo -F depends modulo</code></pre>
+
+      <h2 id="moduli">Moduli, dipendenze e blacklist</h2>
+      <p>
+        Un modulo &egrave; un pezzo di kernel caricabile a runtime. Si carica
+        con <code>modprobe</code>, che risolve le dipendenze leggendo
+        <code>modules.dep</code>; <code>insmod</code> carica un file senza
+        risolvere nulla ed &egrave; quasi sempre la scelta sbagliata.
+        <code>modprobe -r</code> scarica un modulo e le sue dipendenze non
+        usate; <code>rmmod</code> scarica solo quello indicato.
+      </p>
+      <pre><code>modprobe modulo
+modprobe -r modulo
+modinfo modulo
+modprobe --show-depends modulo
+lsmod | grep modulo
+depmod -a</code></pre>
+      <p>
+        Il caricamento automatico si configura in
+        <code>/etc/modules-load.d/*.conf</code> (systemd) e, su Debian,
+        anche in <code>/etc/modules</code>. Le opzioni e le regole stanno in
+        <code>/etc/modprobe.d/*.conf</code>: <code>options</code> passa
+        parametri, <code>alias</code> associa un nome, <code>blacklist</code>
+        impedisce il caricamento automatico per alias, <code>install</code>
+        sostituisce il comando di caricamento.
+      </p>
+      <pre><code># /etc/modprobe.d/blacklist-nouveau.conf
+blacklist nouveau
+options nouveau modeset=0
+
+# Blocco &ldquo;duro&rdquo;: anche un modprobe esplicito fallisce
+install nouveau /bin/false
+
+# Caricamento automatico all'avvio
+# /etc/modules-load.d/lab.conf
+v4l2loopback</code></pre>
+      <p>
+        Dopo aver modificato una blacklist che riguarda il boot (per esempio
+        nouveau, oppure un driver di storage), rigenera l&rsquo;initramfs:
+        <code>update-initramfs -u -k all</code> su Debian/Ubuntu,
+        <code>dracut -f</code> su RHEL/Fedora. Altrimenti la modifica vale solo
+        per il sistema gi&agrave; avviato.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Blacklist non &egrave; un divieto assoluto.</strong> Blocca
+          il caricamento automatico per alias, non un
+          <code>modprobe nome</code> esplicito. Per impedire davvero il
+          caricamento usa <code>install nome /bin/false</code>. E non
+          disabilitare un driver di storage o di input senza avere una console
+          di recupero pronta.
+        </p>
+      </div>
+      <p>
+        I parametri di un modulo si vedono in
+        <code>/sys/module/&lt;nome&gt;/parameters/</code> e con
+        <code>modinfo -p</code>. Alcuni si possono cambiare a runtime
+        scrivendo nel file corrispondente, altri solo al caricamento. La
+        differenza &egrave; nel permesso del file: se &egrave; in sola lettura,
+        serve un <code>modprobe</code> con l&rsquo;opzione giusta.
+      </p>
+
+      <h2 id="parametri">Parametri di boot e <code>sysctl</code></h2>
+      <p>
+        Ci sono due livelli di configurazione. I <strong>parametri di
+        boot</strong> arrivano al kernel dal bootloader e valgono per
+        l&rsquo;intera vita del boot; i <strong>sysctl</strong> sono variabili
+        runtime esposte in <code>/proc/sys</code>, modificabili a caldo e
+        persistenti tramite file di configurazione. Confonderli &egrave; una
+        fonte inesauribile di &ldquo;ho messo il parametro ma non
+        funziona&rdquo;.
+      </p>
+      <p>
+        I parametri attuali sono in <code>/proc/cmdline</code>. Per aggiungerne
+        uno in modo persistente, su Debian/Ubuntu si modifica
+        <code>/etc/default/grub</code> e si rigenera la configurazione; su
+        RHEL/Fedora <code>grubby</code> &egrave; pi&ugrave; sicuro perch&eacute;
+        aggiorna tutte le voci senza riscrivere il file a mano.
+      </p>
+      <pre><code>cat /proc/cmdline
+
+# Debian/Ubuntu/Mint/Kali
+sudoedit /etc/default/grub
+# GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+# GRUB_CMDLINE_LINUX=""
+sudo update-grub
+
+# RHEL/Fedora
+sudo grubby --info=ALL
+sudo grubby --update-kernel=ALL --args="quiet"
+sudo grubby --update-kernel=ALL --remove-args="quiet"
+sudo grubby --default-kernel
+
+# Arch, con GRUB
+sudo grub-mkconfig -o /boot/grub/grub.cfg</code></pre>
+      <p>
+        Su RHEL con UEFI la configurazione rigenerata pu&ograve; finire in
+        <code>/boot/efi/EFI/redhat/grub.cfg</code>; su Fedora il file reale
+        &egrave; <code>/boot/grub2/grub.cfg</code> e quello nella ESP fa da
+        rimando. Se usi systemd-boot, i parametri stanno in
+        <code>/boot/loader/entries/*.conf</code> e si aggiornano con
+        <code>bootctl</code>. In tutti i casi, dopo la modifica verifica
+        <code>/proc/cmdline</code> al riavvio: &egrave; l&rsquo;unica prova che
+        il parametro &egrave; arrivato.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Parametro</th><th>Effetto</th><th>Quando usarlo</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>quiet</code>, <code>splash</code></td>
+              <td>Meno messaggi, schermata grafica</td>
+              <td>Desktop; toglili per diagnosticare</td>
+            </tr>
+            <tr>
+              <td><code>loglevel=7</code>, <code>debug</code></td>
+              <td>Messaggi kernel pi&ugrave; verbosi</td>
+              <td>Problemi di driver o boot</td>
+            </tr>
+            <tr>
+              <td><code>nomodeset</code></td>
+              <td>Non carica i driver video in modalit&agrave; kernel</td>
+              <td>Schermo nero con GPU recente</td>
+            </tr>
+            <tr>
+              <td><code>acpi=off</code>, <code>noapic</code>, <code>pci=nomsi</code></td>
+              <td>Disabilita parti di ACPI/APIC/MSI</td>
+              <td>Hardware difettoso o molto vecchio; ultima risorsa</td>
+            </tr>
+            <tr>
+              <td><code>intel_iommu=on</code>, <code>amd_iommu=on</code></td>
+              <td>Attiva IOMMU</td>
+              <td>Passthrough, isolamento, alcuni driver</td>
+            </tr>
+            <tr>
+              <td><code>mitigations=off</code></td>
+              <td>Disattiva le mitigazioni CPU</td>
+              <td>Mai su sistemi esposti: riduce la sicurezza</td>
+            </tr>
+            <tr>
+              <td><code>systemd.unit=rescue.target</code></td>
+              <td>Avvia in modalit&agrave; rescue</td>
+              <td>Sistema che non arriva al login</td>
+            </tr>
+            <tr>
+              <td><code>init=/bin/bash</code></td>
+              <td>Avvia bash come PID 1</td>
+              <td>Recovery estrema; root in sola lettura</td>
+            </tr>
+            <tr>
+              <td><code>rd.break</code></td>
+              <td>Ferma l&rsquo;initramfs prima del root</td>
+              <td>Reset password, riparazione LVM/LUKS su RHEL</td>
+            </tr>
+            <tr>
+              <td><code>console=ttyS0,115200n8</code></td>
+              <td>Console seriale</td>
+              <td>Server headless e macchine virtuali</td>
+            </tr>
+            <tr>
+              <td><code>preempt=full</code></td>
+              <td>Seleziona preemption completa a boot</td>
+              <td>Kernel con <code>CONFIG_PREEMPT_DYNAMIC</code>, latenza bassa</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><code>sysctl</code>: runtime e persistenza</h3>
+      <p>
+        <code>sysctl</code> legge e scrive i parametri del kernel. Un valore
+        scritto con <code>-w</code> vale fino al riavvio; per renderlo
+        persistente serve un file in <code>/etc/sysctl.d/</code>, applicato
+        all&rsquo;avvio da <code>systemd-sysctl</code>. Il nome con i punti
+        corrisponde al percorso in <code>/proc/sys</code>:
+        <code>vm.swappiness</code> &egrave;
+        <code>/proc/sys/vm/swappiness</code>.
+      </p>
+      <pre><code>sysctl vm.swappiness
+sudo sysctl -w vm.swappiness=10
+sysctl -a | wc -l
+
+# Persistente
+sudoedit /etc/sysctl.d/99-lab.conf
+# vm.swappiness = 10
+# kernel.dmesg_restrict = 1
+sudo sysctl --system
+sudo sysctl -p /etc/sysctl.d/99-lab.conf</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Chiave</th><th>Valore tipico</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>vm.swappiness</code></td>
+              <td>10&ndash;60</td>
+              <td>Quanto il kernel preferisce lo swap alla cache</td>
+            </tr>
+            <tr>
+              <td><code>vm.vfs_cache_pressure</code></td>
+              <td>50&ndash;100</td>
+              <td>Quanto aggressivamente recupera dentry e inode</td>
+            </tr>
+            <tr>
+              <td><code>vm.dirty_ratio</code></td>
+              <td>10&ndash;20</td>
+              <td>Percentuale di RAM sporca prima di forzare la scrittura</td>
+            </tr>
+            <tr>
+              <td><code>net.core.somaxconn</code></td>
+              <td>4096</td>
+              <td>Lunghezza massima della coda di accept</td>
+            </tr>
+            <tr>
+              <td><code>net.ipv4.ip_forward</code></td>
+              <td>1</td>
+              <td>Inoltro IP: router, VPN, container</td>
+            </tr>
+            <tr>
+              <td><code>net.ipv4.tcp_congestion_control</code></td>
+              <td><code>bbr</code></td>
+              <td>Algoritmo di congestione, se il modulo &egrave; disponibile</td>
+            </tr>
+            <tr>
+              <td><code>fs.inotify.max_user_watches</code></td>
+              <td>524288</td>
+              <td>Watcher per IDE, editor e tool di build</td>
+            </tr>
+            <tr>
+              <td><code>fs.file-max</code></td>
+              <td>Dipende dal sistema</td>
+              <td>Numero massimo di file aperti nel sistema</td>
+            </tr>
+            <tr>
+              <td><code>kernel.pid_max</code></td>
+              <td>4194304</td>
+              <td>PID massimi disponibili</td>
+            </tr>
+            <tr>
+              <td><code>kernel.dmesg_restrict</code></td>
+              <td>1</td>
+              <td>Impedisce agli utenti non privilegiati di leggere <code>dmesg</code></td>
+            </tr>
+            <tr>
+              <td><code>kernel.kptr_restrict</code></td>
+              <td>2</td>
+              <td>Nasconde gli indirizzi del kernel nei file di debug</td>
+            </tr>
+            <tr>
+              <td><code>kernel.yama.ptrace_scope</code></td>
+              <td>1</td>
+              <td>Limita <code>ptrace</code> ai processi figli, se Yama &egrave; attivo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <p>
+          <strong>Non copiare valori da internet.</strong>
+          <code>vm.swappiness=0</code> su un server con poca RAM pu&ograve;
+          peggiorare l&rsquo;OOM; <code>ip_forward=1</code> su una macchina
+          esposta cambia il modello di sicurezza. Misura prima e dopo, e
+          annota il valore precedente accanto alla modifica.
+        </p>
+      </div>
+
+      <h2 id="aggiornare">Aggiornare il kernel</h2>
+      <p>
+        Aggiornare il kernel &egrave; normale e necessario: porta correzioni di
+        sicurezza, supporto per hardware nuovo e fix di file system. Il rischio
+        si riduce tenendo un kernel precedente avviabile, leggendo le note di
+        rilascio e riavviando appena possibile. La regola pratica &egrave;:
+        aggiorna, riavvia, verifica con <code>uname -r</code>, e conserva
+        almeno una voce vecchia nel menu di boot.
+      </p>
+      <h3>Debian, Ubuntu, Mint e Kali</h3>
+      <p>
+        Il kernel arriva come pacchetto <code>linux-image-*</code>. I
+        metapacchetti (<code>linux-image-amd64</code> su Debian,
+        <code>linux-generic</code> su Ubuntu) seguono la serie prevista; i
+        pacchetti HWE portano kernel pi&ugrave; recenti sulle LTS. I vecchi
+        kernel restano installati finch&eacute; non si fa pulizia.
+      </p>
+      <pre><code>sudo apt update
+apt list --installed 'linux-image-*'
+
+# Debian: serie stabile del rilascio
+sudo apt install linux-image-amd64 linux-headers-amd64
+
+# Ubuntu: kernel GA o HWE
+sudo apt install linux-generic
+sudo apt install linux-generic-hwe-24.04
+
+sudo apt full-upgrade
+sudo apt autoremove --purge
+ls /boot/vmlinuz-*</code></pre>
+      <p>
+        <code>autoremove --purge</code> elimina i kernel vecchi, ma tiene
+        quello in uso e di solito almeno uno precedente. Se vuoi essere
+        prudente, marca a mano il kernel di riserva con
+        <code>sudo apt-mark hold linux-image-&lt;versione&gt;</code> e
+        rilascialo dopo qualche giorno. Su Ubuntu il file
+        <code>/var/run/reboot-required</code> e il comando
+        <code>needrestart</code> dicono se il riavvio &egrave; dovuto al
+        kernel o a una libreria.
+      </p>
+      <h3>RHEL, Fedora e derivate</h3>
+      <p>
+        Su RHEL/Fedora il kernel &egrave; composto da pi&ugrave; pacchetti:
+        <code>kernel-core</code>, <code>kernel-modules</code>,
+        <code>kernel-modules-extra</code>, <code>kernel-devel</code>,
+        <code>kernel-headers</code>. <code>dnf</code> installa la nuova
+        versione accanto alla vecchia e lascia a
+        <code>installonly_limit</code> il compito di limitare quante
+        conservarne (il default &egrave; 3).
+      </p>
+      <pre><code>sudo dnf check-update kernel
+sudo dnf upgrade kernel
+sudo dnf install kernel-&lt;versione&gt;
+
+sudo dnf repoquery --installonly
+sudo dnf remove --oldinstallonly --setopt installonly_limit=2 kernel
+
+grep installonly_limit /etc/dnf/dnf.conf
+sudo grubby --default-kernel
+sudo needs-restarting -r</code></pre>
+      <p>
+        <code>needs-restarting -r</code> esce con codice 1 se serve un riavvio;
+        fa parte di <code>dnf-plugins-core</code>. Dopo il riavvio,
+        <code>uname -r</code> deve mostrare la nuova release. Se non succede,
+        il bootloader sta scegliendo una voce vecchia: controlla
+        <code>grubby --info=ALL</code> e l&rsquo;ordine in GRUB.
+      </p>
+      <h3>Arch, openSUSE e firmware</h3>
+      <p>
+        Su Arch il kernel &egrave; un pacchetto normale:
+        <code>pacman -Syu linux linux-headers</code>. Tieni anche
+        <code>linux-lts</code> come riserva: se il kernel rolling si rompe, la
+        voce LTS nel menu di boot salva la giornata. Su openSUSE si usa
+        <code>zypper up kernel-default</code> e <code>zypper ps -s</code> per
+        vedere quali processi usano file cancellati da un aggiornamento.
+      </p>
+      <p>
+        Il firmware &egrave; un capitolo separato. <code>linux-firmware</code>
+        contiene i blob per Wi-Fi, GPU e periferiche; i microcode CPU arrivano
+        da <code>intel-microcode</code> o <code>amd64-microcode</code> su
+        Debian/Ubuntu e da <code>microcode_ctl</code> su RHEL/Fedora. Per
+        BIOS, SSD e dock si usa <code>fwupdmgr</code>, che non c&rsquo;entra
+        con il kernel ma con il firmware del dispositivo.
+      </p>
+      <pre><code>sudo fwupdmgr refresh --force
+sudo fwupdmgr get-updates
+sudo fwupdmgr update
+
+# Debian/Ubuntu
+sudo apt install linux-firmware intel-microcode
+# RHEL/Fedora
+sudo dnf install linux-firmware microcode_ctl</code></pre>
+
+      <h2 id="initramfs">initramfs</h2>
+      <p>
+        L&rsquo;initramfs &egrave; un archivio compresso che il bootloader carica
+        insieme al kernel. Serve a fare i primi passi quando il root non
+        &egrave; ancora montato: caricare i driver del disco, aprire LUKS,
+        attivare LVM o RAID, montare il root e passare il controllo a
+        <code>init</code>. Se manca un modulo o un firmware dentro
+        l&rsquo;initramfs, il sistema si ferma con un messaggio del tipo
+        &ldquo;unable to find a live medium&rdquo; o &ldquo;not found&rdquo;.
+      </p>
+      <p>
+        Ogni famiglia ha il suo strumento. La regola &egrave; sempre la stessa:
+        dopo aver cambiato moduli, blacklist, crittografia o configurazione
+        dello storage, rigenera l&rsquo;initramfs <em>prima</em> di riavviare.
+      </p>
+      <pre><code># Debian/Ubuntu/Mint/Kali
+sudo update-initramfs -u -k all
+lsinitramfs /boot/initrd.img-$(uname -r) | head
+
+# RHEL/Fedora
+sudo dracut -f
+sudo dracut --regenerate-all -f
+lsinitrd /boot/initramfs-$(uname -r).img | head
+
+# Arch
+sudo mkinitcpio -P
+lsinitcpio /boot/initramfs-linux.img | head</code></pre>
+      <p>
+        La configurazione cambia con lo strumento: Debian usa
+        <code>/etc/initramfs-tools/initramfs.conf</code> e
+        <code>/etc/initramfs-tools/conf.d/</code> (per esempio
+        <code>MODULES=most</code>, <code>COMPRESS=zstd</code>, la variabile
+        <code>RESUME</code> per l&rsquo;ibernazione); RHEL/Fedora usa
+        <code>/etc/dracut.conf.d/*.conf</code>; Arch usa
+        <code>/etc/mkinitcpio.conf</code> con la variabile <code>HOOKS</code>,
+        dove l&rsquo;ordine conta. Un errore tipico &egrave; togliere
+        <code>encrypt</code> o <code>lvm2</code> dagli hook e ritrovarsi un
+        sistema che non apre il root.
+      </p>
+      <p>
+        Con LUKS, verifica che <code>/etc/crypttab</code> sia corretto e che
+        l&rsquo;initramfs contenga il modulo <code>dm_crypt</code>; con RAID,
+        rigenera <code>/etc/mdadm/mdadm.conf</code> e poi l&rsquo;initramfs.
+        Per l&rsquo;ibernazione serve <code>resume=UUID=...</code> nella
+        command line e la stessa UUID nel file di resume. Se il sistema usa
+        un&rsquo;immagine unificata (UKI), kernel, initramfs e command line
+        sono firmati insieme: in quel caso si rigenera l&rsquo;UKI, non solo
+        l&rsquo;initramfs.
+      </p>
+
+      <h2 id="dkms">DKMS e moduli fuori dall&rsquo;albero</h2>
+      <p>
+        I moduli che non stanno nell&rsquo;albero del kernel (driver NVIDIA,
+        VirtualBox, ZFS, alcuni driver Wi-Fi) vanno ricompilati a ogni cambio
+        di kernel. DKMS automatizza questo passaggio: registra il modulo,
+        tiene traccia delle versioni e lo ricostruisce quando arriva un kernel
+        nuovo, a patto che siano installati gli header giusti.
+      </p>
+      <pre><code>dkms status
+sudo dkms autoinstall
+sudo dkms install -m nome -v versione
+sudo dkms remove -m nome -v versione --all
+
+# Header necessari
+sudo apt install linux-headers-$(uname -r)     # Debian/Ubuntu
+sudo dnf install kernel-devel kernel-headers    # RHEL/Fedora
+sudo pacman -S linux-headers                    # Arch</code></pre>
+      <p>
+        Se dopo un aggiornamento un modulo DKMS non si carica, la prima cosa da
+        leggere &egrave;
+        <code>/var/lib/dkms/&lt;modulo&gt;/&lt;versione&gt;/build/make.log</code>.
+        Le cause pi&ugrave; comuni sono header mancanti, un modulo non ancora
+        aggiornato per il nuovo kernel e la firma Secure Boot rifiutata. Il
+        messaggio <code>Key was rejected by service</code> appartiene
+        all&rsquo;ultima categoria.
+      </p>
+      <p>
+        DKMS non &egrave; obbligatorio per tutti i moduli esterni: alcuni
+        progetti distribuiscono pacchetti gi&agrave; compilati per kernel
+        specifici, altri usano <code>akmods</code> su Fedora. In tutti i casi
+        il principio &egrave; lo stesso: il modulo deve corrispondere alla
+        release esatta (<code>vermagic</code>) del kernel in uso.
+      </p>
+
+      <h2 id="secure-boot">Secure Boot e firma dei moduli</h2>
+      <p>
+        Secure Boot verifica la catena di firme dal firmware al bootloader e,
+        se configurato, al kernel e ai moduli. Su un sistema con Secure Boot
+        attivo, un modulo non firmato non si carica. Le strade sono due:
+        disattivare Secure Boot (semplice, ma indebolisce la catena) oppure
+        firmare il modulo con una chiave enrolata nel firmware.
+      </p>
+      <pre><code>mokutil --sb-state
+dmesg | grep -i secure
+bootctl status | grep -i "secure boot"
+cat /sys/kernel/security/lockdown</code></pre>
+      <p>
+        La firma con Machine Owner Key (MOK) &egrave; la procedura pi&ugrave;
+        comune. Si genera una coppia di chiavi, si firma il modulo, si importa
+        la chiave pubblica con <code>mokutil</code> e si completa
+        l&rsquo;enrollment al riavvio nella schermata MOK Manager.
+      </p>
+      <pre><code># Genera la chiave (una volta sola)
+openssl req -new -x509 -newkey rsa:2048 -keyout MOK.priv \
+  -outform DER -out MOK.der -days 36500 -subj "/CN=Adripedia MOK/"
+
+# Firma il modulo
+sudo kmodsign sha512 MOK.priv MOK.der modulo.ko
+
+# Importa la chiave e completa l'enrollment al riavvio
+sudo mokutil --import MOK.der
+sudo mokutil --list-enrolled
+modinfo -F signer modulo.ko
+modinfo -F sig_key modulo.ko</code></pre>
+      <p>
+        Su sistemi con chiavi proprie e <code>sbctl</code>, il flusso &egrave;
+        diverso: si creano le chiavi, si enrolano nel firmware, si firma il
+        bootloader e i moduli con <code>sbctl sign -s</code>, e si verifica con
+        <code>sbctl verify</code>. <code>sbctl enroll-keys --microsoft</code>
+        mantiene anche le chiavi Microsoft, necessarie per opzioni ROM e
+        alcuni dispositivi. In tutti i casi, dopo un aggiornamento del kernel
+        i moduli vanno rifirmati o ricostruiti dal sistema che gestisce la
+        firma.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Secure Boot non &egrave; un antivirus.</strong> Verifica che
+          il codice avviato sia firmato, non che sia sicuro. Un modulo firmato
+          pu&ograve; avere bug; una chiave MOK compromessa permette di firmare
+          qualsiasi cosa. Tratta la chiave privata come una chiave di
+          firma del software: file separato, permessi stretti, backup.
+        </p>
+      </div>
+      <p>
+        Per un blocco pi&ugrave; forte si usa
+        <code>module.sig_enforce=1</code> nella command line, oppure
+        <code>CONFIG_MODULE_SIG_FORCE=y</code> in compilazione: il kernel
+        rifiuta anche i moduli firmati con chiavi non presenti nel portachiavi.
+        Il lockdown mode, visibile in
+        <code>/sys/kernel/security/lockdown</code>, limita ulteriormente
+        <code>/dev/mem</code>, kexec e accessi diretti al kernel.
+      </p>
+
+      <h2 id="compilare">Compilare un kernel</h2>
+      <p>
+        Compilare il kernel serve per hardware non ancora supportato, per
+        applicare una patch, per ridurre il sistema a ci&ograve; che serve o per
+        fare debug. Non &egrave; la prima cosa da fare quando qualcosa non
+        funziona: prima si prova il kernel della distribuzione, poi si valuta.
+        Servono sorgenti, toolchain, tempo e spazio (10&ndash;20 GiB).
+      </p>
+      <pre><code># Dipendenze, per famiglia
+sudo apt install build-essential libncurses-dev bison flex \
+  libssl-dev libelf-dev dwarves bc rsync
+sudo dnf install gcc make ncurses-devel bison flex openssl-devel \
+  elfutils-libelf-devel dwarves bc rsync perl
+sudo pacman -S base-devel bc libelf pahole cpio perl tar xz</code></pre>
+      <p>
+        Il modo pi&ugrave; sicuro per partire &egrave; riusare la
+        configurazione del kernel in uso, poi aggiornarla alle nuove opzioni
+        con <code>olddefconfig</code>. Da l&igrave; si attiva ci&ograve; che
+        serve con <code>menuconfig</code> o con <code>scripts/config</code>.
+        Per un sistema embedded, <code>localmodconfig</code> riduce la
+        configurazione ai moduli attualmente caricati; per un desktop o un
+        server generico &egrave; troppo aggressivo.
+      </p>
+      <pre><code>cp /boot/config-$(uname -r) .config
+make olddefconfig
+
+# Modifica interattiva
+make menuconfig
+
+# Oppure da script
+scripts/config --enable CONFIG_PREEMPT_RT
+scripts/config --module CONFIG_NVME_CORE
+scripts/config --set-str CONFIG_LOCALVERSION "-lab"
+make olddefconfig
+
+# Compilazione
+make -j"$(nproc)"
+sudo make modules_install
+sudo make install
+
+# Debian/Ubuntu: initramfs e GRUB
+sudo update-initramfs -u -k all
+sudo update-grub
+
+# RHEL/Fedora: initramfs e GRUB
+sudo dracut -f
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg</code></pre>
+      <p>
+        <code>make install</code> copia kernel, configurazione e
+        <code>System.map</code> in <code>/boot</code> e di solito invoca lo
+        script <code>installkernel</code> della distribuzione. Se vuoi un
+        pacchetto invece di file sparsi, usa <code>make deb-pkg</code> o
+        <code>make rpm-pkg</code>: &egrave; il modo giusto per distribuire un
+        kernel su pi&ugrave; macchine e per disinstallarlo con il package
+        manager. <code>make localyesconfig</code> trasforma i moduli caricati
+        in componenti built-in, ma pu&ograve; produrre un kernel enorme.
+      </p>
+      <p>
+        Dopo il riavvio, <code>uname -r</code> deve mostrare il suffisso
+        scelto (per esempio <code>-lab</code>). Se il sistema non parte,
+        riavvia con il kernel precedente dal menu di GRUB e controlla
+        <code>dmesg</code>. Le cause pi&ugrave; frequenti sono un modulo
+        storage mancante nell&rsquo;initramfs, una configurazione troppo
+        minimal e un bootloader non aggiornato.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Vanilla non &egrave; la distribuzione.</strong> Il kernel di
+          kernel.org non contiene le patch, i firmware e le configurazioni
+          della tua distro. Un kernel compilato da sorgenti pu&ograve; perdere
+          driver proprietari, Secure Boot e integrazione con
+          <code>dkms</code>. Provalo in una VM o su una macchina di
+          laboratorio, non sul portatile che usi per lavorare.
+        </p>
+      </div>
+
+      <h2 id="livepatch">Livepatch e realtime</h2>
+      <p>
+        Ci sono due esigenze diverse che vengono spesso confuse:
+        <strong>applicare una correzione senza riavviare</strong> e
+        <strong>ridurre la latenza</strong>. La prima si affronta con il
+        live patching, la seconda con un kernel realtime.
+      </p>
+      <h3>Live patching</h3>
+      <p>
+        Il live patching sostituisce a runtime singole funzioni del kernel per
+        correggere una vulnerabilit&agrave; senza reboot. Ubuntu offre
+        Livepatch con Ubuntu Pro (fino a cinque macchine personali), RHEL usa
+        <code>kpatch</code>, SUSE <code>kGraft</code>. Non &egrave; una
+        scorciatoia universale: funziona solo per patch preparate, non cambia
+        strutture dati, non aggiunge driver e non sostituisce un riavvio
+        pianificato.
+      </p>
+      <pre><code># Ubuntu Livepatch
+canonical-livepatch status --verbose
+sudo canonical-livepatch enable &lt;token&gt;
+canonical-livepatch list
+
+# RHEL kpatch
+sudo kpatch list
+sudo kpatch load kpatch-&lt;nome&gt;.ko
+sudo kpatch unload kpatch-&lt;nome&gt;.ko</code></pre>
+      <h3>Realtime</h3>
+      <p>
+        PREEMPT_RT &egrave; entrato nel mainline con il kernel 6.12: non
+        serve pi&ugrave; un albero separato per la maggior parte dei casi.
+        Si abilita con <code>CONFIG_PREEMPT_RT=y</code> e si distribuisce con
+        pacchetti dedicati: <code>linux-image-rt-amd64</code> su Debian,
+        <code>kernel-rt</code> su RHEL/Fedora, <code>linux-realtime</code> su
+        Ubuntu. Su kernel con <code>CONFIG_PREEMPT_DYNAMIC</code> si pu&ograve;
+        scegliere <code>preempt=full</code> al boot.
+      </p>
+      <pre><code>sudo apt install linux-image-rt-amd64 rt-tests
+cyclictest -p 99 -m -n -i 1000 -l 10000
+
+# Isolamento CPU e IRQ (esempio su 8 core)
+# isolcpus=2-7 nohz_full=2-7 rcu_nocbs=2-7 irqaffinity=0-1
+
+chrt -f 99 comando
+rtla timerlat top
+hwlatdetect --duration=60</code></pre>
+      <p>
+        Il realtime non rende il sistema &ldquo;pi&ugrave; veloce&rdquo;:
+        riduce la latenza massima e la sua variabilit&agrave;, spesso a scapito
+        del throughput. Su un desktop si traduce in meno scatti audio/video;
+        su una macchina industriale in un ciclo di controllo pi&ugrave;
+        prevedibile. Va misurato con <code>cyclictest</code> e
+        <code>rtla</code>, non dichiarato.
+      </p>
+
+      <h2 id="diagnostica">Diagnostica e recovery</h2>
+      <p>
+        La diagnostica del kernel si fa per strati: prima i messaggi, poi i
+        moduli e i driver, poi le risorse (CPU, memoria, I/O), infine il
+        tracing. Non serve partire da <code>perf</code> se il problema &egrave;
+        un firmware mancante: <code>dmesg</code> lo dice subito.
+      </p>
+      <pre><code># Messaggi e boot precedente
+dmesg -T --level=err,warn
+journalctl -k -b -1
+journalctl -k | grep -i -E 'error|fail|firmware|oom'
+
+# Risorse
+vmstat 1
+iostat -xz 1
+slabtop -o
+cat /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io
+
+# Driver e interrupt
+lspci -k
+lsusb -t
+cat /proc/interrupts
+cpupower frequency-info
+sensors</code></pre>
+      <p>
+        L&rsquo;OOM killer lascia una traccia precisa:
+        <code>dmesg | grep -i 'killed process'</code> mostra vittima, PID e
+        consumo. Un <code>hung task</code> o un <code>soft lockup</code>
+        indicano un thread bloccato nel kernel; un <code>taint</code> con
+        modulo proprietario rende la diagnosi pi&ugrave; difficile. Per i
+        crash dump si usa <code>kdump</code> con
+        <code>crashkernel=</code> nella command line e
+        <code>systemctl status kdump</code>; su Ubuntu c&rsquo;&egrave; anche
+        <code>pstore</code>, che conserva i messaggi del crash nella memoria
+        persistente del firmware.
+      </p>
+      <h3>Riparare un boot che non arriva</h3>
+      <p>
+        Dal menu di GRUB si preme <kbd>e</kbd> per modificare una voce al volo.
+        Le mosse pi&ugrave; utili: togliere <code>quiet splash</code> per
+        vedere i messaggi, aggiungere <code>nomodeset</code> per i problemi
+        video, avviare <code>systemd.unit=rescue.target</code> per un sistema
+        semi-funzionante, oppure <code>init=/bin/bash</code> per una shell di
+        emergenza. Con <code>init=/bin/bash</code> il root &egrave; montato in
+        sola lettura: <code>mount -o remount,rw /</code> prima di modificare
+        qualsiasi cosa.
+      </p>
+      <pre><code># Prompt grub&gt;: trovare la partizione e avviare a mano
+ls
+ls (hd0,gpt2)/boot
+set root=(hd0,gpt2)
+linux /boot/vmlinuz-7.3.4 root=/dev/nvme0n1p2 ro
+initrd /boot/initrd.img-7.3.4
+boot</code></pre>
+      <p>
+        Su RHEL/Fedora, <code>rd.break</code> ferma l&rsquo;initramfs prima del
+        passaggio al root e permette di riparare LUKS, LVM o la password di
+        root; dopo la modifica serve <code>touch /.autorelabel</code> se
+        SELinux &egrave; attivo. <code>grub-reboot</code> imposta una voce solo
+        per il prossimo avvio, utile per provare un kernel senza cambiare il
+        default. <code>efibootmgr -v</code> mostra le voci UEFI e
+        <code>efibootmgr -o</code> ne cambia l&rsquo;ordine.
+      </p>
+      <p>
+        Per un blocco totale, il magic SysRq resta l&rsquo;ultima risorsa:
+        <code>Alt</code>+<code>Stampa</code>+<code>R</code> (rimonta in
+        lettura), <code>E</code> (termina i processi), <code>I</code> (uccide
+        quelli rimasti), <code>S</code> (sync), <code>U</code> (rimonta in sola
+        lettura), <code>B</code> (reboot). La sequenza REISUB evita di perdere
+        dati rispetto a un reset. Va abilitata con
+        <code>kernel.sysrq=1</code>, e su alcune distribuzioni &egrave;
+        limitata per sicurezza.
+      </p>
+      <div class="callout ok">
+        <p>
+          <strong>Ordine di intervento.</strong> 1) Leggi
+          <code>dmesg</code>/<code>journalctl -k</code>. 2) Verifica moduli,
+          firmware e driver con <code>lspci -k</code>. 3) Controlla
+          initramfs e bootloader. 4) Misura CPU, memoria e I/O. 5) Solo dopo,
+          tracing con <code>perf</code> o <code>bpftrace</code>. La fretta
+          salta i primi tre passi e finisce sempre per reinstallare il
+          sistema.
+        </p>
+      </div>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>kernel.org, <em>Releases</em></strong> &mdash; mainline,
+        stable e longterm; versioni al 10 novembre 2026.</li>
+        <li><strong>Linux Kernel Documentation</strong> &mdash;
+        <em>admin-guide</em>, <em>sysctl</em>, <em>module-signing</em>,
+        <em>livepatch</em>, <em>RT</em> e <em>kernel parameters</em>.</li>
+        <li><strong>Debian, <em>Linux Kernel Handbook</em></strong> &mdash;
+        pacchetti <code>linux-image</code>, initramfs e configurazione.</li>
+        <li><strong>Ubuntu, <em>Kernel</em></strong> &mdash; kernel GA/HWE,
+        Livepatch, <code>needrestart</code>.</li>
+        <li><strong>Red Hat, <em>Managing the kernel</em></strong> &mdash;
+        <code>grubby</code>, <code>dnf</code>, <code>kpatch</code>,
+        <code>kdump</code> e <code>installonly_limit</code>.</li>
+        <li><strong>Fedora, <em>Kernel</em></strong> &mdash; aggiornamenti,
+        <code>akmods</code> e Secure Boot.</li>
+        <li><strong>Arch Wiki, <em>Kernel</em></strong> &mdash; moduli,
+        <code>mkinitcpio</code>, parametri e compilazione.</li>
+        <li><strong>DKMS, <em>Documentation</em></strong> &mdash; stato,
+        ricostruzione e log dei moduli esterni.</li>
+        <li><strong><code>mokutil</code>, <code>sbctl</code> e
+        <code>kmodsign</code></strong> &mdash; enrollment delle chiavi e firma
+        dei moduli.</li>
+      </ul>
+      <p>
+        Versioni verificate il 14 novembre 2026: stable 7.3.4 (10 novembre
+        2026), longterm 6.18.63 e 6.12.117, kernel 7.0 uscito il 12 aprile
+        2026, PREEMPT_RT nel mainline dalla 6.12. Prima di aggiornare un
+        sistema in produzione, controlla le note della distribuzione: le patch
+        e le versioni dei pacchetti contano pi&ugrave; del numero di
+        kernel.org.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Linux</span>
+        <span class="footer-right">
+          <span>Kernel e gestione &middot; aggiornata il 14 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

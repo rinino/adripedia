@@ -27,7 +27,9 @@ adripedia/
 │  │  ├─ agenti.html          # agenti e orchestrazione: pattern, gerarchia, costi, affidabilità
 │  │  └─ laboratorio.html     # otto esercizi neutrali con passi, risultato atteso e varianti
 │  ├─ linux/                  # sezione Linux
-│  │  └─ index.html           # panoramica: storia, kernel/userland/distribuzione, famiglie, criteri di scelta
+│  │  ├─ index.html           # panoramica: storia, kernel/userland/distribuzione, famiglie, criteri di scelta
+│  │  ├─ installazione.html   # installazione da terminale: Mint e Kali, ISO, USB, partizioni, preseed, debootstrap
+│  │  └─ kernel.html          # kernel e gestione: versioni, moduli, parametri, initramfs, DKMS, Secure Boot, diagnostica
 │  ├─ git/                    # sezione Git
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi, esempi e ricette
 │  ├─ docker/                 # sezione Docker
@@ -117,7 +119,8 @@ diagnostica. La sezione AI fa eccezione: è una pagina introduttiva discorsiva,
 con indice interno e glossario cercabile, più sei approfondimenti senza tab
 (`modelli`, `prompt`, `skill`, `mcp`, `agenti`, `laboratorio`). Anche Linux è
 una sezione a pagine separate: la panoramica è discorsiva, le pagine tecniche
-arrivano una alla volta e non usano tab.
+non usano tab. Sono pubblicate la panoramica, l'installazione da riga di comando
+e il kernel; le altre arrivano una alla volta.
 
 ```html
 <div class="tabs" data-tabs>
@@ -400,24 +403,32 @@ pagine.
 
 ## Mappa della sezione Linux
 
-La sezione è a pagine separate, come AI. La panoramica è pubblicata; le pagine
-tecniche arrivano una alla volta e gli esempi sono separati per famiglia:
-Debian/Ubuntu e Red Hat/Fedora.
+La sezione è a pagine separate, come AI. Sono pubblicate la panoramica,
+l'installazione e il kernel; le altre pagine tecniche arrivano una alla volta e
+gli esempi sono separati per famiglia: Debian/Ubuntu e Red Hat/Fedora.
 
 - `informatica/linux/index.html`: storia del kernel e di GNU, distinzione tra
   kernel, userland e distribuzione, cinque famiglie (Debian, Red Hat, SUSE,
   Arch, indipendenti), criteri di scelta e mappa della sezione.
+- `informatica/linux/installazione.html`: verifica di ISO e firma, scrittura
+  della USB con `dd`, GPT/ESP/LUKS, installer testuale di Kali, preseed,
+  `debootstrap`, limiti dell'installer grafico di Mint e post-installazione.
+- `informatica/linux/kernel.html`: mainline/stable/LTS, `/boot` e
+  `/lib/modules`, moduli e blacklist, parametri di boot, `sysctl`, aggiornamenti
+  per famiglia, initramfs, DKMS, compilazione, Secure Boot, livepatch,
+  PREEMPT_RT e diagnostica.
 - `filesystem.html`, `processi.html`, `systemd.html`, `shell.html`,
   `rete.html`, `pacchetti.html`: le pagine tecniche di base.
 - `comandi-debian.html` e `comandi-rhel.html`: due cheat sheet con ricerca,
   una per famiglia.
 - `vi-vim.html`: guida a modalità, movimento, modifica, registri, macro,
   ricerca e sostituzione, configurazione e plugin.
-- `storage.html`, `boot-kernel.html`, `sicurezza.html`, `diagnostica.html`,
+- `storage.html`, `boot.html`, `sicurezza.html`, `diagnostica.html`,
   `laboratorio.html`: la seconda ondata.
 
-Fatti e date della panoramica sono verificati sulle fonti ufficiali al 14
-novembre 2026: kernel 7.0 (12 aprile 2026), Debian 13 trixie (9 agosto 2025),
-Ubuntu 26.04 LTS (aprile 2026), RHEL 10 (20 maggio 2025), Fedora 44 (aprile
-2026). Le versioni delle distribuzioni citate vanno ricontrollate prima di
-ogni aggiornamento.
+Fatti e date sono verificati sulle fonti ufficiali al 14 novembre 2026: kernel
+7.0 (12 aprile 2026), stable 7.3.4 (10 novembre 2026), longterm 6.18.63 e
+6.12.117, Debian 13 trixie (9 agosto 2025), Ubuntu 26.04 LTS (aprile 2026),
+RHEL 10 (20 maggio 2025), Fedora 44 (aprile 2026), Mint 22.3 (13 gennaio 2026),
+Kali 2026.3 (26 ottobre 2026, kernel 7.1.5). Le versioni delle distribuzioni
+citate vanno ricontrollate prima di ogni aggiornamento.

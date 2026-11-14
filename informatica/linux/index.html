@@ -33,18 +33,18 @@
         di quasi tutto ci&ograve; che oggi chiamiamo server, cloud, container,
         Android e, sempre pi&ugrave; spesso, desktop. Questa pagina racconta
         come &egrave; successo e come si orienta chi deve scegliere una
-        distribuzione. Le pagine tecniche della sezione arriveranno una alla
-        volta.
+        distribuzione. Le prime pagine tecniche &mdash; installazione e kernel
+        &mdash; sono gi&agrave; online; le altre arriveranno una alla volta.
       </p>
 
       <div class="callout">
         <strong>Come leggere questa sezione:</strong> la panoramica &egrave;
         discorsiva e si legge dall&rsquo;inizio alla fine: storia, pezzi del
         sistema, famiglie di distribuzioni e criteri di scelta. Le pagine
-        tecniche &mdash; file system, processi, systemd, shell, rete, pacchetti,
-        comandi per Debian e per Red Hat, vi e Vim, storage, boot, sicurezza,
-        diagnostica e laboratorio &mdash; sono in preparazione e verranno
-        pubblicate una alla volta. La
+        tecniche &mdash; installazione e kernel sono gi&agrave; online; file
+        system, processi, systemd, shell, rete, pacchetti, comandi per Debian
+        e per Red Hat, vi e Vim, storage, boot, sicurezza, diagnostica e
+        laboratorio arriveranno una alla volta. La
         <a href="#mappa">mappa della sezione</a> dice cosa conterr&agrave;
         ognuna.
       </div>
@@ -494,6 +494,11 @@
               <td>Pubblicata</td>
             </tr>
             <tr>
+              <td><a href="installazione.html">Installazione da riga di comando</a></td>
+              <td>Verifica di ISO e firma, USB con <code>dd</code>, GPT/ESP/LUKS, installer testuale Kali, preseed, debootstrap, Mint e post-installazione.</td>
+              <td>Pubblicata</td>
+            </tr>
+            <tr>
               <td>File system e permessi</td>
               <td>FHS, inode, link, permessi POSIX e speciali, ACL, mount, ext4/XFS/Btrfs/overlayfs.</td>
               <td>In preparazione</td>
@@ -544,8 +549,13 @@
               <td>In preparazione</td>
             </tr>
             <tr>
-              <td>Boot e kernel</td>
-              <td>UEFI, GRUB, initramfs, parametri del kernel, moduli, Secure Boot, recovery.</td>
+              <td><a href="kernel.html">Kernel e gestione</a></td>
+              <td>Mainline/stable/LTS, moduli, parametri di boot, <code>sysctl</code>, aggiornamenti, initramfs, DKMS, compilazione, Secure Boot, livepatch, realtime, diagnostica.</td>
+              <td>Pubblicata</td>
+            </tr>
+            <tr>
+              <td>Boot</td>
+              <td>UEFI, GRUB, systemd-boot, initramfs, Secure Boot e recovery.</td>
               <td>In preparazione</td>
             </tr>
             <tr>
@@ -577,6 +587,13 @@
         <a href="../kubernetes/index.html">Kubernetes</a>. Per la gestione dei
         sorgenti e delle configurazioni, <a href="../git/index.html">Git</a> ha
         una parte dedicata all&rsquo;installazione su Linux.
+      </p>
+      <p>
+        Se devi preparare una macchina da zero, la pagina
+        <a href="installazione.html">Installazione da riga di comando</a> copre
+        Mint e Kali, dalla verifica della ISO al primo avvio. Per aggiornare,
+        compilare, firmare o riparare il kernel, il riferimento &egrave;
+        <a href="kernel.html">Kernel e gestione</a>.
       </p>
     </main>
 

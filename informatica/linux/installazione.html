@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Installazione da riga di comando — Adripedia</title>
+  <meta name="description" content="Installare Linux Mint e Kali Linux da riga di comando: verifica della ISO e della firma, scrittura della USB con dd, partizionamento GPT e LUKS, installer testuale Kali, preseed, debootstrap e post-installazione.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/installazione.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Installazione</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; Linux</p>
+      <h1>Installazione da riga di comando</h1>
+      <p class="lead">
+        &ldquo;Installare da terminale&rdquo; vuol dire due cose diverse a
+        seconda della distribuzione. Kali Linux ha un installer testuale
+        ufficiale e si pu&ograve; automatizzare con preseed o costruire con
+        <code>debootstrap</code>. Linux Mint, invece, installer ufficiale solo
+        grafico: da terminale si fanno verifica, scrittura della USB,
+        partizionamento e post-installazione, ma il wizard resta grafico.
+        Questa pagina copre entrambe le strade e dice con chiarezza dove
+        finisce ci&ograve; che &egrave; supportato e comincia il lavoro manuale.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> La parte davvero critica non &egrave; il
+          wizard: &egrave; ci&ograve; che succede prima e dopo. Verificare
+          l&rsquo;immagine, scriverla sul dispositivo giusto, preparare GPT,
+          ESP e swap, poi rifinire il sistema. Sono tutti passi da terminale,
+          e sono quelli che distinguono un&rsquo;installazione che regge da una
+          che si rompe al primo aggiornamento.
+        </p>
+      </div>
+
+      <nav class="section-index" aria-labelledby="installazione-index-title">
+        <p class="section-index-title" id="installazione-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#limiti">Che cosa si pu&ograve; fare da terminale</a></li>
+          <li><a href="#immagine">Scegliere e verificare l&rsquo;immagine</a></li>
+          <li><a href="#usb">Scrivere la USB</a></li>
+          <li><a href="#partizioni">Partizionare: GPT, ESP e swap</a></li>
+          <li><a href="#kali-testuale">Kali: l&rsquo;installer testuale</a></li>
+          <li><a href="#kali-preseed">Kali: preseed e installazioni ripetibili</a></li>
+          <li><a href="#kali-debootstrap">Kali: debootstrap e chroot</a></li>
+          <li><a href="#mint">Mint: wizard grafico, terminale per il resto</a></li>
+          <li><a href="#post">Post-installazione, per entrambe</a></li>
+          <li><a href="#errori">Errori comuni</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="limiti">Che cosa si pu&ograve; fare da terminale</h2>
+      <p>
+        Un installer testuale non &egrave; un installer &ldquo;senza
+        interfaccia&rdquo;: &egrave; un programma a schermo intero che pone
+        domande a riga di comando, e che quindi funziona anche su una console
+        seriale, in una macchina virtuale senza desktop o in un ambiente di
+        automazione. &Egrave; il caso di Kali, che usa il
+        <code>debian-installer</code> (d-i) con una modalit&agrave; testuale
+        accanto a quella grafica.
+      </p>
+      <p>
+        Mint non offre nulla di equivalente. L&rsquo;installer ufficiale
+        &egrave; Ubiquity, un wizard grafico; non esiste un&rsquo;immagine
+        &ldquo;netinst&rdquo; testuale e non c&rsquo;&egrave; un preseed
+        documentato per Mint. Chi ha bisogno di un&rsquo;installazione
+        automatica di Mint deve scegliere un&rsquo;altra strada: clonare un
+        sistema gi&agrave; installato, usare LMDE (che eredita il d-i di
+        Debian) oppure accettare che una base Ubuntu con i repository Mint non
+        &egrave; Mint.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Attivit&agrave;</th><th>Linux Mint 22.3</th><th>Kali Linux 2026.3</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Installer ufficiale</td>
+              <td>Ubiquity, solo grafico</td>
+              <td><code>debian-installer</code>, grafico o testuale</td>
+            </tr>
+            <tr>
+              <td>Installazione da console seriale</td>
+              <td>Non supportata</td>
+              <td>S&igrave;, con &ldquo;Install&rdquo; o expert install</td>
+            </tr>
+            <tr>
+              <td>Automazione con file di risposte</td>
+              <td>Non documentata</td>
+              <td>Preseed, con esempi ufficiali</td>
+            </tr>
+            <tr>
+              <td>Costruzione di una base minimale</td>
+              <td>Solo indirettamente, via Ubuntu</td>
+              <td><code>debootstrap</code> su <code>kali-rolling</code></td>
+            </tr>
+            <tr>
+              <td>Partizionamento da terminale</td>
+              <td>S&igrave;</td>
+              <td>S&igrave;</td>
+            </tr>
+            <tr>
+              <td>Post-installazione da terminale</td>
+              <td>S&igrave;</td>
+              <td>S&igrave;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <p>
+          <strong>Prima di cominciare.</strong> Un&rsquo;installazione cancella
+          dati. Controlla due volte il nome del disco con
+          <code>lsblk -o NAME,SIZE,MODEL,SERIAL,TRAN</code>, scollega le unit&agrave;
+          che non vuoi toccare e tieni un backup verificato. I comandi di questa
+          pagina usano nomi di esempio (<code>/dev/nvme0n1</code>,
+          <code>/dev/sdX</code>): sostituiscili con i tuoi, non copiarli alla
+          cieca.
+        </p>
+      </div>
+
+      <h2 id="immagine">Scegliere e verificare l&rsquo;immagine</h2>
+      <p>
+        Le due distribuzioni hanno cicli diversi. Linux Mint 22.3
+        &laquo;Zena&raquo; &egrave; uscita il 13 gennaio 2026, si basa su Ubuntu
+        24.04 LTS e riceve aggiornamenti fino ad aprile 2029; le ISO normali
+        usano il kernel 6.14, mentre le ISO HWE pubblicate pi&ugrave; tardi
+        portano il kernel 7.0 per l&rsquo;hardware recente. Kali 2026.3 &egrave;
+        uscita il 26 ottobre 2026, &egrave; rolling su base Debian testing e
+        include il kernel 7.1.5.
+      </p>
+      <p>
+        Scarica solo dai siti ufficiali o dai mirror elencati:
+        <code>linuxmint.com</code> per Mint, <code>kali.org</code> per Kali.
+        Un torrent ufficiale &egrave; spesso pi&ugrave; veloce e verifica i
+        blocchi durante il download, ma la somma SHA256 va controllata lo
+        stesso. Le immagini che servono sono:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Distribuzione</th><th>Immagine</th><th>Uso</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mint 22.3 Cinnamon</td>
+              <td><code>linuxmint-22.3-cinnamon-64bit.iso</code></td>
+              <td>Desktop completo, installer grafico</td>
+            </tr>
+            <tr>
+              <td>Mint 22.3 HWE</td>
+              <td>ISO HWE con kernel 7.0</td>
+              <td>Hardware molto recente</td>
+            </tr>
+            <tr>
+              <td>Kali 2026.3 installer</td>
+              <td><code>kali-linux-2026.3-installer-amd64.iso</code></td>
+              <td>Installazione completa offline</td>
+            </tr>
+            <tr>
+              <td>Kali 2026.3 netinst</td>
+              <td><code>kali-linux-2026.3-installer-netinst-amd64.iso</code></td>
+              <td>Base minima, pacchetti dalla rete</td>
+            </tr>
+            <tr>
+              <td>Kali 2026.3 live</td>
+              <td><code>kali-linux-2026.3-live-amd64.iso</code></td>
+              <td>Prova senza installare; le modifiche non persistono</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>La somma SHA256</h3>
+      <p>
+        La somma dice che il file &egrave; integro, non che &egrave; autentico:
+        per quello serve la firma GPG. Su Linux, nella cartella del download:
+      </p>
+      <pre><code># Mint: il file delle somme e la sua firma sono scaricati accanto alla ISO
+sha256sum -c sha256sum.txt
+
+# Kali: il file SHA256SUMS contiene anche le immagini che non hai scaricato
+sha256sum -c SHA256SUMS --ignore-missing</code></pre>
+      <p>
+        Su Windows, da PowerShell, il comando equivalente &egrave;
+        <code>Get-FileHash .\immagine.iso -Algorithm SHA256</code>; il valore
+        restituito va confrontato a mano con quello pubblicato. In alternativa
+        <code>certutil -hashfile immagine.iso SHA256</code>.
+      </p>
+
+      <h3>La firma GPG</h3>
+      <p>
+        Mint firma il file delle somme con la propria chiave di firma delle ISO.
+        La chiave storica ha impronta
+        <code>27DEB15644C6B3CF3BD7D291300F846BA25BAE09</code>: importala da un
+        keyserver, verifica che l&rsquo;impronta corrisponda e controlla la
+        firma.
+      </p>
+      <pre><code>gpg --keyserver keyserver.ubuntu.com \
+  --recv-key 27DEB15644C6B3CF3BD7D291300F846BA25BAE09
+gpg --fingerprint 27DEB15644C6B3CF3BD7D291300F846BA25BAE09
+gpg --verify sha256sum.txt.gpg sha256sum.txt</code></pre>
+      <p>
+        Kali pubblica la chiave dell&rsquo;archivio e firma <code>SHA256SUMS</code>.
+        Il controllo completo &egrave; in tre passi: importare la chiave,
+        verificare il file delle somme, verificare la ISO con quelle somme.
+      </p>
+      <pre><code>wget https://archive.kali.org/archive-key.asc
+gpg --import archive-key.asc
+gpg --verify SHA256SUMS.gpg SHA256SUMS
+sha256sum -c SHA256SUMS --ignore-missing</code></pre>
+      <div class="callout ok">
+        <p>
+          <strong>Regola.</strong> Se la firma non &egrave; valida, non
+          &ldquo;aggirare&rdquo; il problema: riscarica l&rsquo;immagine da un
+          altro mirror ufficiale. Una ISO alterata &egrave; un problema di
+          sicurezza, non un fastidio da superare.
+        </p>
+      </div>
+
+      <h2 id="usb">Scrivere la USB</h2>
+      <p>
+        Individua il dispositivo con <code>lsblk</code>. La colonna
+        <code>TRAN</code> dice se &egrave; USB, <code>SIZE</code> aiuta a
+        riconoscerla e <code>MODEL</code> toglie gli ultimi dubbi. Smonta le
+        partizioni eventualmente montate, poi scrivi sull&rsquo;intero
+        dispositivo, non su una sua partizione.
+      </p>
+      <pre><code>lsblk -o NAME,SIZE,MODEL,SERIAL,TRAN,MOUNTPOINTS
+sudo umount /dev/sdX?* 2&gt;/dev/null
+
+# of= indica il DISCO, non la partizione: /dev/sdX, non /dev/sdX1
+sudo dd if=linuxmint-22.3-cinnamon-64bit.iso of=/dev/sdX \
+  bs=4M status=progress oflag=sync conv=fsync
+sync</code></pre>
+      <p>
+        <code>oflag=sync</code> rende la scrittura pi&ugrave; lenta ma evita di
+        staccare la chiavetta mentre la cache sta ancora lavorando. Per Kali
+        il comando &egrave; identico, cambia solo il nome del file. Su Windows
+        si usano Rufus, balenaEtcher o Ventoy; con Ventoy basta copiare la ISO
+        nella partizione dati, senza scriverla con <code>dd</code>. Mint ha
+        anche un proprio &ldquo;USB Image Writer&rdquo; nel menu.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Errore classico.</strong> Scrivere su <code>/dev/sdX1</code>
+          invece che su <code>/dev/sdX</code> produce una USB che non avvia.
+          Un altro classico &egrave; scegliere il disco sbagliato:
+          <code>dd</code> non chiede conferma e non ha un cestino.
+        </p>
+      </div>
+
+      <h2 id="partizioni">Partizionare: GPT, ESP e swap</h2>
+      <p>
+        Su un sistema UEFI servono una tabella GPT e una partizione EFI System
+        Partition (ESP) in FAT32, montata in <code>/boot/efi</code>. La presenza
+        dell&rsquo;EFI si controlla con
+        <code>test -d /sys/firmware/efi &amp;&amp; echo UEFI</code>. Una
+        dimensione ragionevole per l&rsquo;ESP &egrave; 512 MiB&ndash;1 GiB:
+        contiene bootloader, firmware e, su alcune distribuzioni, immagini del
+        kernel.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Partizione</th><th>Dimensione tipica</th><th>File system</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ESP</td>
+              <td>512 MiB&ndash;1 GiB</td>
+              <td>FAT32</td>
+              <td>Flag <code>esp</code>; montata in <code>/boot/efi</code></td>
+            </tr>
+            <tr>
+              <td>Root</td>
+              <td>30&ndash;60 GiB</td>
+              <td>ext4 o Btrfs</td>
+              <td>Contiene il sistema; Btrfs abilita gli snapshot</td>
+            </tr>
+            <tr>
+              <td>Home</td>
+              <td>Il resto, o separata</td>
+              <td>ext4</td>
+              <td>Utile per reinstallare senza perdere i dati</td>
+            </tr>
+            <tr>
+              <td>Swap</td>
+              <td>2&ndash;8 GiB, o pari alla RAM</td>
+              <td>swap</td>
+              <td>Pari alla RAM solo se serve l&rsquo;ibernazione</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Esempio con <code>parted</code> su un disco NVMe, con ESP da 512 MiB e
+        root che occupa il resto. I numeri sono in MiB e l&rsquo;allineamento
+        parte da 1 MiB, come raccomandato per i dischi moderni.
+      </p>
+      <pre><code>sudo parted -s /dev/nvme0n1 mklabel gpt
+sudo parted -s /dev/nvme0n1 mkpart ESP fat32 1MiB 513MiB
+sudo parted -s /dev/nvme0n1 set 1 esp on
+sudo parted -s /dev/nvme0n1 mkpart root ext4 513MiB 100%
+
+sudo mkfs.fat -F32 /dev/nvme0n1p1
+sudo mkfs.ext4 -L root /dev/nvme0n1p2
+
+sudo mkdir -p /mnt/boot/efi
+sudo mount /dev/nvme0n1p2 /mnt
+sudo mount /dev/nvme0n1p1 /mnt/boot/efi
+blkid</code></pre>
+      <p>
+        Per lo swap ci sono due strade. Una partizione dedicata si crea con
+        <code>mkswap</code> e si attiva con <code>swapon</code>; un file di
+        swap &egrave; pi&ugrave; flessibile e si crea dopo aver montato il
+        root. Su sistemi con molta RAM si pu&ograve; usare <code>zram</code>
+        (swap compresso in memoria) e lasciare lo swap su disco solo per
+        l&rsquo;ibernazione.
+      </p>
+      <pre><code># Partizione swap
+sudo mkswap -L swap /dev/nvme0n1p3
+sudo swapon /dev/nvme0n1p3
+
+# Oppure swapfile da 8 GiB dentro il root gi&agrave; montato
+sudo fallocate -l 8G /mnt/swapfile
+sudo chmod 600 /mnt/swapfile
+sudo mkswap /mnt/swapfile
+sudo swapon /mnt/swapfile</code></pre>
+
+      <h3>Root cifrato con LUKS2</h3>
+      <p>
+        Se il disco &egrave; portatile o contiene dati sensibili, cifra il root
+        con LUKS2. L&rsquo;installer di Kali lo propone nella modalit&agrave;
+        &ldquo;guided &mdash; encrypted LVM&rdquo;; da terminale la sequenza
+        &egrave; questa. <code>cryptsetup</code> usa LUKS2 come formato
+        predefinito nelle versioni recenti.
+      </p>
+      <pre><code>sudo cryptsetup luksFormat /dev/nvme0n1p2
+sudo cryptsetup open /dev/nvme0n1p2 cryptroot
+sudo mkfs.ext4 -L root /dev/mapper/cryptroot
+sudo mount /dev/mapper/cryptroot /mnt
+
+# /etc/crypttab, dentro il sistema installato
+cryptroot UUID=&lt;uuid-del-disco&gt; none luks,discard</code></pre>
+      <p>
+        <code>discard</code> passa i TRIM al disco ma pu&ograve; rivelare quali
+        blocchi sono in uso: su un SSD vale la pena, su un disco condiviso
+        valuta tu. La passphrase non si recupera: se la perdi, i dati sono
+        persi. Aggiungi una seconda chiave con
+        <code>cryptsetup luksAddKey /dev/nvme0n1p2</code> e conservala in un
+        posto separato.
+      </p>
+
+      <h2 id="kali-testuale">Kali: l&rsquo;installer testuale</h2>
+      <p>
+        Avviando la ISO installer compare il menu del <code>debian-installer</code>.
+        Le voci utili sono <strong>Graphical install</strong>,
+        <strong>Install</strong> (testuale) e <strong>Advanced options</strong>,
+        che contiene expert install, rescue mode e le varianti text-only. La
+        modalit&agrave; &ldquo;Install&rdquo; &egrave; quella da usare su una
+        console seriale o quando la scheda video non collabora.
+      </p>
+      <ol>
+        <li><strong>Lingua, paese, tastiera.</strong> La lingua del sistema
+        installato non &egrave; la lingua del installer: scegli con calma.</li>
+        <li><strong>Rete.</strong> DHCP &egrave; la scelta normale; in un
+        laboratorio con IP statici servono indirizzo, maschera, gateway e DNS.
+        Il mirror predefinito &egrave; <code>http.kali.org</code>.</li>
+        <li><strong>Nome e dominio.</strong> Evita nomi generici come
+        <code>kali</code> in una rete condivisa; il dominio pu&ograve; restare
+        vuoto in laboratorio.</li>
+        <li><strong>Utenti.</strong> L&rsquo;installer crea un utente normale e
+        chiede la password di root. Kali non usa la password
+        <code>toor</code> dell&rsquo;immagine live: quella &egrave; solo della
+        live.</li>
+        <li><strong>Orologio.</strong> UTC s&igrave;, fuso orario
+        <code>Europe/Rome</code> se sei in Italia. Su un dual boot con Windows
+        la scelta UTC evita il classico salto di due ore.</li>
+        <li><strong>Partizioni.</strong> Guided su disco intero, guided con
+        LVM cifrato, oppure manuale se hai gi&agrave; preparato GPT e LUKS.
+        &ldquo;Use entire disk&rdquo; cancella tutto: controlla il nome del
+        disco nella schermata di conferma.</li>
+        <li><strong>Software.</strong> Scegli l&rsquo;ambiente desktop (Xfce
+        &egrave; il predefinito storico di Kali, ma ci sono GNOME, KDE Plasma e
+        altri) e i metapacchetti Kali. Per un sistema minimale deseleziona il
+        desktop e installa dopo <code>kali-linux-headless</code>.</li>
+        <li><strong>GRUB.</strong> Su UEFI va installato nella ESP; su BIOS nel
+        MBR del disco. Se il installer non vede altri sistemi, il menu di GRUB
+        conterr&agrave; solo Kali.</li>
+        <li><strong>Riavvio.</strong> Rimuovi la USB e avvia dal disco. I log
+        dell&rsquo;installazione restano in <code>/var/log/installer/</code>,
+        utilissimi se qualcosa non ha funzionato.</li>
+      </ol>
+      <div class="callout">
+        <p>
+          <strong>Testuale non significa silenzioso.</strong> Il d-i scrive in
+          <code>/var/log/installer/syslog</code> e
+          <code>/var/log/installer/partman</code>. Se l&rsquo;installazione si
+          ferma, passa alla console 4 con <kbd>Alt</kbd>+<kbd>F4</kbd> (o
+          <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F4</kbd>) e leggi il log invece
+          di riavviare alla cieca.
+        </p>
+      </div>
+
+      <h2 id="kali-preseed">Kali: preseed e installazioni ripetibili</h2>
+      <p>
+        Il preseed &egrave; un file di testo che risponde in anticipo alle
+        domande del <code>debian-installer</code>. &Egrave; il modo ufficiale
+        per installare Kali senza interazione: utile per laboratori, macchine
+        virtuali e immagini da distribuire. Kali mantiene esempi aggiornati nel
+        repository GitLab <code>kalilinux/recipes/kali-preseed-examples</code>.
+      </p>
+      <p>
+        Un preseed minimo per una VM con disco <code>/dev/vda</code>:
+      </p>
+      <pre><code># Localizzazione
+d-i debian-installer/locale string en_US.UTF-8
+d-i keyboard-configuration/xkb-keymap select us
+
+# Rete
+d-i netcfg/choose_interface select auto
+d-i netcfg/get_hostname string kali-lab
+d-i netcfg/get_domain string lab.local
+
+# Utenti: in produzione usa password cifrate, non in chiaro
+d-i passwd/user-fullname string Kali Lab
+d-i passwd/username string kali
+d-i passwd/user-password password CambiamiSubito
+d-i passwd/user-password-again password CambiamiSubito
+
+# Orologio
+d-i clock-setup/utc boolean true
+d-i time/zone string Europe/Rome
+
+# Disco: cancella il primo disco e usa una sola partizione
+d-i partman-auto/disk string /dev/vda
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select atomic
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+# Pacchetti e bootloader
+d-i pkgsel/include string openssh-server
+d-i grub-installer/only_debian boolean true
+d-i finish-install/reboot_in_progress note</code></pre>
+      <p>
+        Il file si pu&ograve; servire via HTTP e passare al kernel con
+        <code>auto=true priority=critical url=http://192.0.2.10/preseed.cfg</code>,
+        oppure mettere nella radice della USB e indicare
+        <code>file=/preseed.cfg</code>. Gli esempi ufficiali mostrano anche
+        come incorporarlo nell&rsquo;ISO. Per un controllo pi&ugrave; fine si
+        usa <code>late_command</code>, che esegue comandi alla fine
+        dell&rsquo;installazione:
+      </p>
+      <pre><code>d-i preseed/late_command string \
+  in-target systemctl enable ssh; \
+  in-target apt-get update</code></pre>
+      <div class="callout warn">
+        <p>
+          <strong>Il preseed contiene segreti.</strong> Password in chiaro,
+          chiavi SSH e token non vanno in un repository pubblico. Servi il file
+          via HTTPS, limita l&rsquo;accesso e cambia le password al primo
+          accesso. Meglio ancora, usa
+          <code>passwd/user-password-crypted</code> con un hash
+          <code>$6$...</code> generato da <code>mkpasswd</code> o
+          <code>openssl passwd -6</code>.
+        </p>
+      </div>
+
+      <h2 id="kali-debootstrap">Kali: debootstrap e chroot</h2>
+      <p>
+        <code>debootstrap</code> costruisce un sistema Debian (o derivato) in
+        una directory, senza avviare un installer. Serve per chroot, container,
+        immagini minime e installazioni personalizzate. Con Kali il suite
+        &egrave; <code>kali-rolling</code> e il mirror
+        <code>https://http.kali.org/kali</code>. Il pacchetto
+        <code>kali-archive-keyring</code> va incluso, altrimenti
+        <code>apt</code> non si fida del repository. Se <code>debootstrap</code>
+        non trova la chiave, installa <code>kali-archive-keyring</code> sul
+        sistema host e aggiungi
+        <code>--keyring=/usr/share/keyrings/kali-archive-keyring.gpg</code>.
+      </p>
+      <pre><code>sudo apt install debootstrap
+sudo mkdir -p /mnt/kali
+sudo debootstrap --arch=amd64 --variant=minbase \
+  --include=kali-archive-keyring,kali-linux-core \
+  kali-rolling /mnt/kali https://http.kali.org/kali
+
+sudo mount --bind /dev /mnt/kali/dev
+sudo mount --bind /dev/pts /mnt/kali/dev/pts
+sudo mount -t proc proc /mnt/kali/proc
+sudo mount -t sysfs sys /mnt/kali/sys
+sudo cp /etc/resolv.conf /mnt/kali/etc/resolv.conf
+sudo chroot /mnt/kali /bin/bash</code></pre>
+      <p>
+        Dentro il chroot vanno completati i pezzi che l&rsquo;installer
+        farebbe da solo: utenti, password, fuso orario, kernel, initramfs,
+        bootloader e <code>/etc/fstab</code>. La ESP va montata in
+        <code>/boot/efi</code> prima di <code>grub-install</code>. Un esempio
+        essenziale:
+      </p>
+      <pre><code>export DEBIAN_FRONTEND=noninteractive
+apt update
+apt install -y kali-linux-core linux-image-amd64 initramfs-tools \
+  grub-efi-amd64 sudo
+
+passwd root
+adduser kali
+usermod -aG sudo kali
+
+update-initramfs -u -k all
+grub-install --target=x86_64-efi \
+  --efi-directory=/boot/efi --bootloader-id=Kali
+update-grub</code></pre>
+      <p>
+        Per un sistema con strumenti ma senza desktop, il metapacchetto giusto
+        &egrave; <code>kali-linux-headless</code>; per l&rsquo;esperienza
+        completa <code>kali-linux-default</code>. Il chroot non &egrave;
+        un&rsquo;installazione ufficiale: <code>fstab</code>, initramfs,
+        bootloader e configurazione della rete sono a tuo carico. Se vuoi
+        qualcosa di pi&ugrave; veloce di <code>debootstrap</code>, esiste
+        <code>mmdebstrap</code>, compatibile con gli stessi repository.
+      </p>
+
+      <h2 id="mint">Mint: wizard grafico, terminale per il resto</h2>
+      <p>
+        Su Mint il terminale serve prima e dopo, non durante. Dalla live si
+        pu&ograve; aprire un terminale e lanciare l&rsquo;installer con
+        <code>ubiquity</code>, ma la procedura resta grafica: lingua,
+        tastiera, rete, partizioni, utente, bootloader. Se la sessione grafica
+        non parte, si avvia la live in modalit&agrave; compatibilit&agrave; e si
+        aggiunge <code>nomodeset</code> al boot.
+      </p>
+      <p>
+        Un flusso realistico &egrave; questo: verifica la ISO, scrivi la USB,
+        avvia la live, apri il terminale, controlla i dischi con
+        <code>lsblk</code>, prepara eventualmente le partizioni con
+        <code>parted</code> (lasciando a Ubiquity il compito di formattare e
+        montare), lancia <code>ubiquity</code> e completa il wizard. Dopo il
+        riavvio, il terminale torna utile per aggiornamenti, driver, firewall,
+        snapshot e backup.
+      </p>
+      <pre><code># Nella live, prima del wizard
+lsblk -o NAME,SIZE,MODEL,SERIAL,TRAN,MOUNTPOINTS
+sudo ubiquity
+
+# Dopo il primo avvio
+sudo apt update
+sudo apt full-upgrade
+mintdrivers
+mintreport</code></pre>
+      <p>
+        <strong>Automazione: cosa non c&rsquo;&egrave;.</strong> Mint non
+        documenta un preseed o un kickstart per Ubiquity. Le alternative
+        oneste sono tre: clonare un&rsquo;installazione gi&agrave; configurata
+        con Clonezilla o <code>dd</code>; usare LMDE 7, che &egrave; basata su
+        Debian 13 e quindi eredita il <code>debian-installer</code> e il
+        preseed; oppure partire da Ubuntu con <code>debootstrap</code> e
+        aggiungere i repository Mint. Quest&rsquo;ultima strada d&agrave;
+        &ldquo;Ubuntu con pezzi di Mint&rdquo;, non un Mint vero: va bene per
+        un laboratorio, non per distribuire un&rsquo;immagine ufficiale.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Se ti serve solo il desktop.</strong> Mint &egrave; pensata
+          per essere installata con il wizard. Forzare un&rsquo;installazione
+          testuale significa rinunciare al supporto e ricostruire a mano
+          configurazioni che Mint d&agrave; per scontate. Scegliere un&rsquo;altra
+          distribuzione &egrave; spesso la decisione tecnicamente migliore.
+        </p>
+      </div>
+
+      <h2 id="post">Post-installazione, per entrambe</h2>
+      <p>
+        Il sistema appena installato &egrave; una base, non un sistema finito.
+        I passi seguenti valgono per entrambe le distribuzioni, con le
+        differenze segnalate. L&rsquo;ordine conta: prima gli aggiornamenti,
+        poi firmware e driver, poi sicurezza e backup.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Passo</th><th>Comando</th><th>Perch&eacute;</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Aggiornamenti</td>
+              <td><code>sudo apt update &amp;&amp; sudo apt full-upgrade</code></td>
+              <td>Allinea il sistema ai repository</td>
+            </tr>
+            <tr>
+              <td>Firmware</td>
+              <td><code>sudo fwupdmgr refresh &amp;&amp; sudo fwupdmgr get-updates</code></td>
+              <td>Aggiorna BIOS, SSD, dock e periferiche</td>
+            </tr>
+            <tr>
+              <td>Orologio</td>
+              <td><code>sudo timedatectl set-ntp true</code></td>
+              <td>Evita errori di TLS, log e backup</td>
+            </tr>
+            <tr>
+              <td>Locale</td>
+              <td><code>sudo locale-gen it_IT.UTF-8</code></td>
+              <td>Accenti, formati e ordinamento corretti</td>
+            </tr>
+            <tr>
+              <td>Firewall</td>
+              <td><code>sudo ufw enable</code></td>
+              <td>Chiude le porte in ascolto non necessarie</td>
+            </tr>
+            <tr>
+              <td>Snapshot</td>
+              <td><code>sudo timeshift --create</code></td>
+              <td>Punto di ripristino prima di sperimentare</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Base comune Debian/Ubuntu/Mint/Kali
+sudo apt update
+sudo apt full-upgrade
+sudo apt install build-essential curl git htop
+sudo timedatectl set-ntp true
+sudo locale-gen it_IT.UTF-8
+sudo localectl set-locale LANG=it_IT.UTF-8
+sudo hostnamectl set-hostname lab-linux
+
+# Firewall: Mint lo include, Kali spesso no
+sudo apt install ufw
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw enable
+sudo ufw status verbose
+
+# Snapshot e backup
+sudo timeshift --create --comments "post-installazione" --tags D
+sudo rsync -aAXH --delete /home/ /mnt/backup/home/</code></pre>
+      <p>
+        Su Mint, <code>mintdrivers</code> e <code>mintupdate</code> fanno parte
+        del sistema: il primo propone i driver proprietari, il secondo gestisce
+        gli aggiornamenti con un&rsquo;interfaccia pi&ugrave; chiara di
+        <code>apt</code>. Su Kali, <code>kali-tweaks</code> raccoglie le
+        impostazioni tipiche (shell, tema, repository, metapacchetti) e
+        <code>kali-linux-default</code> installa il set completo degli
+        strumenti. Su entrambe, <code>needrestart</code> o il file
+        <code>/var/run/reboot-required</code> dicono se serve un riavvio dopo
+        un aggiornamento del kernel.
+      </p>
+      <p>
+        Se il sistema &egrave; un dual boot con Windows, imposta
+        <code>timedatectl set-local-rtc 0</code> per tenere l&rsquo;orologio
+        hardware in UTC: Windows lo interpreta come ora locale e mostra
+        un&rsquo;ora sbagliata, ma &egrave; un problema noto e correggibile dal
+        lato Windows. Per il resto, la regola &egrave; non montare le partizioni
+        Windows in scrittura finch&eacute; BitLocker o l&rsquo;ibernazione non
+        sono stati gestiti.
+      </p>
+      <div class="callout ok">
+        <p>
+          <strong>Prima di usare Kali.</strong> Gli strumenti di test di
+          penetrazione vanno usati solo su sistemi di cui hai l&rsquo;autorizzazione
+          scritta. Un laboratorio isolato, una VM o una rete di test sono
+          l&rsquo;ambiente giusto; una rete pubblica o aziendale senza permesso
+          &egrave; un reato, non un esercizio.
+        </p>
+      </div>
+
+      <h2 id="errori">Errori comuni</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Sintomo</th><th>Causa probabile</th><th>Rimedio</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>La USB non compare nel menu di boot</td>
+              <td>Scritta su una partizione, oppure Secure Boot attivo</td>
+              <td>Riscrivi su <code>/dev/sdX</code>; controlla UEFI e firma</td>
+            </tr>
+            <tr>
+              <td><code>dd: Permission denied</code></td>
+              <td>Dispositivo montato o permessi insufficienti</td>
+              <td><code>umount</code> e usa <code>sudo</code></td>
+            </tr>
+            <tr>
+              <td>GRUB non parte dopo l&rsquo;installazione</td>
+              <td>ESP non montata o bootloader sul disco sbagliato</td>
+              <td>Riavvia in chroot, monta la ESP, reinstalla GRUB</td>
+            </tr>
+            <tr>
+              <td><code>grub-install: cannot find EFI directory</code></td>
+              <td><code>/boot/efi</code> non montata nel chroot</td>
+              <td>Monta la ESP prima di <code>grub-install</code></td>
+            </tr>
+            <tr>
+              <td>Il sistema parte in modalit&agrave; grafica minima</td>
+              <td>Driver video o firmware mancante</td>
+              <td><code>nomodeset</code> al boot, poi installa i driver</td>
+            </tr>
+            <tr>
+              <td>Mint non si installa da console seriale</td>
+              <td>Ubiquity &egrave; solo grafico</td>
+              <td>Usa una console grafica, o scegli LMDE/Kali</td>
+            </tr>
+            <tr>
+              <td>Kali live &ldquo;perde&rdquo; le modifiche</td>
+              <td>Stai usando la live, non un sistema installato</td>
+              <td>Avvia l&rsquo;installer, non la live</td>
+            </tr>
+            <tr>
+              <td>Dopo l&rsquo;aggiornamento il kernel non cambia</td>
+              <td>Vecchio kernel ancora selezionato in GRUB</td>
+              <td>Riavvia e scegli la voce nuova, o rigenera GRUB</td>
+            </tr>
+            <tr>
+              <td>L&rsquo;orologio salta di due ore</td>
+              <td>Windows usa l&rsquo;ora locale, Linux UTC</td>
+              <td><code>timedatectl set-local-rtc 0</code></td>
+            </tr>
+            <tr>
+              <td><code>apt</code> bloccato da un altro processo</td>
+              <td>Aggiornamento in corso o lock rimasto</td>
+              <td>Aspetta; controlla <code>ps aux | grep apt</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Per i problemi di avvio, la pagina sul
+        <a href="kernel.html">kernel e la sua gestione</a> entra nel dettaglio di
+        parametri, initramfs, moduli e recovery. Per il partizionamento e i file
+        system, la sezione user&agrave; gli stessi concetti di GPT, ESP e
+        <code>/etc/fstab</code>.
+      </p>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Linux Mint, <em>Installation Guide</em></strong> &mdash;
+        requisiti, creazione della USB, installer grafico e primi passi.</li>
+        <li><strong>Linux Mint, <em>Release Notes 22.3 &laquo;Zena&raquo;</em></strong>
+        &mdash; base Ubuntu 24.04 LTS, kernel 6.14, supporto fino ad aprile
+        2029, ISO HWE con kernel 7.0.</li>
+        <li><strong>Kali Linux, <em>Installing Kali Linux</em></strong> &mdash;
+        installazione su disco, partizionamento, cifratura e installer.</li>
+        <li><strong>Kali Linux, <em>Downloading Kali Linux</em></strong> &mdash;
+        immagini installer, netinst e live; verifica delle firme.</li>
+        <li><strong>Kali Linux, <em>kali-preseed-examples</em></strong>
+        (GitLab) &mdash; esempi ufficiali di preseed e loro incorporamento
+        nell&rsquo;ISO.</li>
+        <li><strong>Debian, <em>Installation Guide</em></strong> &mdash;
+        <code>debian-installer</code>, preseed e partizionamento.</li>
+        <li><strong>Debian Wiki, <em>debootstrap</em></strong> &mdash;
+        costruzione di un sistema di base in una directory.</li>
+        <li><strong>GNU Parted</strong> e <strong>cryptsetup</strong> &mdash;
+        documentazione di <code>parted</code>, LUKS2 e <code>crypttab</code>.</li>
+      </ul>
+      <p>
+        Date e versioni verificate il 14 novembre 2026: Mint 22.3 (13 gennaio
+        2026), Kali 2026.3 (26 ottobre 2026, kernel 7.1.5). Prima di
+        reinstalare, controlla sempre le note di rilascio: nomi delle ISO,
+        kernel e mirror cambiano.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Linux</span>
+        <span class="footer-right">
+          <span>Installazione &middot; aggiornata il 14 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

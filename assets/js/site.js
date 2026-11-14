@@ -70,7 +70,9 @@
             {
               text: "Linux",
               children: [
-                { text: "Panoramica", href: "informatica/linux/index.html" }
+                { text: "Panoramica", href: "informatica/linux/index.html" },
+                { text: "Installazione", href: "informatica/linux/installazione.html" },
+                { text: "Kernel e gestione", href: "informatica/linux/kernel.html" }
               ]
             },
             {
