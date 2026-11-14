@@ -31,6 +31,8 @@ adripedia/
 │  │  ├─ installazione.html   # installazione da terminale: Mint e Kali, ISO, USB, partizioni, preseed, debootstrap
 │  │  ├─ kernel.html          # kernel e gestione: versioni, moduli, parametri, initramfs, DKMS, Secure Boot, diagnostica
 │  │  ├─ filesystem.html      # file system e permessi: FHS, inode, link, ACL, mount, ext4/XFS/Btrfs/overlayfs, recupero
+│  │  ├─ processi.html        # processi e risorse: fork/exec, segnali, scheduler, limiti, cgroup v2, namespace, OOM killer
+│  │  ├─ systemd.html         # systemd: unità, service, target, timer, socket, journald, boot, cgroup, hardening, casi pratici
 │  │  └─ vi-vim.html          # vi e Vim: modalità, operatori, registri, regex, macro, finestre, configurazione, plugin, recupero
 │  ├─ git/                    # sezione Git
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi, esempi e ricette
@@ -122,8 +124,8 @@ con indice interno e glossario cercabile, più sei approfondimenti senza tab
 (`modelli`, `prompt`, `skill`, `mcp`, `agenti`, `laboratorio`). Anche Linux è
 una sezione a pagine separate: la panoramica è discorsiva, le pagine tecniche
 non usano tab. Sono pubblicate la panoramica, l'installazione da riga di comando,
-il kernel, il file system e permessi e la guida a vi e Vim; le altre arrivano una
-alla volta.
+il kernel, il file system e i permessi, i processi e le risorse, systemd, e la
+guida a vi e Vim; le altre arrivano una alla volta.
 
 ```html
 <div class="tabs" data-tabs>
@@ -152,6 +154,14 @@ salta al comando scelto, evidenziato per qualche secondo. Il markup è
 `.cmd-search`; il comportamento è lo stesso modulo in `assets/js/site.js`.
 Nella pagina Git la ricerca indicizza anche il tab **Esempi** e, se il
 risultato è lì, lo apre prima di scorrere.
+
+Le pagine tecniche Linux usano lo stesso blocco `.cmd-search` senza tab: il
+`<main>` porta `data-cmd-search-scope` e la ricerca indicizza le tabelle marcate
+con `data-cmd-table`, i blocchi di codice e i titoli delle sezioni. Vale per
+`installazione.html`, `kernel.html`, `filesystem.html`, `processi.html`,
+`systemd.html` e `vi-vim.html`, e va replicato in ogni nuova pagina tecnica. La
+panoramica `informatica/linux/index.html` resta senza barra di ricerca, perché
+non contiene comandi.
 
 Il pannello **Approfondimenti** di Kubernetes apre con il glossario
 (`#glossario`) e un filtro locale (`#glossary-search-input`) che nasconde le
@@ -407,9 +417,9 @@ pagine.
 ## Mappa della sezione Linux
 
 La sezione è a pagine separate, come AI. Sono pubblicate la panoramica,
-l'installazione, il kernel, il file system e permessi e la guida a vi e Vim; le
-altre pagine tecniche arrivano una alla volta e gli esempi sono separati per
-famiglia: Debian/Ubuntu e Red Hat/Fedora.
+l'installazione, il kernel, il file system e i permessi, i processi e le risorse,
+systemd e la guida a vi e Vim; le altre pagine tecniche arrivano una alla volta e
+gli esempi sono separati per famiglia: Debian/Ubuntu e Red Hat/Fedora.
 
 - `informatica/linux/index.html`: storia del kernel e di GNU, distinzione tra
   kernel, userland e distribuzione, cinque famiglie (Debian, Red Hat, SUSE,
@@ -425,7 +435,16 @@ famiglia: Debian/Ubuntu e Red Hat/Fedora.
   timestamp, tipi di file, hard link e symlink, permessi POSIX, SUID/SGID/sticky,
   capability, ACL, xattr e `chattr`, SELinux/AppArmor, mount e `fstab`, ext4,
   XFS, Btrfs, overlayfs e tmpfs, spazio e inode, quote, manutenzione e recupero.
-- `processi.html`, `systemd.html`, `shell.html`,
+- `informatica/linux/processi.html`: fork/exec/wait, zombie e orfani, thread e
+  TID, stati, scheduler EEVDF, nice e real-time, segnali, job control, `/proc`,
+  limiti e `prlimit`, cgroup v2, namespace, memoria e OOM killer, PSI,
+  diagnostica, `strace`, `perf`, core dump, FAQ e casi pratici con soluzioni.
+- `informatica/linux/systemd.html`: PID 1 e componenti, tipi di unità e percorsi,
+  service con `Type=`, `Restart=`, `Exec*` e utenti, `systemctl`, target e
+  dipendenze, timer, socket activation e template, journald, boot e rescue,
+  cgroup e slice, hardening con `systemd-analyze security`, networkd, resolved,
+  timesyncd, FAQ e casi pratici con soluzioni.
+- `shell.html`,
   `rete.html`, `pacchetti.html`: le pagine tecniche di base.
 - `comandi-debian.html` e `comandi-rhel.html`: due cheat sheet con ricerca,
   una per famiglia.
@@ -440,6 +459,7 @@ Fatti e date sono verificati sulle fonti ufficiali al 14 novembre 2026: kernel
 7.0 (12 aprile 2026), stable 7.3.4 (10 novembre 2026), longterm 6.18.63 e
 6.12.117, Debian 13 trixie (9 agosto 2025), Ubuntu 26.04 LTS (aprile 2026),
 RHEL 10 (20 maggio 2025), Fedora 44 (aprile 2026), Mint 22.3 (13 gennaio 2026),
-Kali 2026.3 (26 ottobre 2026, kernel 7.1.5), Vim 9.2 e Neovim 0.12.6 (9
-ottobre 2026). Le versioni delle distribuzioni citate vanno ricontrollate prima
-di ogni aggiornamento.
+Kali 2026.3 (26 ottobre 2026, kernel 7.1.5), systemd upstream 262 (Debian 13
+e RHEL 10 sulla serie 257, Ubuntu 26.04 sulla serie 259), Vim 9.2 e Neovim
+0.12.6 (9 ottobre 2026). Le versioni delle distribuzioni citate vanno
+ricontrollate prima di ogni aggiornamento.

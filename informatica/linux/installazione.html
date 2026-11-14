@@ -24,7 +24,7 @@
       <span class="topbar-title">Installazione</span>
     </header>
 
-    <main id="main" class="page">
+    <main id="main" class="page" data-cmd-search-scope>
       <p class="eyebrow">Approfondimento &middot; Linux</p>
       <h1>Installazione da riga di comando</h1>
       <p class="lead">
@@ -49,9 +49,32 @@
         </p>
       </div>
 
+      <div class="cmd-search" id="cerca">
+        <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="cmd-search-input" type="search"
+                 placeholder="Per esempio: ISO, dd, preseed, LUKS&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                 aria-autocomplete="list" aria-describedby="cmd-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+          Scrivi cosa vuoi fare: la ricerca guarda comandi, descrizioni e titoli delle sezioni.
+        </p>
+        <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+            aria-label="Comandi trovati" hidden></ul>
+      </div>
+
       <nav class="section-index" aria-labelledby="installazione-index-title">
         <p class="section-index-title" id="installazione-index-title">In questa pagina</p>
         <ol>
+          <li><a href="#cerca">Cerca un comando</a></li>
           <li><a href="#limiti">Che cosa si pu&ograve; fare da terminale</a></li>
           <li><a href="#immagine">Scegliere e verificare l&rsquo;immagine</a></li>
           <li><a href="#usb">Scrivere la USB</a></li>
@@ -86,7 +109,7 @@
         Debian) oppure accettare che una base Ubuntu con i repository Mint non
         &egrave; Mint.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Attivit&agrave;</th><th>Linux Mint 22.3</th><th>Kali Linux 2026.3</th></tr>
@@ -154,7 +177,7 @@
         blocchi durante il download, ma la somma SHA256 va controllata lo
         stesso. Le immagini che servono sono:
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Distribuzione</th><th>Immagine</th><th>Uso</th></tr>
@@ -278,7 +301,7 @@ sync</code></pre>
         contiene bootloader, firmware e, su alcune distribuzioni, immagini del
         kernel.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Partizione</th><th>Dimensione tipica</th><th>File system</th><th>Note</th></tr>
@@ -598,7 +621,7 @@ mintreport</code></pre>
         differenze segnalate. L&rsquo;ordine conta: prima gli aggiornamenti,
         poi firmware e driver, poi sicurezza e backup.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Passo</th><th>Comando</th><th>Perch&eacute;</th></tr>
@@ -687,7 +710,7 @@ sudo rsync -aAXH --delete /home/ /mnt/backup/home/</code></pre>
       </div>
 
       <h2 id="errori">Errori comuni</h2>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Sintomo</th><th>Causa probabile</th><th>Rimedio</th></tr>

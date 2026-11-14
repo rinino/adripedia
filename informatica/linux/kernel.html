@@ -24,7 +24,7 @@
       <span class="topbar-title">Kernel</span>
     </header>
 
-    <main id="main" class="page">
+    <main id="main" class="page" data-cmd-search-scope>
       <p class="eyebrow">Approfondimento &middot; Linux</p>
       <h1>Il kernel e la sua gestione</h1>
       <p class="lead">
@@ -54,9 +54,32 @@
         gi&agrave; installato.
       </p>
 
+      <div class="cmd-search" id="cerca">
+        <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="cmd-search-input" type="search"
+                 placeholder="Per esempio: modulo, initramfs, sysctl, DKMS&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                 aria-autocomplete="list" aria-describedby="cmd-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+          Scrivi cosa vuoi fare: la ricerca guarda comandi, descrizioni e titoli delle sezioni.
+        </p>
+        <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+            aria-label="Comandi trovati" hidden></ul>
+      </div>
+
       <nav class="section-index" aria-labelledby="kernel-index-title">
         <p class="section-index-title" id="kernel-index-title">In questa pagina</p>
         <ol>
+          <li><a href="#cerca">Cerca un comando</a></li>
           <li><a href="#modello">Che cosa gestisce il kernel</a></li>
           <li><a href="#versioni">Mainline, stable e LTS</a></li>
           <li><a href="#anatomia">Cosa c&rsquo;&egrave; in <code>/boot</code> e <code>/lib/modules</code></a></li>
@@ -135,7 +158,7 @@ uname -a      # tutto insieme</code></pre>
         in genere almeno due anni, e vengono mantenute anche oltre quando
         servono a distribuzioni e produttori.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Ramo</th><th>Versione al 14 novembre 2026</th><th>A cosa serve</th></tr>
@@ -192,7 +215,7 @@ uname -a      # tutto insieme</code></pre>
         che il kernel carica dopo. Conoscere questi file evita di
         &ldquo;reinstallare tutto&rdquo; quando basta rigenerare un initramfs.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Percorso</th><th>Contenuto</th></tr>
@@ -401,7 +424,7 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg</code></pre>
         <code>/proc/cmdline</code> al riavvio: &egrave; l&rsquo;unica prova che
         il parametro &egrave; arrivato.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Parametro</th><th>Effetto</th><th>Quando usarlo</th></tr>
@@ -486,7 +509,7 @@ sudoedit /etc/sysctl.d/99-lab.conf
 # kernel.dmesg_restrict = 1
 sudo sysctl --system
 sudo sysctl -p /etc/sysctl.d/99-lab.conf</code></pre>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Chiave</th><th>Valore tipico</th><th>Effetto</th></tr>

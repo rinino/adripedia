@@ -24,7 +24,7 @@
       <span class="topbar-title">File system</span>
     </header>
 
-    <main id="main" class="page">
+    <main id="main" class="page" data-cmd-search-scope>
       <p class="eyebrow">Approfondimento &middot; Linux</p>
       <h1>File system e permessi</h1>
       <p class="lead">
@@ -58,9 +58,32 @@
         gestione</a>.
       </p>
 
+      <div class="cmd-search" id="cerca">
+        <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="cmd-search-input" type="search"
+                 placeholder="Per esempio: permessi, mount, inode, ACL&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                 aria-autocomplete="list" aria-describedby="cmd-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+          Scrivi cosa vuoi fare: la ricerca guarda comandi, descrizioni e titoli delle sezioni.
+        </p>
+        <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+            aria-label="Comandi trovati" hidden></ul>
+      </div>
+
       <nav class="section-index" aria-labelledby="fs-index-title">
         <p class="section-index-title" id="fs-index-title">In questa pagina</p>
         <ol>
+          <li><a href="#cerca">Cerca un comando</a></li>
           <li><a href="#fhs">La gerarchia FHS</a></li>
           <li><a href="#inode">Inode, nomi e metadati</a></li>
           <li><a href="#tipi">Tipi di file, hard link e symlink</a></li>
@@ -84,7 +107,7 @@
         mount; &egrave; la distribuzione a decidere che cosa mettere in
         <code>/usr</code> e che cosa in <code>/var</code>.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Percorso</th><th>Contenuto</th><th>Note</th></tr>
@@ -146,7 +169,7 @@ find /var -xdev -inum 1234567 2&gt;/dev/null</code></pre>
       <p>
         I timestamp hanno significati diversi e non sono intercambiabili:
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Timestamp</th><th>Quando cambia</th><th>Si pu&ograve; impostare?</th></tr>
@@ -200,7 +223,7 @@ readlink -f /usr/bin/python3</code></pre>
         dispositivi, pipe e socket sono file. Il primo carattere di
         <code>ls -l</code> dice il tipo.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Carattere</th><th>Tipo</th><th>Esempio</th></tr>
@@ -263,7 +286,7 @@ getfattr -R -d -m - /srv/app &gt; /backup/app.xattr</code></pre>
         Senza <code>x</code> una directory non si apre, anche se si conosce il
         nome esatto del file.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Ottale</th><th>Simbolico</th><th>Significato</th></tr>
@@ -330,7 +353,7 @@ find /srv -xdev -perm /u+s</code></pre>
         l&rsquo;identit&agrave; con cui un processo accede o il modo in cui una
         directory gestisce le cancellazioni.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Bit</th><th>Su un file</th><th>Su una directory</th></tr>
@@ -457,7 +480,7 @@ findmnt --verify</code></pre>
         <code>/etc/fstab</code> ha sei campi. Un errore qui pu&ograve;
         impedire il boot o far partire il sistema in emergency mode.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Campo</th><th>Significato</th><th>Esempio</th></tr>
@@ -520,7 +543,7 @@ lsof +D /mnt/app</code></pre>
         per il carico, la dimensione, la necessit&agrave; di snapshot e il
         sistema operativo che si sta usando.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>File system</th><th>Punti forti</th><th>Limiti</th><th>Uso tipico</th></tr>
@@ -780,7 +803,7 @@ sudo blkdiscard /dev/nvme0n1</code></pre>
         errori I/O; 5) solo dopo valuta <code>fsck</code> o
         <code>xfs_repair</code>.
       </p>
-      <div class="table-wrap">
+      <div class="table-wrap" data-cmd-table>
         <table>
           <thead>
             <tr><th>Sintomo</th><th>Causa probabile</th><th>Verifica</th></tr>

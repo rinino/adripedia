@@ -34,18 +34,18 @@
         Android e, sempre pi&ugrave; spesso, desktop. Questa pagina racconta
         come &egrave; successo e come si orienta chi deve scegliere una
         distribuzione. Le prime pagine tecniche &mdash; installazione, kernel,
-        file system e permessi, vi/Vim &mdash; sono gi&agrave; online; le altre
-        arriveranno una alla volta.
+        file system e permessi, processi, systemd, vi/Vim &mdash; sono
+        gi&agrave; online; le altre arriveranno una alla volta.
       </p>
 
       <div class="callout">
         <strong>Come leggere questa sezione:</strong> la panoramica &egrave;
         discorsiva e si legge dall&rsquo;inizio alla fine: storia, pezzi del
         sistema, famiglie di distribuzioni e criteri di scelta. Le pagine
-        tecniche &mdash; installazione, kernel, file system e permessi, vi/Vim
-        sono gi&agrave; online; processi, systemd, shell, rete, pacchetti,
-        comandi per Debian e per Red Hat, storage, boot, sicurezza, diagnostica
-        e laboratorio arriveranno una alla volta. La
+        tecniche &mdash; installazione, kernel, file system e permessi,
+        processi, systemd, vi/Vim sono gi&agrave; online; shell, rete,
+        pacchetti, comandi per Debian e per Red Hat, storage, boot, sicurezza,
+        diagnostica e laboratorio arriveranno una alla volta. La
         <a href="#mappa">mappa della sezione</a> dice cosa conterr&agrave;
         ognuna.
       </div>
@@ -505,14 +505,14 @@
               <td>Pubblicata</td>
             </tr>
             <tr>
-              <td>Processi e risorse</td>
+              <td><a href="processi.html">Processi e risorse</a></td>
               <td>fork/exec, segnali, priorit&agrave;, limiti, <code>/proc</code>, cgroup v2, namespace, OOM killer.</td>
-              <td>In preparazione</td>
+              <td>Pubblicata</td>
             </tr>
             <tr>
-              <td>systemd</td>
+              <td><a href="systemd.html">systemd</a></td>
               <td>Unit&agrave;, service, timer, socket, target, journal, drop-in, analisi dei tempi di avvio.</td>
-              <td>In preparazione</td>
+              <td>Pubblicata</td>
             </tr>
             <tr>
               <td>Shell e scripting</td>
@@ -598,7 +598,12 @@
         configurazione e script senza uscire dal terminale, la guida &egrave;
         <a href="vi-vim.html">vi e Vim</a>. Per capire dove finiscono i file,
         chi pu&ograve; leggerli e come si monta un disco, la pagina &egrave;
-        <a href="filesystem.html">File system e permessi</a>.
+        <a href="filesystem.html">File system e permessi</a>. Per capire chi
+        consuma CPU, memoria e I/O, chi riceve i segnali e come si limita un
+        servizio, la pagina &egrave; <a href="processi.html">Processi e
+        risorse</a>. Per scrivere un servizio che parta al boot, programmare
+        un timer, leggere il journal o limitare un&rsquo;unit&agrave;, il
+        riferimento &egrave; <a href="systemd.html">systemd</a>.
       </p>
     </main>
 

@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Processi e risorse — Adripedia</title>
+  <meta name="description" content="Processi e risorse su Linux: fork/exec, stati, segnali, thread, scheduler EEVDF, priorit&agrave;, limiti, /proc, cgroup v2, namespace, memoria, OOM killer, diagnostica e recupero.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/processi.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Processi e risorse</span>
+    </header>
+
+    <main id="main" class="page" data-cmd-search-scope>
+      <p class="eyebrow">Approfondimento &middot; Linux</p>
+      <h1>Processi e risorse</h1>
+      <p class="lead">
+        Un processo non &egrave; un programma: &egrave; un programma in
+        esecuzione, con un PID, uno stato, una gerarchia, dei file descriptor
+        aperti e delle risorse che il kernel gli concede. Capire
+        <code>fork</code>, <code>exec</code>, i segnali, lo scheduler, i limiti
+        e i cgroup &egrave; ci&ograve; che separa &ldquo;riavvia e spera&rdquo;
+        da un&rsquo;indagine vera. Questa pagina parte dal ciclo di vita e
+        arriva a <code>/proc</code>, cgroup v2, namespace, OOM killer e
+        diagnostica dei processi bloccati.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Tre comandi coprono met&agrave; del
+          lavoro: <code>ps -eo pid,ppid,stat,pcpu,pmem,etime,cmd --sort=-pcpu</code>
+          per vedere chi consuma, <code>cat /proc/PID/status</code> per capire
+          in che stato &egrave; e <code>systemd-cgls</code> per sapere in quale
+          cgroup vive. La regola &egrave; sempre la stessa: prima si misura,
+          poi si limita, solo alla fine si uccide.
+        </p>
+      </div>
+
+      <p>
+        Per la struttura del file system e i permessi c&rsquo;&egrave;
+        <a href="filesystem.html">File system e permessi</a>; per i moduli e i
+        parametri che regolano scheduler e memoria c&rsquo;&egrave;
+        <a href="kernel.html">Il kernel e la sua gestione</a>. Qui si presume
+        una shell gi&agrave; funzionante e un sistema con systemd.
+      </p>
+
+      <div class="cmd-search" id="cerca">
+        <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="cmd-search-input" type="search"
+                 placeholder="Per esempio: zombie, segnali, cgroup, OOM&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                 aria-autocomplete="list" aria-describedby="cmd-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+          Scrivi cosa vuoi fare: la ricerca guarda comandi, descrizioni e titoli delle sezioni.
+        </p>
+        <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+            aria-label="Comandi trovati" hidden></ul>
+      </div>
+
+      <nav class="section-index" aria-labelledby="proc-index-title">
+        <p class="section-index-title" id="proc-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cerca">Cerca un comando</a></li>
+          <li><a href="#processo">Programma, processo e PID</a></li>
+          <li><a href="#ciclo">fork, exec, wait e zombie</a></li>
+          <li><a href="#thread">Thread, task e segnali</a></li>
+          <li><a href="#stati">Stati e scheduler</a></li>
+          <li><a href="#segnali">Segnali</a></li>
+          <li><a href="#job">Job control e processi persistenti</a></li>
+          <li><a href="#ispezione">Ispezionare un processo</a></li>
+          <li><a href="#limiti">Limiti, priorit&agrave; e affinit&agrave;</a></li>
+          <li><a href="#cgroup">cgroup v2</a></li>
+          <li><a href="#namespace">Namespace</a></li>
+          <li><a href="#memoria">Memoria e OOM killer</a></li>
+          <li><a href="#diagnostica">Diagnostica e recupero</a></li>
+          <li><a href="#casi">Domande frequenti e casi pratici</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="processo">Programma, processo e PID</h2>
+      <p>
+        Il kernel descrive ogni processo con una struttura interna,
+        <code>task_struct</code>, che contiene lo stato, i registri, lo spazio
+        di indirizzamento, i file descriptor, i segnali, le priorit&agrave; e i
+        puntatori alle risorse condivise. Il PID &egrave; solo l&rsquo;identificatore
+        visibile nello spazio dei nomi corrente: lo stesso processo ha PID
+        diversi in namespace diversi, e un thread ha un <code>TID</code>
+        diverso dal <code>TGID</code> del processo a cui appartiene.
+      </p>
+      <p>
+        I PID vengono riutilizzati. Un programma che tiene un PID in un file e
+        lo usa giorni dopo pu&ograve; colpire un processo completamente diverso:
+        &egrave; la classica race che ha portato all&rsquo;introduzione delle
+        <em>pidfd</em> (<code>pidfd_open</code>, <code>pidfd_send_signal</code>),
+        un handle stabile che non soffre del riuso.
+      </p>
+      <pre><code># Identita del processo
+ps -p $$ -o pid,ppid,pgid,sid,tty,stat,cmd
+echo "PID della shell: $$"
+echo "PID del padre: $PPID"
+
+# Limiti e namespace del PID corrente
+cat /proc/self/status
+cat /proc/self/cgroup
+readlink /proc/self/ns/pid
+readlink /proc/self/ns/mnt
+
+# PID massimo e PID liberi
+cat /proc/sys/kernel/pid_max
+cat /proc/loadavg</code></pre>
+      <p>
+        <code>ps -p $$</code> mostra anche <code>PGID</code> (process group),
+        <code>SID</code> (session) e <code>TTY</code>: sono le tre coordinate
+        che servono per capire chi riceve un segnale da terminale e chi
+        sopravvive alla chiusura della sessione.
+      </p>
+
+      <h2 id="ciclo">fork, exec, wait e zombie</h2>
+      <p>
+        Su Linux un processo nasce quasi sempre da <code>fork()</code> o
+        <code>clone()</code>. <code>fork()</code> duplica il processo: il
+        figlio riceve una copia dello spazio di indirizzamento, ma le pagine
+        sono condivise in copy-on-write finch&eacute; uno dei due non scrive.
+        I file descriptor vengono copiati e puntano alla stessa
+        <em>open file description</em>: condividono offset e flag, non solo il
+        numero. Il valore di ritorno distingue i due rami: 0 nel figlio, PID
+        del figlio nel padre, &minus;1 in caso di errore.
+      </p>
+      <p>
+        <code>execve()</code> non crea un processo: sostituisce l&rsquo;immagine
+        del processo corrente con un nuovo programma. Il PID resta lo stesso, i
+        file descriptor aperti restano aperti (tranne quelli marcati
+        <code>FD_CLOEXEC</code>), gli handler dei segnali tornano al default
+        (quelli ignorati restano ignorati) e lo spazio di indirizzamento viene
+        rimpiazzato. Se <code>execve</code> ritorna, &egrave; sempre un errore.
+      </p>
+      <pre><code># La shell usa fork + exec per ogni comando esterno
+strace -f -e trace=clone,execve,wait4 bash -c 'ls /tmp'
+
+# Il figlio vede 0, il padre vede il PID
+bash -c 'echo "padre $$"; ( echo "figlio $BASHPID, padre $PPID" )'
+
+# wait: il padre raccoglie lo stato di uscita
+bash -c 'sleep 1 &amp; p=$!; wait "$p"; echo "exit=$?"'</code></pre>
+      <p>
+        Quando un processo termina, il kernel libera memoria e risorse ma
+        conserva una voce con PID e stato di uscita finch&eacute; il padre non
+        chiama <code>wait()</code> o <code>waitpid()</code>. Quella voce
+        &egrave; lo <em>zombie</em>: non consuma memoria utente, non si pu&ograve;
+        uccidere, e occupa solo uno slot nella tabella dei PID. Se il padre
+        muore prima, il figlio viene riadottato da PID 1 (o da un
+        <em>subreaper</em> impostato con <code>PR_SET_CHILD_SUBREAPER</code>) e
+        raccolto da l&igrave;.
+      </p>
+      <pre><code># Zombie e processi senza padre
+ps -eo pid,ppid,stat,cmd | awk '$3 ~ /^Z/'
+ps -eo pid,ppid,stat,cmd | awk '$2 == 1'
+
+# Chi e il padre di un PID
+ps -o pid,ppid,stat,cmd -p PID
+cat /proc/PID/status | grep -E '^(State|PPid|Threads|Sig)'
+
+# Stato di uscita in forma leggibile
+wait "$pid"; echo $?
+# 128 + numero del segnale se il processo e stato ucciso</code></pre>
+      <p>
+        Un processo ucciso da un segnale non ha un exit code normale: la shell
+        riporta <code>128 + N</code>, dove <code>N</code> &egrave; il numero del
+        segnale. <code>137</code> significa <code>128 + 9</code>, quindi
+        <code>SIGKILL</code>; <code>143</code> &egrave;
+        <code>SIGTERM</code>. Nei container &egrave; il motivo per cui
+        &ldquo;exit 137&rdquo; quasi sempre vuol dire OOM killer o
+        <code>docker kill</code>.
+      </p>
+
+      <h2 id="thread">Thread, task e segnali</h2>
+      <p>
+        I thread su Linux sono processi che condividono lo spazio di
+        indirizzamento, i file descriptor, la tabella dei segnali e il
+        filesystem corrente. Il kernel li crea con <code>clone()</code> e i
+        flag <code>CLONE_VM</code>, <code>CLONE_FS</code>,
+        <code>CLONE_FILES</code>, <code>CLONE_SIGHAND</code> e
+        <code>CLONE_THREAD</code>. Ogni thread ha un TID, ma tutti condividono
+        il TGID, che &egrave; il PID che si vede con <code>ps</code>.
+      </p>
+      <p>
+        La distinzione conta per i segnali: la <em>disposizione</em> &egrave;
+        condivisa dal gruppo di thread, ma la <em>maschera</em> &egrave; per
+        thread. Un segnale pu&ograve; essere consegnato a un thread qualsiasi
+        che non lo blocca, oppure a un thread specifico con
+        <code>pthread_kill</code> o <code>tgkill</code>.
+      </p>
+      <pre><code># Thread di un processo
+ps -eLf
+ps -eLo pid,tid,class,rtprio,ni,pri,psr,pcpu,comm
+ls /proc/PID/task
+
+# Top per thread
+top -H -p PID
+htop   # F2 -> Display options -> Show custom thread names
+
+# Stack e stato dei thread
+cat /proc/PID/task/TID/status
+cat /proc/PID/task/TID/stack 2&gt;/dev/null</code></pre>
+      <p>
+        La maggior parte dei programmi usa il modello 1:1 di NPTL: un thread
+        utente per thread kernel. Le goroutine di Go, i task di Java e le
+        coroutine di altri runtime multiplexano molti task utente su pochi
+        thread kernel, quindi <code>ps -eLf</code> mostra meno thread di quanti
+        ne conti il linguaggio.
+      </p>
+
+      <h2 id="stati">Stati e scheduler</h2>
+      <p>
+        Lo stato in <code>ps</code> &egrave; una lettera, ma racconta molto.
+        <code>R</code> &egrave; in esecuzione o in coda per la CPU;
+        <code>S</code> dorme in modo interrompibile; <code>D</code> dorme in
+        modo non interrompibile, quasi sempre in attesa di I/O;
+        <code>T</code> &egrave; fermato da un segnale o da un debugger;
+        <code>Z</code> &egrave; uno zombie; <code>I</code> &egrave; un thread
+        idle del kernel.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Stato</th><th>Significato</th><th>Come si sblocca</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>R</code></td><td>Running o runnable</td><td>Aspetta il suo turno di CPU</td></tr>
+            <tr><td><code>S</code></td><td>Sleep interrompibile</td><td>Un segnale o l&rsquo;evento atteso</td></tr>
+            <tr><td><code>D</code></td><td>Sleep non interrompibile</td><td>Solo l&rsquo;I/O o il driver; <code>SIGKILL</code> arriva dopo</td></tr>
+            <tr><td><code>T</code></td><td>Stopped</td><td><code>SIGCONT</code></td></tr>
+            <tr><td><code>Z</code></td><td>Zombie</td><td>Il padre chiama <code>wait</code></td></tr>
+            <tr><td><code>I</code></td><td>Idle kernel thread</td><td>Non consuma CPU; &egrave; normale</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Dal kernel 6.6 lo scheduler fair &egrave; <em>EEVDF</em> (Earliest
+        Eligible Virtual Deadline First), che ha sostituito CFS. L&rsquo;idea
+        &egrave; assegnare a ogni task una slice e una deadline virtuale, e
+        servire prima chi &egrave; eleggibile con la scadenza pi&ugrave;
+        vicina. Per l&rsquo;amministratore cambia poco: <code>nice</code> resta
+        il modo normale per spostare il peso, e le classi real-time restano
+        separate.
+      </p>
+      <pre><code># Priorita e classe di scheduling
+chrt -p PID
+ps -eo pid,ni,pri,rtprio,class,psr,comm --sort=-pri | head
+
+# Cambiare nice (solo root puo scendere sotto 0)
+nice -n 10 comando-lungo
+renice -n 5 -p PID
+renice -n 5 -g PGID
+renice -n 5 -u alice
+
+# Affinita e NUMA
+taskset -pc PID
+taskset -c 0-3 comando
+numactl --cpunodebind=0 --membind=0 comando
+lscpu | grep -E 'NUMA|CPU\(s\)'</code></pre>
+      <p>
+        Le classi real-time (<code>SCHED_FIFO</code>, <code>SCHED_RR</code>)
+        hanno priorit&agrave; 1&ndash;99 e possono affamare il resto del
+        sistema. Il kernel applica un limite: di default i task real-time
+        possono occupare il 95% di ogni periodo di un secondo
+        (<code>sched_rt_runtime_us=950000</code>,
+        <code>sched_rt_period_us=1000000</code>). <code>SCHED_DEADLINE</code>
+        &egrave; ancora diverso: si dichiarano runtime, deadline e periodo, e
+        il kernel ammette il task solo se la domanda &egrave; sostenibile.
+      </p>
+      <pre><code>chrt -f 10 comando        # FIFO, priorita 10
+chrt -r 20 comando        # round-robin
+chrt -b 0 comando         # batch
+chrt -i 0 comando         # idle
+chrt -d --sched-runtime 5000000 \
+  --sched-deadline 10000000 --sched-period 20000000 0 comando
+
+cat /proc/sys/kernel/sched_rt_runtime_us
+cat /proc/sys/kernel/sched_rt_period_us</code></pre>
+      <p>
+        Il <em>load average</em> non &egrave; la percentuale di CPU: conta i
+        task in stato <code>R</code> e <code>D</code>. Un carico di 8 su una
+        macchina a 4 core pu&ograve; significare CPU satura, ma anche otto
+        processi bloccati su un disco lento. <code>vmstat</code> distingue i
+        due casi con le colonne <code>r</code> e <code>b</code>.
+      </p>
+      <pre><code>uptime
+cat /proc/loadavg
+vmstat 1 5
+# r = runnable, b = blocked, wa = iowait, st = steal in VM
+mpstat -P ALL 1
+sar -u 1 5</code></pre>
+
+      <h2 id="segnali">Segnali</h2>
+      <p>
+        Un segnale &egrave; una notifica asincrona. I segnali standard non si
+        accodano: se ne arriva un secondo mentre il primo &egrave; pendente,
+        viene perso. I segnali real-time (<code>SIGRTMIN</code>&ndash;<code>SIGRTMAX</code>)
+        si accodano e possono portare un payload con <code>sigqueue</code>.
+        Ogni segnale ha una disposizione: default, ignora, oppure un handler.
+        <code>SIGKILL</code> e <code>SIGSTOP</code> non possono essere
+        catturati, bloccati o ignorati.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Segnale</th><th>Numero</th><th>Effetto tipico</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>SIGHUP</code></td><td>1</td><td>Terminale chiuso o configurazione da ricaricare</td></tr>
+            <tr><td><code>SIGINT</code></td><td>2</td><td><kbd>Ctrl-C</kbd>: interruzione</td></tr>
+            <tr><td><code>SIGQUIT</code></td><td>3</td><td><kbd>Ctrl-\</kbd>: core dump</td></tr>
+            <tr><td><code>SIGKILL</code></td><td>9</td><td>Terminazione immediata, non gestibile</td></tr>
+            <tr><td><code>SIGSEGV</code></td><td>11</td><td>Accesso non valido alla memoria</td></tr>
+            <tr><td><code>SIGPIPE</code></td><td>13</td><td>Scrittura su una pipe senza lettori</td></tr>
+            <tr><td><code>SIGTERM</code></td><td>15</td><td>Richiesta di terminazione ordinata</td></tr>
+            <tr><td><code>SIGCHLD</code></td><td>17</td><td>Un figlio &egrave; terminato o fermato</td></tr>
+            <tr><td><code>SIGCONT</code></td><td>18</td><td>Riprende un processo fermato</td></tr>
+            <tr><td><code>SIGSTOP</code></td><td>19</td><td>Ferma il processo, non gestibile</td></tr>
+            <tr><td><code>SIGTSTP</code></td><td>20</td><td><kbd>Ctrl-Z</kbd>: stop da terminale</td></tr>
+            <tr><td><code>SIGUSR1</code></td><td>10</td><td>Definito dall&rsquo;applicazione</td></tr>
+            <tr><td><code>SIGUSR2</code></td><td>12</td><td>Definito dall&rsquo;applicazione</td></tr>
+            <tr><td><code>SIGWINCH</code></td><td>28</td><td>La finestra del terminale ha cambiato dimensione</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        I numeri variano per architettura: su x86-64 <code>SIGUSR1</code>
+        &egrave; 10, su altre architetture pu&ograve; essere diverso. Non
+        scrivere <code>kill -10</code> in uno script portabile: usa il nome.
+      </p>
+      <pre><code># Elenco dei segnali
+kill -l
+trap -l
+
+# Inviare segnali
+kill -TERM PID
+kill -HUP PID
+kill -0 PID          # verifica esistenza e permessi, non invia nulla
+kill -TERM -- -PGID  # tutto il process group
+pkill -TERM -u alice -f 'python worker'
+pkill -HUP -x nginx
+pgrep -a -u alice
+pidwait PID          # aspetta la fine senza polling</code></pre>
+      <p>
+        <code>kill -0</code> &egrave; il modo corretto per verificare se un
+        processo esiste: ritorna 0 se esiste ed &egrave; raggiungibile,
+        <code>EPERM</code> se esiste ma non abbiamo i permessi,
+        <code>ESRCH</code> se non esiste. <code>pkill -f</code> cerca nella
+        riga di comando completa e pu&ograve; colpire la shell che lo esegue:
+        &egrave; una fonte classica di autogol.
+      </p>
+      <pre><code># Script che chiude in modo pulito
+#!/usr/bin/env bash
+set -euo pipefail
+
+cleanup() {
+  echo "chiusura richiesta" &gt;&amp;2
+  rm -f "$tmpfile"
+}
+trap cleanup EXIT INT TERM
+
+tmpfile=$(mktemp)
+sleep 1000 &amp;
+wait $!</code></pre>
+      <p>
+        <code>SIGTERM</code> &egrave; una richiesta, non una garanzia: un
+        processo pu&ograve; ignorarla, gestirla male o restare bloccato in
+        <code>D</code>. <code>SIGKILL</code> non viene consegnato finch&eacute;
+        il task non torna da una syscall non interrompibile; per questo un
+        processo su un NFS bloccato pu&ograve; restare vivo anche dopo
+        <code>kill -9</code>. In quel caso il problema &egrave; il mount o il
+        driver, non il processo.
+      </p>
+
+      <h2 id="job">Job control e processi persistenti</h2>
+      <p>
+        La shell organizza i comandi in <em>job</em> e <em>process group</em>.
+        <kbd>Ctrl-Z</kbd> invia <code>SIGTSTP</code>, <kbd>Ctrl-C</kbd>
+        <code>SIGINT</code>, <kbd>Ctrl-\</kbd> <code>SIGQUIT</code>. Il
+        terminale consegna questi segnali al process group in foreground, non
+        a tutti i processi della sessione. Quando il terminale si chiude, il
+        kernel invia <code>SIGHUP</code> alla sessione e la shell pu&ograve;
+        propagarlo ai job; <code>nohup</code> e <code>disown</code> servono a
+        evitarlo.
+      </p>
+      <pre><code>comando-lungo &amp;
+jobs -l
+fg %1
+bg %1
+disown %1
+nohup comando-lungo &gt;log.txt 2&gt;&amp;1 &amp;
+setsid comando-lungo &lt;/dev/null &gt;log.txt 2&gt;&amp;1 &amp;
+timeout -s TERM 30 comando
+timeout -s KILL 60 comando</code></pre>
+      <p>
+        <code>nohup</code> ignora <code>SIGHUP</code> e redirige l&rsquo;output;
+        <code>setsid</code> crea una nuova sessione e stacca il processo dal
+        terminale di controllo. Nessuno dei due &egrave; un vero supervisore:
+        se il processo muore, nessuno lo riavvia. Per lavoro che deve
+        sopravvivere a logout, crash e riavvii, la risposta &egrave; un&rsquo;unit&agrave;
+        systemd, non <code>nohup</code>.
+      </p>
+      <pre><code># Sessione persistente interattiva
+tmux new -s lavoro
+tmux attach -t lavoro
+tmux ls
+screen -S lavoro
+screen -r lavoro
+
+# Servizio transiente, senza creare un file unit
+systemd-run --unit=backup-oggi --property=Nice=10 \
+  --property=IOSchedulingClass=best-effort \
+  --property=IOSchedulingPriority=7 \
+  /usr/local/bin/backup.sh
+
+systemctl status backup-oggi
+journalctl -u backup-oggi -f</code></pre>
+      <p>
+        <code>systemd-run</code> crea un&rsquo;unit&agrave; temporanea che
+        sopravvive alla shell e viene gestita da systemd come qualsiasi
+        servizio. Con <code>--scope</code> il comando resta nel contesto
+        chiamante ma viene comunque tracciato in un cgroup; con
+        <code>--on-active=30m</code> si crea un timer. &Egrave; il modo
+        corretto per lanciare un job una tantum senza scrivere un file in
+        <code>/etc/systemd/system</code>.
+      </p>
+
+      <h2 id="ispezione">Ispezionare un processo</h2>
+      <p>
+        <code>/proc</code> &egrave; la fonte primaria. Ogni directory
+        <code>/proc/PID</code> espone stato, mappa di memoria, file aperti,
+        working directory, eseguibile, variabili d&rsquo;ambiente, limiti,
+        cgroup e statistiche di scheduling. Gli strumenti come <code>ps</code>,
+        <code>top</code> e <code>lsof</code> leggono quasi tutti da qui.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>File</th><th>Contenuto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>status</code></td><td>Stato, PPid, UID/GID, thread, segnali, memoria</td></tr>
+            <tr><td><code>stat</code></td><td>Stato e tempi in formato compatto per <code>ps</code></td></tr>
+            <tr><td><code>cmdline</code></td><td>Argomenti separati da NUL</td></tr>
+            <tr><td><code>environ</code></td><td>Ambiente separato da NUL</td></tr>
+            <tr><td><code>maps</code> <code>smaps_rollup</code></td><td>Mappature di memoria e riepilogo RSS/PSS</td></tr>
+            <tr><td><code>fd/</code></td><td>File descriptor aperti, con symlink al bersaglio</td></tr>
+            <tr><td><code>cwd</code> <code>root</code> <code>exe</code></td><td>Directory corrente, radice, eseguibile</td></tr>
+            <tr><td><code>limits</code></td><td>Limiti soft e hard</td></tr>
+            <tr><td><code>cgroup</code></td><td>Gerarchia cgroup v2 di appartenenza</td></tr>
+            <tr><td><code>sched</code> <code>schedstat</code></td><td>Classe, priorita, tempo di CPU, attese</td></tr>
+            <tr><td><code>io</code></td><td>Byte letti e scritti, syscall di I/O</td></tr>
+            <tr><td><code>oom_score</code> <code>oom_score_adj</code></td><td>Punteggio e aggiustamento OOM</td></tr>
+            <tr><td><code>stack</code> <code>wchan</code></td><td>Kernel stack e funzione di attesa</td></tr>
+            <tr><td><code>ns/</code></td><td>Namespace di mount, PID, rete, utente e altri</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Vista d'insieme
+ps -eo pid,ppid,pgid,sid,stat,ni,pri,psr,pcpu,pmem,rss,etime,cmd --sort=-pcpu | head -n 20
+ps --forest -o pid,ppid,stat,cmd
+pstree -aps PID
+
+# Dettaglio
+cat /proc/PID/status
+tr '\0' ' ' &lt; /proc/PID/cmdline; echo
+tr '\0' '\n' &lt; /proc/PID/environ
+ls -l /proc/PID/fd
+readlink /proc/PID/cwd /proc/PID/exe /proc/PID/root
+cat /proc/PID/limits
+cat /proc/PID/io
+cat /proc/PID/smaps_rollup
+cat /proc/PID/wchan; echo</code></pre>
+      <p>
+        <code>ps</code> con <code>stat</code> pu&ograve; aggiungere suffissi:
+        <code>s</code> session leader, <code>l</code> multithread,
+        <code>+</code> in foreground, <code>&lt;</code> alta priorit&agrave;,
+        <code>N</code> bassa priorit&agrave;. <code>ps -eo stat,cmd</code> e
+        <code>ps -eo pid,stat,cmd</code> sono pi&ugrave; leggibili di una
+        tabella gigante.
+      </p>
+      <pre><code># Chi tiene aperto un file o una directory
+lsof -p PID
+lsof +D /srv/app
+fuser -vm /srv/app
+fuser -k /srv/app   # attenzione: uccide
+
+# File cancellati ancora aperti
+lsof +L1
+ls -l /proc/PID/fd | grep deleted
+
+# Socket e connessioni del processo
+ss -tupn
+ss -ltnp | grep PID</code></pre>
+
+      <h2 id="limiti">Limiti, priorit&agrave; e affinit&agrave;</h2>
+      <p>
+        Ogni processo ha limiti <em>soft</em> e <em>hard</em>. Il soft &egrave;
+        quello attivo, l&rsquo;hard &egrave; il tetto massimo: un processo non
+        privilegiato pu&ograve; abbassare l&rsquo;hard e alzare il soft fino
+        all&rsquo;hard, ma non superarlo. <code>ulimit</code> agisce sulla shell
+        e sui figli; <code>prlimit</code> pu&ograve; leggere e modificare un
+        processo gi&agrave; in esecuzione, se si hanno i permessi.
+      </p>
+      <pre><code>ulimit -a
+ulimit -n          # file descriptor
+ulimit -u          # processi/thread per utente
+ulimit -c          # dimensione core dump
+ulimit -v          # spazio di indirizzamento
+ulimit -s          # stack
+ulimit -l          # memoria lockabile
+
+ulimit -n 65535
+ulimit -Hn         # hard limit
+
+prlimit --pid PID
+prlimit --pid PID --nofile=65535:65535
+prlimit --pid PID --core=0:</code></pre>
+      <p>
+        I limiti di login arrivano da PAM (<code>/etc/security/limits.conf</code>
+        e <code>/etc/security/limits.d/</code>), ma i servizi systemd
+        <strong>non</strong> passano da PAM: per loro si usano
+        <code>LimitNOFILE=</code>, <code>LimitNPROC=</code>,
+        <code>LimitCORE=</code> nel file unit o nei drop-in. Il valore assoluto
+        massimo dei file aperti &egrave; <code>fs.nr_open</code>; il tetto
+        complessivo del sistema &egrave; <code>fs.file-max</code>.
+      </p>
+      <pre><code>systemctl show -p LimitNOFILE sshd.service
+systemctl edit sshd.service
+# [Service]
+# LimitNOFILE=65535
+
+cat /proc/sys/fs/nr_open
+cat /proc/sys/fs/file-max
+cat /proc/sys/fs/file-nr</code></pre>
+      <p>
+        <code>nice</code> va da &minus;20 (pi&ugrave; priorit&agrave;) a 19
+        (meno priorit&agrave;). Un utente normale pu&ograve; solo aumentare il
+        valore, cio&egrave; ridurre la priorit&agrave;; per diminuirlo serve
+        <code>CAP_SYS_NICE</code>. L&rsquo;affinit&agrave; limita i core su
+        cui un processo pu&ograve; girare; su macchine NUMA, <code>numactl</code>
+        lega anche la memoria a un nodo e riduce gli accessi remoti.
+      </p>
+      <pre><code>nice -n 19 tar -czf backup.tar.gz /srv
+renice -n 10 -p PID
+ionice -c 2 -n 7 -p PID
+ionice -c 3 -p PID          # idle: solo quando il disco e libero
+taskset -c 0,1 -p PID
+taskset -pc PID
+chrt -p PID
+
+# Verifica
+ps -o pid,ni,pri,psr,cmd -p PID
+cat /proc/PID/sched | head -n 5</code></pre>
+      <p>
+        <code>ionice</code> dipende dallo scheduler I/O: con BFQ e CFQ ha
+        effetto pieno, con <code>mq-deadline</code> e <code>kyber</code>
+        l&rsquo;effetto &egrave; limitato o nullo. Le priorit&agrave; I/O per
+        cgroup (<code>io.weight</code>) sono spesso pi&ugrave; efficaci di
+        <code>ionice</code> per limitare un servizio.
+      </p>
+
+      <h2 id="cgroup">cgroup v2</h2>
+      <p>
+        I cgroup v2 organizzano i processi in una gerarchia unica e
+        distribuiscono risorse in modo proporzionale. systemd &egrave; il
+        gestore normale: ogni servizio, scope e sessione utente vive in un
+        cgroup, e i limiti si impostano tramite le propriet&agrave; delle
+        unit&agrave;. La gerarchia &egrave; montata su
+        <code>/sys/fs/cgroup</code>; se <code>stat -fc %T</code> risponde
+        <code>cgroup2fs</code>, il sistema &egrave; in modalit&agrave; unificata.
+      </p>
+      <pre><code>stat -fc %T /sys/fs/cgroup
+mount | grep cgroup
+systemd-cgls
+systemd-cgtop
+cat /sys/fs/cgroup/cgroup.controllers
+cat /sys/fs/cgroup/cgroup.subtree_control</code></pre>
+      <p>
+        I controller principali sono <code>cpu</code>, <code>cpuset</code>,
+        <code>memory</code>, <code>io</code>, <code>pids</code>,
+        <code>rdma</code>, <code>hugetlb</code> e <code>misc</code>. Un
+        controller compare in <code>cgroup.controllers</code> del padre e va
+        abilitato nei figli scrivendo in
+        <code>cgroup.subtree_control</code>. Vale la <em>no internal process
+        constraint</em>: un cgroup che distribuisce controller ai figli non
+        pu&ograve; avere processi propri, quindi i servizi stanno nelle foglie.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>File</th><th>Significato</th><th>Esempio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>memory.max</code></td><td>Limite rigido di memoria</td><td><code>1G</code> oppure <code>max</code></td></tr>
+            <tr><td><code>memory.high</code></td><td>Soglia di throttling, non kill</td><td><code>800M</code></td></tr>
+            <tr><td><code>memory.current</code></td><td>Uso corrente</td><td>lettura</td></tr>
+            <tr><td><code>memory.events</code></td><td>Contatori <code>high</code>, <code>max</code>, <code>oom</code>, <code>oom_kill</code></td><td>lettura</td></tr>
+            <tr><td><code>cpu.max</code></td><td>Quota e periodo in microsecondi</td><td><code>50000 100000</code> = 50%</td></tr>
+            <tr><td><code>cpu.weight</code></td><td>Peso relativo, 1&ndash;10000</td><td><code>100</code></td></tr>
+            <tr><td><code>cpu.stat</code></td><td>Tempo usato e throttling</td><td>lettura</td></tr>
+            <tr><td><code>io.max</code></td><td>Limiti byte e IOPS per dispositivo</td><td><code>8:0 rbps=104857600</code></td></tr>
+            <tr><td><code>pids.max</code></td><td>Numero massimo di task</td><td><code>512</code></td></tr>
+            <tr><td><code>cgroup.freeze</code></td><td>Congela tutti i task</td><td><code>1</code> / <code>0</code></td></tr>
+            <tr><td><code>cgroup.kill</code></td><td>Uccide l&rsquo;intero sottoalbero</td><td><code>1</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Limiti via systemd, persistenti
+systemctl set-property sshd.service MemoryMax=512M
+systemctl set-property sshd.service CPUQuota=50%
+systemctl set-property user-1000.slice MemoryHigh=4G
+systemctl set-property user-1000.slice TasksMax=2048
+
+# Verifica
+systemctl show sshd.service -p MemoryMax -p CPUQuotaPerSecUSec
+cat /sys/fs/cgroup/system.slice/sshd.service/memory.max
+cat /sys/fs/cgroup/system.slice/sshd.service/memory.current
+cat /sys/fs/cgroup/system.slice/sshd.service/memory.events
+cat /sys/fs/cgroup/system.slice/sshd.service/cpu.stat</code></pre>
+      <p>
+        <code>systemctl set-property</code> scrive un drop-in persistente e
+        ricarica l&rsquo;unit&agrave;. <code>MemoryHigh</code> rallenta il
+        gruppo quando supera la soglia, <code>MemoryMax</code> &egrave; il
+        muro: oltre, il kernel uccide un processo del cgroup. Per un job
+        temporaneo si usa <code>systemd-run</code> con le stesse
+        propriet&agrave;.
+      </p>
+      <pre><code># Limiti manuali su un cgroup creato a mano
+sudo mkdir /sys/fs/cgroup/demo
+echo '+memory +cpu +pids' | sudo tee /sys/fs/cgroup/cgroup.subtree_control
+echo 1G | sudo tee /sys/fs/cgroup/demo/memory.max
+echo '50000 100000' | sudo tee /sys/fs/cgroup/demo/cpu.max
+echo 256 | sudo tee /sys/fs/cgroup/demo/pids.max
+echo $$ | sudo tee /sys/fs/cgroup/demo/cgroup.procs
+
+# Congelare e uccidere un sottoalbero
+echo 1 | sudo tee /sys/fs/cgroup/demo/cgroup.freeze
+echo 1 | sudo tee /sys/fs/cgroup/demo/cgroup.kill</code></pre>
+      <p>
+        Attenzione: spostare la shell corrente in un cgroup creato a mano
+        pu&ograve; renderla difficile da recuperare se il cgroup viene
+        rimosso. In produzione si lascia fare a systemd, che gestisce
+        gerarchia, delegate e cleanup.
+      </p>
+
+      <h2 id="namespace">Namespace</h2>
+      <p>
+        I namespace limitano ci&ograve; che un processo pu&ograve;
+        <em>vedere</em>; i cgroup limitano ci&ograve; che pu&ograve;
+        <em>consumare</em>. &Egrave; la coppia che sta alla base dei
+        container. I namespace principali sono mount, PID, rete, IPC, UTS,
+        utente, cgroup e time.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Namespace</th><th>Isola</th><th>Flag</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Mount</td><td>Punti di mount e gerarchia dei file</td><td><code>CLONE_NEWNS</code></td></tr>
+            <tr><td>PID</td><td>Numerazione dei processi</td><td><code>CLONE_NEWPID</code></td></tr>
+            <tr><td>Network</td><td>Interfacce, rotte, firewall, socket</td><td><code>CLONE_NEWNET</code></td></tr>
+            <tr><td>IPC</td><td>Code, semafori e memoria condivisa System V</td><td><code>CLONE_NEWIPC</code></td></tr>
+            <tr><td>UTS</td><td>Hostname e domain name</td><td><code>CLONE_NEWUTS</code></td></tr>
+            <tr><td>User</td><td>UID/GID e capability</td><td><code>CLONE_NEWUSER</code></td></tr>
+            <tr><td>Cgroup</td><td>Vista della gerarchia cgroup</td><td><code>CLONE_NEWCGROUP</code></td></tr>
+            <tr><td>Time</td><td>Offset degli orologi</td><td><code>CLONE_NEWTIME</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code>lsns
+lsns -t pid
+readlink /proc/PID/ns/*
+
+# Entrare nei namespace di un processo
+nsenter -t PID -m -u -i -n -p
+nsenter -t PID -n -- ip addr
+
+# Nuovo namespace PID con una shell
+unshare --fork --pid --mount-proc bash
+ps -ef   # dentro si vede un albero ridotto
+
+# User namespace non privilegiato, se abilitato dalla distribuzione
+unshare -Ur bash
+id
+cat /proc/self/uid_map</code></pre>
+      <p>
+        Nel namespace PID il primo processo &egrave; PID 1 e ha un trattamento
+        speciale: il kernel ignora i segnali senza handler, tranne quelli
+        inviati da un processo di un namespace antenato. Per questo
+        <code>kill -9 1</code> dentro un container spesso non fa ci&ograve;
+        che si aspetta. <code>nsenter</code> &egrave; anche il modo per
+        ispezionare un container che non espone una shell.
+      </p>
+      <pre><code># Rete isolata con iproute2
+sudo ip netns add lab
+sudo ip netns exec lab ip link
+sudo ip netns exec lab bash
+sudo ip netns del lab
+
+# Ispezionare un container Docker o Podman
+docker inspect -f '{{.State.Pid}}' nome
+sudo nsenter -t PID -n -p
+podman top nome pid user comm args</code></pre>
+
+      <h2 id="memoria">Memoria e OOM killer</h2>
+      <p>
+        <code>free</code> mostra la memoria libera, ma il numero che conta
+        &egrave; <code>available</code>: include la page cache che il kernel
+        pu&ograve; scartare. <code>free</code> basso con
+        <code>available</code> alto &egrave; normale e sano. La memoria di un
+        processo si legge meglio con <code>RSS</code> (pagine residenti),
+        <code>PSS</code> (quota proporzionale delle pagine condivise) e
+        <code>USS</code> (solo pagine private). <code>smaps_rollup</code>
+        d&agrave; PSS e USS in un colpo solo.
+      </p>
+      <pre><code>free -h
+cat /proc/meminfo | grep -E 'MemTotal|MemFree|MemAvailable|Buffers|Cached|Swap'
+vmstat 1
+
+cat /proc/PID/smaps_rollup | grep -E 'Rss|Pss|Private'
+pmap -x PID
+ps -o pid,rss,vsz,pmem,cmd -p PID
+smem -tk
+ps_mem</code></pre>
+      <p>
+        L&rsquo;OOM killer interviene quando il kernel non riesce a soddisfare
+        un&rsquo;allocazione. Sceglie un processo in base a un punteggio che
+        tiene conto di memoria usata, durata e <code>oom_score_adj</code>
+        (&minus;1000&ndash;1000). <code>&minus;1000</code> esclude un processo
+        quasi del tutto, <code>1000</code> lo rende il primo candidato. Nei
+        cgroup, l&rsquo;OOM &egrave; locale: si uccide un processo del gruppo
+        che ha superato <code>memory.max</code>, non per forza l&rsquo;intero
+        sistema.
+      </p>
+      <pre><code>cat /proc/PID/oom_score
+cat /proc/PID/oom_score_adj
+choom -p PID
+choom -n -500 -p PID
+echo -500 | sudo tee /proc/PID/oom_score_adj
+
+cat /sys/fs/cgroup/system.slice/sshd.service/memory.events
+cat /sys/fs/cgroup/system.slice/sshd.service/memory.oom.group
+cat /sys/fs/cgroup/system.slice/sshd.service/memory.pressure
+
+dmesg -T | grep -i -E 'oom|killed process'
+journalctl -k | grep -i oom</code></pre>
+      <p>
+        <code>systemd-oomd</code> &egrave; un demone che anticipa
+        l&rsquo;OOM classico usando PSI (Pressure Stall Information) e swap:
+        uccide un cgroup quando la pressione di memoria &egrave; alta e il
+        sistema sta per diventare ingestibile. Su desktop Fedora e Ubuntu
+        &egrave; attivo per default; su server si configura con
+        <code>ManagedOOMSwap=</code> e <code>ManagedOOMMemoryPressure=</code>.
+      </p>
+      <pre><code>systemctl status systemd-oomd
+oomctl
+cat /proc/pressure/cpu
+cat /proc/pressure/memory
+cat /proc/pressure/io
+
+cat /proc/sys/vm/overcommit_memory
+cat /proc/sys/vm/overcommit_ratio
+grep -E 'CommitLimit|Committed_AS' /proc/meminfo
+cat /proc/sys/vm/swappiness</code></pre>
+      <p>
+        <code>overcommit_memory=0</code> &egrave; la euristica predefinita,
+        <code>1</code> consente sempre, <code>2</code> applica un limite
+        rigoroso basato su <code>CommitLimit</code>. Con <code>2</code> le
+        allocazioni possono fallire prima che la memoria finisca, il che
+        &egrave; desiderabile su alcuni database e indesiderabile altrove.
+        <code>swappiness</code> regola la propensione a spostare pagine
+        anonime in swap; sui server con swap piccolo si tiene basso, ma
+        <code>0</code> non disattiva lo swap.
+      </p>
+
+      <h2 id="diagnostica">Diagnostica e recupero</h2>
+      <p>
+        Un processo lento non &egrave; per forza un processo che usa CPU.
+        Prima si guarda lo stato, poi si distingue CPU, memoria, I/O e attesa.
+        <code>vmstat</code>, <code>iostat</code>, <code>pidstat</code> e
+        <code>mpstat</code> coprono quasi tutto; <code>strace</code> e
+        <code>perf</code> servono quando il problema &egrave; dentro il
+        processo.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Sintomo</th><th>Prima verifica</th><th>Poi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Load alta, CPU bassa</td><td><code>vmstat 1</code>, colonna <code>b</code></td><td><code>ps -eo stat,wchan,cmd</code>, <code>iostat -xz 1</code></td></tr>
+            <tr><td>Processo in <code>D</code></td><td><code>cat /proc/PID/wchan</code></td><td><code>dmesg -T</code>, <code>/proc/PID/stack</code>, NFS o disco</td></tr>
+            <tr><td>Memoria che cresce</td><td><code>smaps_rollup</code>, <code>pmap -x</code></td><td><code>valgrind</code>, <code>heaptrack</code>, <code>MALLOC_ARENA_MAX</code></td></tr>
+            <tr><td>CPU al 100%</td><td><code>top -H</code>, <code>pidstat -u 1</code></td><td><code>perf top -p PID</code>, <code>strace -c</code></td></tr>
+            <tr><td>I/O elevato</td><td><code>iotop -oPa</code>, <code>pidstat -d 1</code></td><td><code>ionice</code>, <code>io.max</code>, dimensione dei file</td></tr>
+            <tr><td>Processo che non muore</td><td><code>ps -o stat,wchan</code></td><td>mount NFS, driver, <code>echo w &gt; /proc/sysrq-trigger</code></td></tr>
+            <tr><td>Crash improvviso</td><td><code>coredumpctl list</code></td><td><code>coredumpctl debug</code>, <code>journalctl -k</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Chi consuma cosa
+pidstat -u -r -d -w 1 5
+iostat -xz 1 5
+mpstat -P ALL 1 5
+iotop -oPa
+atop 1
+
+# Tracciare un processo senza fermarlo
+strace -f -tt -T -p PID
+strace -f -c -p PID
+strace -f -e trace=openat,read,write -p PID
+
+# Profilare
+perf top -p PID
+perf stat -p PID sleep 5
+perf record -F 99 -g -p PID -- sleep 10
+perf report
+
+# BPF quando serve
+bpftrace -e 'tracepoint:sched:sched_switch { @[comm] = count(); }'</code></pre>
+      <p>
+        <code>strace</code> rallenta il processo e pu&ograve; alterare il
+        comportamento di un servizio in produzione; usarlo per pochi secondi,
+        con <code>-c</code> o con un filtro. <code>perf</code> ha meno
+        overhead ma richiede kernel con supporto e permessi
+        (<code>perf_event_paranoid</code>). <code>bpftrace</code> &egrave;
+        potente ma va usato sapendo cosa si sta osservando.
+      </p>
+      <pre><code># Processi bloccati: sysrq (solo se si sa cosa si sta facendo)
+cat /proc/sys/kernel/sysrq
+echo w | sudo tee /proc/sysrq-trigger
+dmesg -T | tail -n 100
+
+# Task bloccati da troppo tempo
+cat /proc/sys/kernel/hung_task_timeout_secs
+dmesg -T | grep -i 'blocked for more than'
+
+# Core dump
+ulimit -c
+cat /proc/sys/kernel/core_pattern
+coredumpctl list
+coredumpctl info PID
+coredumpctl debug PID
+
+# Servizio ostinato
+systemctl status nome.service
+systemctl kill -s SIGKILL nome.service
+systemctl reset-failed nome.service</code></pre>
+      <p>
+        Su Red Hat c&rsquo;&egrave; anche <code>abrt</code> per la raccolta
+        dei crash; su Debian e Ubuntu <code>systemd-coredump</code> &egrave;
+        il percorso normale. In entrambi i casi il core dump non &egrave; la
+        diagnosi: &egrave; la prova da portare a chi conosce il programma.
+      </p>
+      <div class="callout ok">
+        <p>
+          <strong>Regola d&rsquo;oro.</strong> <code>kill -9</code> &egrave;
+          l&rsquo;ultima riga, non la prima. Prima si guarda lo stato, si legge
+          <code>wchan</code>, si controlla <code>dmesg</code>, si verifica il
+          cgroup e si prova <code>SIGTERM</code>. Un processo in
+          <code>D</code> non muore perché il kernel non pu&ograve;
+          interrompere l&rsquo;I/O: ucciderlo &egrave; teatro, non
+          amministrazione.
+        </p>
+      </div>
+
+      <h2 id="casi">Domande frequenti e casi pratici</h2>
+      <p>
+        Le domande che tornano sono poche, ma quasi mai si risolvono con un
+        comando isolato. Qui ci sono i casi che capitano davvero, con sintomo,
+        causa probabile e sequenza di verifica. Le risposte rapide in fondo
+        servono per il resto.
+      </p>
+
+      <h3>Il processo &egrave; in <code>D</code> e non muore nemmeno con <code>kill -9</code></h3>
+      <p>
+        <strong>Sintomo.</strong> <code>ps</code> mostra stato <code>D</code>,
+        <code>kill -9</code> ritorna senza errore ma il processo resta l&igrave;.
+      </p>
+      <p>
+        <strong>Causa.</strong> Il task &egrave; bloccato in una syscall non
+        interrompibile, quasi sempre I/O su disco, NFS, FUSE o un driver. Il
+        segnale viene consegnato solo quando il task torna in user space.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Identifica l&rsquo;attesa, poi rimuovi la
+        causa: server NFS irraggiungibile, disco che non risponde, mount
+        bloccato. Se il disco sta fallendo, il problema non &egrave; il
+        processo.
+      </p>
+      <pre><code>ps -o pid,stat,wchan:32,etime,cmd -p PID
+cat /proc/PID/stack 2&gt;/dev/null
+cat /proc/PID/io
+dmesg -T | tail -n 50
+mount | grep -E 'nfs|cifs|fuse'
+
+# NFS bloccato: smonta con prudenza
+sudo umount -f /mnt/nfs
+sudo umount -l /mnt/nfs
+
+# Elenco dei task bloccati, se sysrq e abilitato
+echo w | sudo tee /proc/sysrq-trigger
+dmesg -T | tail -n 100</code></pre>
+
+      <h3>Ci sono processi zombie: posso ucciderli?</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>ps</code> mostra stato <code>Z</code> e
+        il processo non reagisce a nessun segnale.
+      </p>
+      <p>
+        <strong>Causa.</strong> Lo zombie &egrave; gi&agrave; morto: il kernel
+        conserva solo PID e stato di uscita in attesa che il padre chiami
+        <code>wait()</code>. <code>kill -9</code> non ha alcun effetto.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Trova il padre e fai in modo che raccolga i
+        figli: riavvia il servizio, correggi il programma, oppure verifica che
+        PID 1 stia facendo il suo lavoro. Un <code>SIGCHLD</code> al padre a
+        volte sblocca un handler che non raccoglie, ma non &egrave; una
+        garanzia.
+      </p>
+      <pre><code>ps -eo pid,ppid,stat,etime,cmd | awk '$3 ~ /^Z/'
+ps -o pid,ppid,stat,cmd -p PPID
+kill -CHLD PPID
+
+# Se il padre e un servizio
+systemctl restart nome.service
+journalctl -u nome.service --since '10 min ago'</code></pre>
+
+      <h3>Ho ucciso il processo ma la memoria non &egrave; tornata libera</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>free -h</code> continua a mostrare poca
+        memoria libera dopo la fine di un processo.
+      </p>
+      <p>
+        <strong>Causa.</strong> La page cache non &egrave; memoria sprecata:
+        &egrave; cache che il kernel riusa. Oppure un file cancellato &egrave;
+        ancora aperto, un processo &egrave; rimasto in <code>D</code>, o una
+        cgroup trattiene cache e slab.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Guarda <code>available</code>, non
+        <code>free</code>; cerca file cancellati ancora aperti; controlla
+        <code>memory.current</code> e <code>memory.stat</code> del cgroup.
+        <code>drop_caches</code> &egrave; solo diagnostica, non manutenzione.
+      </p>
+      <pre><code>free -h
+ps -eo pid,stat,rss,pmem,cmd --sort=-rss | head -n 15
+lsof +L1
+slabtop -o | head -n 15
+
+# Cgroup del servizio
+cat /sys/fs/cgroup/system.slice/nome.service/memory.current
+cat /sys/fs/cgroup/system.slice/nome.service/memory.stat | \
+  grep -E '^(anon|file|slab|sock) '
+
+# Reclaim mirato, se il kernel lo supporta
+echo 1G | sudo tee /sys/fs/cgroup/system.slice/nome.service/memory.reclaim
+
+# Solo per diagnosi, non da mettere in cron
+sync; echo 3 | sudo tee /proc/sys/vm/drop_caches</code></pre>
+
+      <h3>Un servizio viene ucciso ogni notte: &egrave; l&rsquo;OOM killer?</h3>
+      <p>
+        <strong>Sintomo.</strong> Il servizio sparisce, <code>systemctl</code>
+        lo mostra fallito, <code>dmesg</code> contiene
+        <code>Out of memory: Killed process</code>.
+      </p>
+      <p>
+        <strong>Causa.</strong> Il cgroup ha superato <code>memory.max</code>,
+        oppure <code>systemd-oomd</code> ha deciso che la pressione di memoria
+        era troppo alta. Pu&ograve; anche essere un job notturno che consuma
+        tutta la memoria disponibile.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Distingui OOM del kernel e OOM di
+        systemd-oomd, poi decidi se alzare il limite o correggere il consumo.
+        Non disattivare l&rsquo;OOM killer: senza, il sistema si blocca.
+      </p>
+      <pre><code>journalctl -k --since 'yesterday' | grep -i -E 'oom|killed process'
+systemd-cgtop -m
+cat /sys/fs/cgroup/system.slice/nome.service/memory.events
+cat /sys/fs/cgroup/system.slice/nome.service/memory.max
+journalctl -u systemd-oomd --since 'yesterday'
+oomctl
+
+# Margine: high rallenta, max uccide
+systemctl set-property nome.service MemoryHigh=1G MemoryMax=1536M
+systemctl show nome.service -p MemoryHigh -p MemoryMax</code></pre>
+
+      <h3>Il servizio &egrave; <code>active</code> ma non risponde</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>systemctl status</code> dice
+        <code>active (running)</code>, ma la porta non risponde o le richieste
+        vanno in timeout.
+      </p>
+      <p>
+        <strong>Causa.</strong> Il processo &egrave; vivo ma bloccato: deadlock
+        tra thread, attesa I/O, pool esaurito, oppure un <code>Type=simple</code>
+        che dichiara attivo un servizio che non ha ancora finito di avviarsi.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Guarda stato e stack dei thread, poi la
+        rete. Per intercettare i blocchi usa un watchdog: con
+        <code>Type=notify</code> e <code>WatchdogSec=</code> systemd considera
+        fallito un servizio che non manda il keepalive.
+      </p>
+      <pre><code>systemctl status nome.service
+systemctl show nome.service -p MainPID -p ActiveState -p SubState -p WatchdogUSec
+ps -o pid,stat,wchan:32,etime,cmd -p PID
+ss -ltnp | grep PID
+strace -f -tt -p PID
+gdb -p PID -batch -ex 'thread apply all bt'
+journalctl -u nome.service --since '15 min ago'</code></pre>
+
+      <h3>Come avvio un processo al boot senza creare un&rsquo;unit&agrave;?</h3>
+      <p>
+        <strong>Risposta breve.</strong> Con <code>systemd-run</code> per un
+        job immediato, ma le unit&agrave; transienti <strong>non</strong>
+        sopravvivono al riavvio. Per il boot serve un&rsquo;unit&agrave;
+        abilitata, un timer persistente o <code>cron @reboot</code>.
+      </p>
+      <pre><code># Job immediato, gestito da systemd
+systemd-run --unit=job --property=MemoryMax=1G /usr/local/bin/job
+
+# Timer relativo a adesso: sparisce al reboot
+systemd-run --on-active=30m --unit=promemoria /usr/local/bin/notify
+
+# Persistente: unita vera
+sudo systemctl edit --force --full job.service
+sudo systemctl enable --now job.service
+
+# Alternativa rapida per veri one-shot
+crontab -e
+# @reboot /usr/local/bin/job</code></pre>
+
+      <h3><code>nohup</code> non basta: il processo muore al logout</h3>
+      <p>
+        <strong>Causa.</strong> <code>nohup</code> ignora <code>SIGHUP</code>,
+        ma non protegge da OOM, errori, chiusura della sessione systemd o
+        pulizia dei processi utente. Non &egrave; un supervisore.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Per un servizio vero usa un&rsquo;unit&agrave;
+        con <code>Restart=on-failure</code> e log nel journal. Per un processo
+        utente che deve restare vivo senza login, abilita il linger.
+      </p>
+      <pre><code>loginctl show-user "$USER" -p Linger
+sudo loginctl enable-linger "$USER"
+systemctl --user enable --now job.service
+journalctl --user -u job.service -f
+
+# Unita di sistema
+systemctl edit --force --full job.service
+# [Service]
+# ExecStart=/usr/local/bin/job
+# Restart=on-failure
+# RestartSec=5</code></pre>
+
+      <h3>Ho alzato <code>ulimit -n</code> ma il servizio ha ancora pochi file</h3>
+      <p>
+        <strong>Causa.</strong> <code>ulimit</code> vale per la shell e i suoi
+        figli. I servizi systemd non passano da PAM e non leggono
+        <code>limits.conf</code>: usano <code>LimitNOFILE=</code>.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Imposta il limite nell&rsquo;unit&agrave; o
+        nei drop-in, ricarica systemd, riavvia il servizio e verifica
+        <code>/proc/PID/limits</code>. Il tetto assoluto &egrave;
+        <code>fs.nr_open</code>.
+      </p>
+      <pre><code>systemctl show nome.service -p LimitNOFILE
+sudo systemctl edit nome.service
+# [Service]
+# LimitNOFILE=65535
+
+sudo systemctl daemon-reload
+sudo systemctl restart nome.service
+cat /proc/PID/limits | grep 'open files'
+cat /proc/sys/fs/nr_open</code></pre>
+
+      <h3>Load average alto con la CPU quasi ferma</h3>
+      <p>
+        <strong>Causa.</strong> Il load average conta anche i task in
+        <code>D</code>. Se <code>vmstat</code> mostra <code>b</code> alto e
+        <code>wa</code> alto, il collo di bottiglia &egrave; il disco, la rete
+        o un mount.
+      </p>
+      <pre><code>vmstat 1 5
+ps -eo pid,stat,wchan:32,pcpu,pmem,cmd | awk '$2 ~ /^D/'
+iostat -xz 1 5
+pidstat -d 1 5
+cat /proc/pressure/io
+dmesg -T | tail -n 50
+sudo smartctl -a /dev/nvme0n1</code></pre>
+      <p>
+        <strong>Soluzione.</strong> Riduci il carico I/O con <code>ionice</code>
+        o <code>io.max</code>, sposta i dati su un volume diverso, correggi il
+        mount NFS, verifica la salute del disco. Aumentare la CPU non serve.
+      </p>
+
+      <h3>Come limito un processo a un core o a 1 GB di RAM?</h3>
+      <p>
+        <strong>Soluzione.</strong> Con <code>taskset</code> o
+        <code>AllowedCPUs=</code> per l&rsquo;affinit&agrave;, e con
+        <code>MemoryMax=</code> o un cgroup per la memoria.
+        <code>CPUQuota=100%</code> corrisponde a un core.
+      </p>
+      <pre><code>taskset -c 0 comando
+systemd-run --scope -p AllowedCPUs=0 -p MemoryMax=1G --unit=limitato \
+  /usr/local/bin/job
+systemd-run --scope -p CPUQuota=100% -p MemoryMax=1G \
+  /usr/local/bin/job
+
+systemctl set-property nome.service CPUQuota=50% MemoryMax=1G
+cat /sys/fs/cgroup/system.slice/nome.service/cpu.stat</code></pre>
+
+      <h3><code>kill</code> dice &ldquo;Operation not permitted&rdquo;</h3>
+      <p>
+        <strong>Causa.</strong> Il processo esiste ma non abbiamo i permessi:
+        utente diverso, <code>CAP_KILL</code> mancante, user namespace, oppure
+        <code>/proc</code> montato con <code>hidepid</code>.
+      </p>
+      <pre><code>id
+capsh --print | grep -i cap_kill
+ls -l /proc/PID
+cat /proc/PID/status | grep -E '^(Uid|Gid|NSpid)'
+sudo kill -TERM PID
+sudo nsenter -t PID -p kill -TERM PID</code></pre>
+      <p>
+        <strong>Nota.</strong> Essere root in un container non significa avere
+        <code>CAP_KILL</code> sui processi del namespace padre. In quel caso si
+        agisce dall&rsquo;host o si cambiano le capability del container.
+      </p>
+
+      <h3>Come vedo i processi dentro un container?</h3>
+      <p>
+        <strong>Soluzione.</strong> Ogni container ha un namespace PID proprio.
+        Dall&rsquo;host vedi i processi con il PID del namespace host; dentro il
+        container ne vedi un albero ridotto.
+      </p>
+      <pre><code>podman top nome pid user comm args
+docker top nome
+podman inspect -f '{{.State.Pid}}' nome
+
+# Entrare nei namespace del container
+nsenter -t PID -p -m
+cat /proc/PID/cgroup
+systemd-cgls | grep -A5 nome</code></pre>
+
+      <h3>Il sistema ha ucciso un processo ma non trovo tracce nell&rsquo;OOM killer</h3>
+      <p>
+        <strong>Causa.</strong> Pu&ograve; essere <code>systemd-oomd</code>, una
+        <code>OOMPolicy=stop</code> che ferma l&rsquo;intera unit&agrave;, un
+        crash con core dump, o un problema hardware. L&rsquo;OOM del kernel non
+        &egrave; l&rsquo;unico modo in cui un processo sparisce.
+      </p>
+      <pre><code>journalctl -k --since '1 hour ago' | grep -i -E 'oom|segfault|killed'
+journalctl -u systemd-oomd --since '1 hour ago'
+oomctl
+coredumpctl list
+dmesg -T | grep -i -E 'oom|segfault|hardware error'
+systemctl show nome.service -p OOMPolicy</code></pre>
+
+      <h3>Posso mandare <code>SIGKILL</code> a PID 1?</h3>
+      <p>
+        <strong>No, non nel senso che si immagina.</strong> PID 1 ignora i
+        segnali per cui non ha un handler, <code>SIGKILL</code> compreso. In un
+        container il runtime pu&ograve; terminarlo dall&rsquo;esterno del
+        namespace; sull&rsquo;host si usa <code>systemctl reboot</code> o
+        <code>systemctl poweroff</code>.
+      </p>
+      <pre><code># Nel container: stop ordinato, poi kill dopo il timeout
+podman stop -t 10 nome
+docker stop -t 10 nome
+
+# PID 1 che non raccoglie i figli: usa un init
+podman run --init ...
+docker run --init ...</code></pre>
+
+      <h3>Risposte rapide</h3>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Domanda</th><th>Risposta</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Come vedo tutti i thread?</td><td><code>ps -eLf</code>, <code>top -H -p PID</code></td></tr>
+            <tr><td>Chi usa la porta 8080?</td><td><code>ss -ltnp</code>, <code>lsof -i :8080</code></td></tr>
+            <tr><td>Come vedo l&rsquo;ambiente di un processo?</td><td><code>tr '\0' '\n' &lt; /proc/PID/environ</code></td></tr>
+            <tr><td>Come fermo e riprendo un processo?</td><td><code>kill -STOP PID</code>, <code>kill -CONT PID</code></td></tr>
+            <tr><td>Come aspetto la fine di un PID?</td><td><code>pidwait PID</code></td></tr>
+            <tr><td>Come uccido un intero process group?</td><td><code>kill -TERM -- -PGID</code></td></tr>
+            <tr><td>Come trovo il cgroup di un processo?</td><td><code>cat /proc/PID/cgroup</code>, <code>systemd-cgls</code></td></tr>
+            <tr><td>Dove finiscono i core dump?</td><td><code>coredumpctl</code>, <code>/proc/sys/kernel/core_pattern</code></td></tr>
+            <tr><td>Come cambio la priorit&agrave; I/O?</td><td><code>ionice -c 2 -n 7 -p PID</code></td></tr>
+            <tr><td>Come vedo il tempo di CPU di un processo?</td><td><code>ps -o pid,time,etime,cmd -p PID</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong><code>man 2 fork</code>, <code>man 2 execve</code>,
+        <code>man 2 wait</code>, <code>man 2 clone</code></strong> &mdash;
+        creazione, sostituzione e raccolta dei processi.</li>
+        <li><strong><code>man 7 signal</code>, <code>man 2 kill</code>,
+        <code>man 2 sigaction</code></strong> &mdash; segnali, maschere,
+        disposizioni e code real-time.</li>
+        <li><strong><code>man 5 proc</code></strong> &mdash; interfaccia
+        <code>/proc</code>, file per processo e parametri del kernel.</li>
+        <li><strong><code>man 7 cgroups</code>, <code>man 7 namespaces</code>,
+        <code>man 1 unshare</code>, <code>man 1 nsenter</code></strong> &mdash;
+        isolamento e controllo delle risorse.</li>
+        <li><strong><code>man 1 systemd-run</code>,
+        <code>man 5 systemd.resource-control</code>,
+        <code>man 5 systemd.exec</code></strong> &mdash; unit&agrave;
+        transienti, limiti e cgroup gestiti da systemd.</li>
+        <li><strong><code>man 1 prlimit</code>, <code>man 1 chrt</code>,
+        <code>man 1 taskset</code>, <code>man 1 ionice</code>,
+        <code>man 1 choom</code></strong> &mdash; limiti, priorit&agrave;,
+        affinit&agrave; e OOM score.</li>
+        <li><strong>Linux kernel documentation</strong> &mdash;
+        <em>scheduler</em>, <em>cgroup-v2</em>, <em>psi</em>,
+        <em>proc</em>, <em>namespaces</em>.</li>
+        <li><strong>procps-ng, util-linux, sysstat, systemd, bcc/bpftrace</strong>
+        &mdash; strumenti e manuali dei rispettivi progetti.</li>
+        <li><strong>LWN.net</strong> &mdash; articoli su EEVDF, PSI, cgroup v2
+        e pidfd.</li>
+        <li><strong>Debian, Ubuntu, Red Hat e Arch Wiki</strong> &mdash;
+        default delle distribuzioni, pacchetti e procedure di recupero.</li>
+      </ul>
+      <p>
+        Comportamenti e comandi verificati il 14 novembre 2026 su kernel 7.x e
+        systemd. I default cambiano tra distribuzioni e versioni: lo scheduler
+        fair &egrave; EEVDF dal kernel 6.6, cgroup v2 &egrave; la gerarchia
+        unificata, <code>systemd-oomd</code> &egrave; attivo su molti desktop
+        ma non su tutti i server. Prima di cambiare limiti o uccidere processi,
+        controlla <code>ps</code>, <code>/proc/PID/status</code> e
+        <code>systemd-cgls</code>.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Linux</span>
+        <span class="footer-right">
+          <span>Processi e risorse &middot; aggiornata il 14 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

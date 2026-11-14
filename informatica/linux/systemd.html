@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>systemd — Adripedia</title>
+  <meta name="description" content="systemd su Linux: PID 1, unit&agrave;, service, systemctl, target e dipendenze, timer, socket activation, template, journald, boot e rescue, cgroup, hardening, networkd, resolved, timesyncd, casi pratici e soluzioni.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/systemd.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">systemd</span>
+    </header>
+
+    <main id="main" class="page" data-cmd-search-scope>
+      <p class="eyebrow">Approfondimento &middot; Linux</p>
+      <h1>systemd</h1>
+      <p class="lead">
+        systemd &egrave; PID 1, ma ridurlo a &ldquo;il programma che avvia il
+        resto&rdquo; &egrave; come dire che un database &egrave; un file. In
+        pochi anni &egrave; diventato il gestore dei servizi, dei socket, dei
+        timer, dei punti di mount, delle sessioni, del journal, della rete,
+        del DNS, dell&rsquo;orologio e dei cgroup. Questa pagina spiega come
+        &egrave; fatto, come si scrive un&rsquo;unit&agrave; che non si rompe,
+        come si leggono le dipendenze e come si diagnostica un servizio che
+        parte a mano ma non al boot.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Quattro comandi coprono
+          l&rsquo;ordinaria amministrazione:
+          <code>systemctl status nome</code> per lo stato,
+          <code>systemctl cat nome</code> per vedere tutte le fonti
+          dell&rsquo;unit&agrave;, <code>journalctl -u nome -b</code> per i
+          log di questa sessione e <code>systemd-analyze verify</code> per
+          scoprire gli errori prima di ricaricare. Dopo ogni modifica a un
+          file unit&agrave; serve <code>systemctl daemon-reload</code>, e
+          dopo un aggiornamento di systemd serve
+          <code>systemctl daemon-reexec</code>.
+        </p>
+      </div>
+
+      <p>
+        Per il ciclo di vita dei processi, i segnali e i cgroup visti dal lato
+        kernel c&rsquo;&egrave; <a href="processi.html">Processi e risorse</a>;
+        per i file di configurazione e i permessi,
+        <a href="filesystem.html">File system e permessi</a>; per i parametri
+        del kernel e l&rsquo;initramfs,
+        <a href="kernel.html">Il kernel e la sua gestione</a>. Qui si presume
+        una distribuzione con systemd gi&agrave; installato, come Debian,
+        Ubuntu, Fedora, RHEL, Mint o Kali.
+      </p>
+
+      <div class="cmd-search" id="cerca">
+        <label class="cmd-search-label" for="cmd-search-input">Cerca un comando</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="cmd-search-input" type="search"
+                 placeholder="Per esempio: timer, journal, restart, hardening&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                 aria-autocomplete="list" aria-describedby="cmd-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+          Scrivi cosa vuoi fare: la ricerca guarda comandi, descrizioni e titoli delle sezioni.
+        </p>
+        <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+            aria-label="Comandi trovati" hidden></ul>
+      </div>
+
+      <nav class="section-index" aria-labelledby="systemd-index-title">
+        <p class="section-index-title" id="systemd-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cerca">Cerca un comando</a></li>
+          <li><a href="#pid1">PID 1 e architettura</a></li>
+          <li><a href="#unita">Unit&agrave;, tipi e percorsi</a></li>
+          <li><a href="#service">Scrivere un service</a></li>
+          <li><a href="#systemctl">systemctl nel quotidiano</a></li>
+          <li><a href="#target">Target e dipendenze</a></li>
+          <li><a href="#timer">Timer</a></li>
+          <li><a href="#socket">Socket activation e template</a></li>
+          <li><a href="#journal">journald e journalctl</a></li>
+          <li><a href="#boot">Boot, rescue ed emergenza</a></li>
+          <li><a href="#risorse">Risorse, cgroup e slice</a></li>
+          <li><a href="#hardening">Hardening delle unit&agrave;</a></li>
+          <li><a href="#rete">Rete, DNS e orologio</a></li>
+          <li><a href="#casi">Domande frequenti e casi pratici</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="pid1">PID 1 e architettura</h2>
+      <p>
+        Al termine del boot il kernel esegue un solo processo, che su un
+        sistema systemd &egrave; <code>/usr/lib/systemd/systemd</code>. Quel
+        processo diventa PID 1, monta i file system rimasti, applica la
+        configurazione, avvia le unit&agrave; e resta in attesa. PID 1 ha un
+        compito che nessun altro processo ha: raccogliere i figli orfani e
+        evitare che diventino zombie. Per questo, se systemd muore, il kernel
+        va in panico: non esiste un secondo programma pronto a prendere il
+        suo posto.
+      </p>
+      <p>
+        Il progetto nasce nel 2010 per iniziativa di Lennart Poettering e Kay
+        Sievers, con l&rsquo;obiettivo di sostituire SysVinit e Upstart con un
+        modello dichiarativo: si descrive <em>cosa</em> deve essere attivo e
+        da cosa dipende, non una sequenza di script. Fedora 15 lo adotta nel
+        maggio 2011, RHEL 7 nel 2014, Debian 8 nel 2015, Ubuntu 15.04 nello
+        stesso anno. Oggi &egrave; il default praticamente ovunque tranne
+        alcune nicchie: Alpine usa OpenRC, Void usa runit, Gentoo lascia
+        scegliere, Devuan esiste proprio per non usarlo.
+      </p>
+      <p>
+        &ldquo;systemd fa troppo&rdquo; &egrave; la critica pi&ugrave;
+        frequente, e in parte &egrave; vera: il progetto ha assorbito
+        funzioni che prima erano di demoni separati. La difesa &egrave; che
+        quei demoni sono binari distinti, comunicano su D-Bus e condividono
+        un modello di configurazione e di log. Non &egrave; un unico processo
+        gigante, ma una famiglia di componenti con lo stesso vocabolario.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Componente</th><th>Ruolo</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>systemd</code></td><td>PID 1, system manager e user manager</td></tr>
+            <tr><td><code>systemd-journald</code></td><td>Raccolta e conservazione dei log</td></tr>
+            <tr><td><code>systemd-logind</code></td><td>Sessioni, utenti, seat, inibizioni</td></tr>
+            <tr><td><code>systemd-udevd</code></td><td>Gestione eventi dei dispositivi</td></tr>
+            <tr><td><code>systemd-networkd</code></td><td>Configurazione di rete dichiarativa</td></tr>
+            <tr><td><code>systemd-resolved</code></td><td>Resolver DNS, LLMNR, mDNS, DNSSEC</td></tr>
+            <tr><td><code>systemd-timesyncd</code></td><td>Sincronizzazione NTP leggera</td></tr>
+            <tr><td><code>systemd-coredump</code></td><td>Raccolta dei core dump</td></tr>
+            <tr><td><code>systemd-oomd</code></td><td>OOM anticipato basato su PSI</td></tr>
+            <tr><td><code>systemd-homed</code></td><td>Home directory portabili e cifrate</td></tr>
+            <tr><td><code>systemd-machined</code></td><td>Registro di macchine e container</td></tr>
+            <tr><td><code>systemd-nspawn</code></td><td>Container leggero basato su namespace</td></tr>
+            <tr><td><code>systemd-boot</code></td><td>Boot loader UEFI minimalista</td></tr>
+            <tr><td><code>systemd-analyze</code>, <code>systemd-run</code></td><td>Analisi e unit&agrave; transienti</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Chi e PID 1
+ps -p 1 -o pid,comm,args
+cat /proc/1/comm
+
+# Versione e funzionalita compilate
+systemctl --version
+systemd-analyze --version
+
+# Stato complessivo del sistema
+systemctl is-system-running
+# running, degraded, starting, maintenance, stopping, offline, unknown
+
+# Modello di init e conferma
+readlink -f /sbin/init
+systemctl --no-pager list-units --type=target</code></pre>
+      <p>
+        <code>systemctl is-system-running</code> risponde <code>running</code>
+        quando tutto &egrave; partito, <code>degraded</code> quando almeno
+        un&rsquo;unit&agrave; &egrave; fallita. &Egrave; il primo controllo
+        dopo un boot sospetto, prima ancora di guardare i singoli servizi.
+        Un sistema <code>degraded</code> funziona, ma qualcosa non &egrave;
+        andato come previsto.
+      </p>
+
+      <h2 id="unita">Unit&agrave;, tipi e percorsi</h2>
+      <p>
+        Un&rsquo;unit&agrave; &egrave; un file di testo in formato INI con
+        estensione che ne dichiara il tipo: <code>.service</code>,
+        <code>.socket</code>, <code>.timer</code>, <code>.target</code>,
+        <code>.mount</code>, <code>.automount</code>, <code>.swap</code>,
+        <code>.path</code>, <code>.slice</code>, <code>.scope</code>,
+        <code>.device</code>. Il nome completo &egrave; l&rsquo;identit&agrave;
+        dell&rsquo;unit&agrave;: <code>sshd.service</code> e
+        <code>sshd.socket</code> sono due oggetti diversi, e possono
+        coesistere.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Tipo</th><th>A cosa serve</th><th>Esempio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>service</code></td><td>Un processo o un gruppo di processi</td><td><code>nginx.service</code></td></tr>
+            <tr><td><code>socket</code></td><td>Un socket in ascolto che attiva un servizio</td><td><code>sshd.socket</code></td></tr>
+            <tr><td><code>timer</code></td><td>Esecuzione programmata di un&rsquo;unit&agrave;</td><td><code>logrotate.timer</code></td></tr>
+            <tr><td><code>target</code></td><td>Punto di sincronizzazione, simile a un runlevel</td><td><code>multi-user.target</code></td></tr>
+            <tr><td><code>mount</code></td><td>Un punto di mount gestito da systemd</td><td><code>home.mount</code></td></tr>
+            <tr><td><code>automount</code></td><td>Mount su richiesta</td><td><code>home.automount</code></td></tr>
+            <tr><td><code>swap</code></td><td>Area di swap</td><td><code>dev-sda2.swap</code></td></tr>
+            <tr><td><code>path</code></td><td>Attivazione su modifica di un percorso</td><td><code>cups.path</code></td></tr>
+            <tr><td><code>slice</code></td><td>Gruppo gerarchico di cgroup</td><td><code>user.slice</code></td></tr>
+            <tr><td><code>scope</code></td><td>Gruppo di processi creato dall&rsquo;esterno</td><td><code>session-1.scope</code></td></tr>
+            <tr><td><code>device</code></td><td>Dispositivo esposto dal kernel</td><td><code>dev-nvme0n1.device</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        I file si trovano in tre gerarchie, in ordine di precedenza:
+        <code>/etc/systemd/system</code> per
+        l&rsquo;amministratore, <code>/run/systemd/system</code> per lo stato
+        runtime e <code>/usr/lib/systemd/system</code> per i pacchetti della
+        distribuzione. Un file con lo stesso nome in <code>/etc</code>
+        vince su quello del vendor; un drop-in in
+        <code>/etc/systemd/system/nome.service.d/*.conf</code> modifica solo
+        le direttive che contiene. Le unit&agrave; utente stanno in
+        <code>~/.config/systemd/user</code> e in
+        <code>/usr/lib/systemd/user</code>.
+      </p>
+      <pre><code># Elenco completo e stato di abilitazione
+systemctl list-units --type=service
+systemctl list-units --all --type=service
+systemctl list-unit-files --type=service
+systemctl list-unit-files --state=enabled
+
+# Vedere tutte le fonti di un'unita, drop-in compresi
+systemctl cat sshd.service
+systemctl cat sshd.service | grep -n '^#'
+
+# Proprieta effettive, non solo il file
+systemctl show sshd.service
+systemctl show sshd.service -p FragmentPath -p DropInPaths
+systemctl show sshd.service -p ExecStart -p User -p Restart
+
+# Dove si trova il file
+systemctl status sshd.service | head -n 5</code></pre>
+      <p>
+        Lo stato di un&rsquo;unit&agrave; non &egrave; solo
+        <em>enabled</em> o <em>disabled</em>. <strong>static</strong>
+        significa che non ha una sezione <code>[Install]</code> e non si
+        abilita da sola; <strong>indirect</strong> significa che viene
+        attivata da un&rsquo;altra unit&agrave;; <strong>generated</strong>
+        indica un&rsquo;unit&agrave; creata al volo da un generatore;
+        <strong>masked</strong> &egrave; un link a <code>/dev/null</code> che
+        impedisce l&rsquo;avvio in modo assoluto; <strong>transient</strong>
+        &egrave; un&rsquo;unit&agrave; in memoria creata da
+        <code>systemd-run</code> o da un&rsquo;API.
+      </p>
+      <pre><code># Disabilitare non basta se qualcosa la tira dentro: mascherare
+sudo systemctl disable --now cups.service
+sudo systemctl mask cups.service
+sudo systemctl unmask cups.service
+
+# Attenzione: mask su un'unita attiva non la ferma
+sudo systemctl stop cups.service
+sudo systemctl mask --now cups.service
+
+# Verifica
+systemctl is-enabled cups.service
+ls -l /etc/systemd/system/cups.service</code></pre>
+      <p>
+        <code>disable</code> rimuove i link di abilitazione ma non impedisce
+        a un&rsquo;altra unit&agrave; di attivare il servizio come
+        dipendenza. <code>mask</code> rende l&rsquo;unit&agrave;
+        inavviabile: &egrave; il modo corretto per dire &ldquo;questo non
+        deve partire mai&rdquo;. Su Debian e Ubuntu molti servizi sono
+        abilitati tramite <code>WantedBy=multi-user.target</code>; su RHEL e
+        Fedora lo stesso, con l&rsquo;aggiunta di preset che decidono lo
+        stato iniziale dei pacchetti.
+      </p>
+
+      <h2 id="service">Scrivere un service</h2>
+      <p>
+        Un&rsquo;unit&agrave; di servizio minima ha tre sezioni:
+        <code>[Unit]</code> per la descrizione e le dipendenze,
+        <code>[Service]</code> per come eseguire il processo e
+        <code>[Install]</code> per come abilitarla. Tutto ci&ograve; che non
+        &egrave; dichiarato eredita i default di systemd, che sono
+        ragionevoli ma non sempre adatti a un&rsquo;applicazione reale.
+      </p>
+      <pre><code># /etc/systemd/system/miaapp.service
+[Unit]
+Description=Mia applicazione
+Documentation=https://example.invalid/docs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=miaapp
+Group=miaapp
+WorkingDirectory=/srv/miaapp
+Environment=APP_ENV=production
+EnvironmentFile=-/etc/miaapp/miaapp.env
+ExecStart=/usr/local/bin/miaapp --config /etc/miaapp/config.yml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=miaapp
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+      <p>
+        <code>After=</code> ordina, <code>Wants=</code> tira dentro
+        l&rsquo;unit&agrave; senza rendere il fallimento bloccante. Mettere
+        <code>After=network.target</code> non significa che la rete sia
+        pronta: <code>network.target</code> dice solo che la configurazione
+        &egrave; stata avviata. Per avere un indirizzo e una rotta servono
+        <code>network-online.target</code> e un demone
+        <em>wait-online</em> attivo.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th><code>Type=</code></th><th>Quando systemd considera il servizio avviato</th><th>Uso tipico</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>simple</code></td><td>Subito dopo il fork di <code>ExecStart</code></td><td>Default; processi che restano in foreground</td></tr>
+            <tr><td><code>exec</code></td><td>Dopo che <code>execve</code> &egrave; riuscita</td><td>Come simple, ma distingue errori di esecuzione</td></tr>
+            <tr><td><code>forking</code></td><td>Quando il processo padre esce</td><td>Demoni tradizionali che fanno fork</td></tr>
+            <tr><td><code>oneshot</code></td><td>Quando il processo termina</td><td>Script di inizializzazione, job brevi</td></tr>
+            <tr><td><code>dbus</code></td><td>Quando il nome D-Bus &egrave; sul bus</td><td>Servizi D-Bus</td></tr>
+            <tr><td><code>notify</code></td><td>Quando arriva <code>READY=1</code> su <code>sd_notify</code></td><td>Servizi che sanno dire quando sono pronti</td></tr>
+            <tr><td><code>notify-reload</code></td><td>Come notify, con ricarica via segnale</td><td>Servizi con reload esplicito</td></tr>
+            <tr><td><code>idle</code></td><td>Dopo che le altre unit&agrave; sono state avviate</td><td>Console, job cosmetici</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La scelta di <code>Type=</code> non &egrave; un dettaglio estetico.
+        Con <code>forking</code> systemd deve indovinare quale processo sia
+        il demone: senza <code>PIDFile=</code> corretto pu&ograve; tracciare
+        il padre sbagliato, dichiarare il servizio attivo e non accorgersi
+        che il figlio &egrave; morto. Un&rsquo;applicazione moderna che resta
+        in foreground va lasciata <code>Type=simple</code> o
+        <code>notify</code>.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th><code>Restart=</code></th><th>Riavvia quando</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>no</code></td><td>Mai; &egrave; il default</td></tr>
+            <tr><td><code>on-success</code></td><td>Uscita con codice 0</td></tr>
+            <tr><td><code>on-failure</code></td><td>Codice diverso da 0, segnale, timeout, watchdog</td></tr>
+            <tr><td><code>on-abnormal</code></td><td>Segnale, timeout o watchdog</td></tr>
+            <tr><td><code>on-abort</code></td><td>Segnale non gestito</td></tr>
+            <tr><td><code>on-watchdog</code></td><td>Watchdog scaduto</td></tr>
+            <tr><td><code>always</code></td><td>Sempre, anche dopo un&rsquo;uscita pulita</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>Restart=always</code> su un job che termina normalmente produce
+        un ciclo infinito di riavvii. Per gli one-shot si usa
+        <code>Restart=no</code>; per i demoni <code>on-failure</code> &egrave;
+        quasi sempre la scelta giusta. <code>RestartSec=</code> evita di
+        martellare il sistema, e <code>StartLimitIntervalSec=</code> con
+        <code>StartLimitBurst=</code> ferma del tutto un servizio che
+        fallisce troppe volte.
+      </p>
+      <pre><code>[Unit]
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+
+# Dopo un crash, systemd lo lascia in failed:
+systemctl status miaapp.service
+journalctl -u miaapp.service -b
+systemctl reset-failed miaapp.service
+systemctl start miaapp.service</code></pre>
+      <p>
+        Le direttive di esecuzione si concatenano in ordine:
+        <code>ExecStartPre</code>, <code>ExecStart</code>,
+        <code>ExecStartPost</code>, <code>ExecReload</code>,
+        <code>ExecStop</code>, <code>ExecStopPost</code>. Ogni riga
+        <code>ExecStart=</code> aggiunge un comando; una riga vuota
+        <code>ExecStart=</code> azzera la lista ereditata, cosa necessaria
+        quando si vuole sostituire l&rsquo;esecuzione in un drop-in.
+        <code>$MAINPID</code> &egrave; il PID del processo principale,
+        disponibile in <code>ExecReload</code> e <code>ExecStop</code>.
+      </p>
+      <pre><code># Drop-in: non tocca il file del vendor
+sudo systemctl edit miaapp.service
+# Crea /etc/systemd/system/miaapp.service.d/override.conf
+
+# Esempio di override
+[Service]
+Environment=APP_ENV=staging
+LimitNOFILE=65535
+
+# Modifica completa, copia il file in /etc
+sudo systemctl edit --full miaapp.service
+
+# Ricaricare la configurazione e il servizio
+sudo systemctl daemon-reload
+sudo systemctl restart miaapp.service
+
+# Controllare prima di applicare
+systemd-analyze verify /etc/systemd/system/miaapp.service</code></pre>
+      <p>
+        <code>systemctl edit</code> &egrave; la pratica corretta: lascia
+        intatto il file del pacchetto, che verr&agrave; aggiornato senza
+        conflitti, e tiene le modifiche locali in un posto prevedibile.
+        <code>systemctl edit --full</code> crea una copia completa in
+        <code>/etc</code>, utile per riscrivere un&rsquo;unit&agrave; di cui
+        si vuole cambiare quasi tutto, ma destinata a divergere dal vendor.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Utenti e ambiente.</strong> <code>User=</code> e
+          <code>Group=</code> cambiano identit&agrave; prima di
+          <code>ExecStart</code>; <code>DynamicUser=yes</code> crea un utente
+          effimero con UID alto, senza voce in <code>/etc/passwd</code>.
+          <code>EnvironmentFile=</code> con il trattino iniziale
+          (<code>-</code>) non fallisce se il file manca.
+          <code>StandardOutput=journal</code> &egrave; il default per i
+          servizi di sistema e rende i log visibili con
+          <code>journalctl -u</code>.
+        </p>
+      </div>
+
+      <h2 id="systemctl">systemctl nel quotidiano</h2>
+      <p>
+        <code>systemctl</code> &egrave; l&rsquo;interfaccia unica per il
+        system manager e, con <code>--user</code>, per l&rsquo;user manager.
+        La sintassi &egrave; coerente: verbo, unit&agrave;, opzioni. Quasi
+        tutti i comandi accettano <code>--now</code> per unire
+        abilitazione e avvio, e <code>--no-pager</code> per evitare che
+        l&rsquo;output finisca in <code>less</code>.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Comando</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>systemctl status nome</code></td><td>Stato, PID, cgroup, ultime righe di log</td></tr>
+            <tr><td><code>systemctl start nome</code></td><td>Avvia adesso, senza abilitare al boot</td></tr>
+            <tr><td><code>systemctl stop nome</code></td><td>Ferma adesso</td></tr>
+            <tr><td><code>systemctl restart nome</code></td><td>Ferma e riavvia</td></tr>
+            <tr><td><code>systemctl reload nome</code></td><td>Invia la ricarica configurata, se esiste</td></tr>
+            <tr><td><code>systemctl reload-or-restart nome</code></td><td>Reload se possibile, altrimenti restart</td></tr>
+            <tr><td><code>systemctl try-restart nome</code></td><td>Riavvia solo se era attivo</td></tr>
+            <tr><td><code>systemctl enable --now nome</code></td><td>Abilita al boot e avvia subito</td></tr>
+            <tr><td><code>systemctl disable --now nome</code></td><td>Disabilita e ferma</td></tr>
+            <tr><td><code>systemctl mask nome</code></td><td>Impedisce l&rsquo;avvio in modo assoluto</td></tr>
+            <tr><td><code>systemctl is-active nome</code></td><td><code>active</code>, <code>inactive</code>, <code>failed</code></td></tr>
+            <tr><td><code>systemctl is-enabled nome</code></td><td><code>enabled</code>, <code>disabled</code>, <code>static</code>, <code>masked</code></td></tr>
+            <tr><td><code>systemctl --failed</code></td><td>Solo le unit&agrave; in stato failed</td></tr>
+            <tr><td><code>systemctl list-dependencies nome</code></td><td>Albero delle dipendenze</td></tr>
+            <tr><td><code>systemctl cat nome</code></td><td>File unit&agrave; e drop-in</td></tr>
+            <tr><td><code>systemctl show nome -p PROP</code></td><td>Valore effettivo di una propriet&agrave;</td></tr>
+            <tr><td><code>systemctl kill -s SIGKILL nome</code></td><td>Segnale a tutti i processi del cgroup</td></tr>
+            <tr><td><code>systemctl reset-failed nome</code></td><td>Azzera il contatore di fallimenti</td></tr>
+            <tr><td><code>systemctl daemon-reload</code></td><td>Rilegge i file unit&agrave;</td></tr>
+            <tr><td><code>systemctl daemon-reexec</code></td><td>Riesegue PID 1 dopo un aggiornamento</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>start</code> e <code>enable</code> sono cose diverse:
+        <code>start</code> agisce adesso, <code>enable</code> crea i link
+        nella directory del target per il prossimo boot. Un servizio
+        avviato a mano ma non abilitato sparisce al riavvio; un servizio
+        abilitato ma non avviato parte al prossimo boot. <code>--now</code>
+        unisce i due gesti, ed &egrave; quello che si vuole quasi sempre.
+      </p>
+      <pre><code># Ciclo di lavoro tipico
+sudo systemctl daemon-reload
+sudo systemctl enable --now miaapp.service
+systemctl status miaapp.service
+journalctl -u miaapp.service -b -n 50 --no-pager
+
+# Cosa farebbe enable, senza farlo
+systemctl enable --dry-run miaapp.service
+
+# Dipendenze inverse: chi tira dentro questa unita
+systemctl list-dependencies --reverse miaapp.service
+
+# Proprieta di interesse
+systemctl show miaapp.service -p ActiveState -p SubState -p MainPID
+systemctl show miaapp.service -p ExecMainStartTimestamp -p ExecMainExitTimestamp
+
+# Uscita e stato
+systemctl is-active miaapp.service; echo $?
+# 0 attivo, 3 non attivo, 4 unita inesistente</code></pre>
+      <p>
+        Gli exit code di <code>systemctl</code> sono utili negli script:
+        <code>is-active</code> ritorna 0 solo se il servizio &egrave;
+        attivo, <code>is-enabled</code> distingue abilitato e non
+        abilitato. <code>systemctl status</code> usa invece 3 per
+        &ldquo;non attivo&rdquo; e 4 per &ldquo;non esiste&rdquo;: non
+        trattarlo come un semplice booleano.
+      </p>
+      <pre><code># User manager: servizi dell'utente, senza root
+systemctl --user status
+systemctl --user enable --now backup.service
+journalctl --user -u backup.service -b
+
+# Restare attivi dopo il logout
+loginctl show-user "$USER" -p Linger
+sudo loginctl enable-linger "$USER"
+
+# Ambiente corretto per --user da SSH o sudo
+echo "$XDG_RUNTIME_DIR"
+# /run/user/1000
+sudo -u alice XDG_RUNTIME_DIR=/run/user/1000 systemctl --user status</code></pre>
+      <p>
+        Il system manager e l&rsquo;user manager sono due istanze distinte
+        di systemd. I servizi utente non possono aprire porte privilegiate,
+        non vedono le unit&agrave; di sistema e vivono in
+        <code>user@UID.service</code>. Senza linger, l&rsquo;user manager
+        viene fermato all&rsquo;ultimo logout e i servizi utente muoiono con
+        lui.
+      </p>
+
+      <h2 id="target">Target e dipendenze</h2>
+      <p>
+        Un target &egrave; un&rsquo;unit&agrave; che non esegue nulla: serve
+        solo come punto di aggregazione. I runlevel di SysV sono stati
+        mappati su target, ma il modello &egrave; diverso: non c&rsquo;&egrave;
+        una sequenza numerica, ci sono dipendenze e ordinamenti dichiarati
+        da ogni unit&agrave;. <code>default.target</code> &egrave; un link
+        simbolico che decide dove si arriva al boot.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Target</th><th>Significato</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>poweroff.target</code></td><td>Spegnimento</td></tr>
+            <tr><td><code>rescue.target</code></td><td>Sistema single-user, servizi essenziali, root shell</td></tr>
+            <tr><td><code>multi-user.target</code></td><td>Sistema multiutente senza grafica</td></tr>
+            <tr><td><code>graphical.target</code></td><td>Multiutente con display manager</td></tr>
+            <tr><td><code>reboot.target</code></td><td>Riavvio</td></tr>
+            <tr><td><code>emergency.target</code></td><td>Solo root filesystem, shell minima</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Dove punta il default
+systemctl get-default
+readlink -f /etc/systemd/system/default.target
+
+# Cambiare il default
+sudo systemctl set-default multi-user.target
+sudo systemctl set-default graphical.target
+
+# Passare a un target adesso, senza riavviare
+sudo systemctl isolate rescue.target
+sudo systemctl isolate multi-user.target
+
+# Albero delle dipendenze
+systemctl list-dependencies multi-user.target
+systemctl list-dependencies --reverse network-online.target</code></pre>
+      <p>
+        Le relazioni si dividono in due famiglie: quelle che
+        <em>tirano dentro</em> un&rsquo;unit&agrave; e quelle che
+        <em>ordinano</em>. <code>Requires=</code> e <code>Wants=</code>
+        attivano; <code>After=</code> e <code>Before=</code> ordinano.
+        Dimenticare questa distinzione &egrave; l&rsquo;errore pi&ugrave;
+        comune: scrivere solo <code>After=postgresql.service</code> non
+        avvia PostgreSQL, e scrivere solo <code>Requires=postgresql.service</code>
+        senza <code>After=</code> pu&ograve; avviare i due processi in
+        parallelo.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Direttiva</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>Requires=</code></td><td>Attiva l&rsquo;unit&agrave;; se fallisce, fallisce anche questa</td></tr>
+            <tr><td><code>Wants=</code></td><td>Attiva l&rsquo;unit&agrave;, ma il fallimento non &egrave; bloccante</td></tr>
+            <tr><td><code>Requisite=</code></td><td>Non attiva; richiede che sia gi&agrave; attiva</td></tr>
+            <tr><td><code>BindsTo=</code></td><td>Come Requires, ma si ferma se l&rsquo;altra sparisce</td></tr>
+            <tr><td><code>PartOf=</code></td><td>Propaga stop e restart all&rsquo;unit&agrave; indicata</td></tr>
+            <tr><td><code>Conflicts=</code></td><td>Le due unit&agrave; non possono essere attive insieme</td></tr>
+            <tr><td><code>Before=</code> / <code>After=</code></td><td>Solo ordinamento, nessuna attivazione</td></tr>
+            <tr><td><code>OnFailure=</code></td><td>Attiva un&rsquo;unit&agrave; quando questa fallisce</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        L&rsquo;ordine di avvio non &egrave; globale: systemd costruisce un
+        grafo e avvia in parallelo tutto ci&ograve; che non ha vincoli. Un
+        target non &egrave; una barriera rigida, ma un nodo del grafo. Per
+        questo il boot &egrave; veloce e per questo un
+        <code>After=</code> sbagliato produce errori intermittenti invece
+        che un fallimento netto.
+      </p>
+      <pre><code># Visualizzare il grafo
+systemd-analyze dot --order | dot -Tsvg &gt; ordine.svg
+systemd-analyze dot multi-user.target | dot -Tsvg &gt; dipendenze.svg
+
+# Chi dipende da chi
+systemctl list-dependencies --all nginx.service
+systemctl list-dependencies --reverse nginx.service
+
+# Un servizio che deve partire dopo il mount di /srv
+# [Unit]
+# RequiresMountsFor=/srv
+# After=local-fs.target</code></pre>
+      <p>
+        <code>RequiresMountsFor=</code> &egrave; la direttiva giusta quando
+        un servizio ha bisogno di un percorso montato: systemd aggiunge le
+        dipendenze di mount necessarie senza doverle elencare a mano.
+        <code>ConditionPathExists=</code>, <code>ConditionFileNotEmpty=</code>
+        e <code>ConditionKernelCommandLine=</code> permettono di saltare
+        un&rsquo;unit&agrave; in modo pulito, senza marcarla come fallita.
+      </p>
+
+      <h2 id="timer">Timer</h2>
+      <p>
+        Un timer &egrave; un&rsquo;unit&agrave; <code>.timer</code> che
+        attiva un&rsquo;unit&agrave; <code>.service</code> con lo stesso
+        nome. Non sostituisce cron a livello di sintassi, ma offre
+        dipendenze, logging nel journal, ambienti controllati,
+        <code>Persistent=true</code> per recuperare le esecuzioni perse e
+        la possibilit&agrave; di vedere lo stato con
+        <code>systemctl list-timers</code>.
+      </p>
+      <pre><code># /etc/systemd/system/backup.service
+[Unit]
+Description=Backup notturno
+
+[Service]
+Type=oneshot
+User=backup
+ExecStart=/usr/local/bin/backup.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+# /etc/systemd/system/backup.timer
+[Unit]
+Description=Esegue il backup ogni notte
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=15m
+AccuracySec=1min
+Unit=backup.service
+
+[Install]
+WantedBy=timers.target</code></pre>
+      <p>
+        <code>OnCalendar=</code> usa una sintassi calendario leggibile:
+        <code>daily</code>, <code>weekly</code>, <code>Mon..Fri 08:00</code>,
+        <code>*-*-01 04:00:00</code> per il primo del mese.
+        <code>Persistent=true</code> salva l&rsquo;ultima esecuzione in
+        <code>/var/lib/systemd/timers</code> e recupera il job se la
+        macchina era spenta. <code>RandomizedDelaySec=</code> distribuisce
+        i timer su una flotta e evita che cento macchine colpiscano lo
+        stesso server alle 03:30:00.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Direttiva</th><th>Significato</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>OnCalendar=</code></td><td>Espressione calendario, con timezone locale</td></tr>
+            <tr><td><code>OnBootSec=</code></td><td>Dopo N dal boot</td></tr>
+            <tr><td><code>OnStartupSec=</code></td><td>Dopo N dall&rsquo;avvio di systemd</td></tr>
+            <tr><td><code>OnUnitActiveSec=</code></td><td>Dopo N dall&rsquo;ultima attivazione dell&rsquo;unit&agrave;</td></tr>
+            <tr><td><code>OnUnitInactiveSec=</code></td><td>Dopo N dall&rsquo;ultima disattivazione</td></tr>
+            <tr><td><code>Persistent=</code></td><td>Recupera le esecuzioni perse</td></tr>
+            <tr><td><code>RandomizedDelaySec=</code></td><td>Ritardo casuale aggiuntivo</td></tr>
+            <tr><td><code>AccuracySec=</code></td><td>Precisione richiesta; 1min &egrave; il default</td></tr>
+            <tr><td><code>Unit=</code></td><td>Unit&agrave; da attivare, se diversa dal nome</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Verificare quando scatta davvero
+systemd-analyze calendar '*-*-* 03:30:00'
+systemd-analyze calendar 'Mon..Fri 08:00' --iterations=5
+systemd-analyze calendar 'daily' --base-time='2026-11-14 12:00:00'
+
+# Timer attivi e prossime scadenze
+systemctl list-timers --all
+systemctl list-timers --all --no-pager
+
+# Stato e log
+systemctl status backup.timer
+systemctl status backup.service
+journalctl -u backup.service -b
+journalctl -u backup.timer -b
+
+# Test immediato senza aspettare
+sudo systemctl start backup.service
+
+# Timer transiente
+sudo systemd-run --on-active=30m --unit=promemoria /usr/local/bin/notify</code></pre>
+      <p>
+        Un timer abilitato ma senza il service corrispondente non fa nulla;
+        il service deve esistere, ma non va abilitato: lo attiva il timer.
+        Se il service ha <code>WantedBy=multi-user.target</code>, partir&agrave;
+        anche al boot, cosa quasi mai desiderata per un job periodico.
+        <code>systemctl list-timers</code> mostra le prossime scadenze e
+        &egrave; il modo pi&ugrave; rapido per capire se un timer &egrave;
+        davvero armato.
+      </p>
+      <p>
+        Rispetto a cron, i timer hanno un vantaggio concreto: ogni
+        esecuzione &egrave; un&rsquo;unit&agrave; con un cgroup, quindi si
+        pu&ograve; limitare memoria e CPU, si vede l&rsquo;esito nel
+        journal e si pu&ograve; usare <code>OnFailure=</code> per reagire.
+        Lo svantaggio &egrave; che la sintassi &egrave; pi&ugrave; verbose e
+        che i timer non sono pensati per esecuzioni ogni minuto su sistemi
+        molto carichi.
+      </p>
+
+      <h2 id="socket">Socket activation e template</h2>
+      <p>
+        Con la socket activation systemd apre il socket e avvia il servizio
+        solo alla prima connessione. Il servizio riceve il file descriptor
+        gi&agrave; pronto, quindi non deve preoccuparsi di bind, permessi o
+        race di avvio. &Egrave; il meccanismo che permette a
+        <code>sshd.socket</code> di ascoltare senza tenere un processo
+        sempre attivo, e che rende possibile riavviare un servizio senza
+        perdere le connessioni in coda.
+      </p>
+      <pre><code># /etc/systemd/system/echo.socket
+[Unit]
+Description=Socket di echo
+
+[Socket]
+ListenStream=127.0.0.1:7777
+Accept=yes
+
+[Install]
+WantedBy=sockets.target
+
+# /etc/systemd/system/echo@.service
+[Unit]
+Description=Echo per connessione
+
+[Service]
+ExecStart=/usr/local/bin/echo-once
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal</code></pre>
+      <p>
+        Con <code>Accept=yes</code> systemd accetta la connessione e avvia
+        un&rsquo;istanza del template <code>echo@.service</code> per ogni
+        client. Con <code>Accept=no</code> il servizio riceve direttamente
+        il socket in ascolto e gestisce le connessioni da s&eacute;: &egrave;
+        il modello usato da <code>sshd.socket</code> e dalla maggior parte
+        dei demoni di rete.
+      </p>
+      <pre><code># Abilitare il socket, non il service
+sudo systemctl daemon-reload
+sudo systemctl enable --now echo.socket
+
+# Verificare
+systemctl status echo.socket
+systemctl list-sockets
+ss -ltnp | grep 7777
+
+# Il servizio parte alla prima connessione
+nc 127.0.0.1 7777
+journalctl -u 'echo@*' -b</code></pre>
+      <p>
+        I template sono unit&agrave; con <code>@</code> nel nome:
+        <code>getty@.service</code> diventa
+        <code>getty@tty1.service</code> quando viene istanziata.
+        <code>%i</code> &egrave; l&rsquo;istanza cos&igrave; com&rsquo;&egrave;
+        scritta, <code>%I</code> &egrave; la stessa stringa dopo
+        l&rsquo;unescaping. Un template evita di duplicare lo stesso file
+        per ogni porta, disco o utente.
+      </p>
+      <pre><code># Istanze di un template
+systemctl list-units 'getty@*'
+systemctl status getty@tty1.service
+
+# Abilitare una istanza specifica
+sudo systemctl enable --now getty@tty2.service
+
+# Template per un servizio su piu porte
+# /etc/systemd/system/mioapp@.service
+# [Service]
+# ExecStart=/usr/local/bin/mioapp --port %i
+# sudo systemctl enable --now mioapp@8080.service
+
+# Istanza predefinita
+# [Install]
+# DefaultInstance=8080
+# WantedBy=multi-user.target</code></pre>
+      <p>
+        La socket activation non &egrave; sempre un guadagno: aggiunge un
+        livello di indirezione e rende meno ovvio capire chi possiede il
+        socket. Su un servizio che deve comunque restare sempre attivo, un
+        <code>.service</code> normale &egrave; pi&ugrave; semplice. Su un
+        servizio usato di rado, o che si vuole riavviare senza downtime,
+        il socket &egrave; la soluzione elegante.
+      </p>
+
+      <h2 id="journal">journald e journalctl</h2>
+      <p>
+        <code>systemd-journald</code> raccoglie messaggi da kernel, servizi,
+        socket, <code>stdout</code>/<code>stderr</code> delle unit&agrave; e
+        da <code>/dev/kmsg</code>. Il formato &egrave; binario e indicizzato,
+        con metadati strutturati per ogni voce: unit&agrave;, PID, UID, GID,
+        hostname, boot ID, priorit&agrave;, campi personalizzati. La
+        conseguenza pratica &egrave; che si pu&ograve; filtrare per
+        <code>_PID</code>, <code>_COMM</code> o <code>_SYSTEMD_UNIT</code>
+        senza espressioni regolari fragili.
+      </p>
+      <p>
+        Di default il journal &egrave; <em>volatile</em>: vive in
+        <code>/run/log/journal</code> e sparisce al riavvio. Per
+        conservarlo bisogna creare <code>/var/log/journal</code>; la
+        direttiva <code>Storage=</code> in
+        <code>/etc/systemd/journald.conf</code> decide il comportamento
+        (<code>volatile</code>, <code>persistent</code>,
+        <code>auto</code>, <code>none</code>).
+      </p>
+      <pre><code># Journal persistente
+sudo mkdir -p /var/log/journal
+sudo systemd-tmpfiles --create --prefix /var/log/journal
+sudo systemctl restart systemd-journald
+
+# Verifica
+journalctl --disk-usage
+ls -l /var/log/journal
+grep -E '^(Storage|SystemMaxUse|RuntimeMaxUse)' /etc/systemd/journald.conf</code></pre>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Comando</th><th>Risultato</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>journalctl -b</code></td><td>Log del boot corrente</td></tr>
+            <tr><td><code>journalctl -b -1</code></td><td>Log del boot precedente</td></tr>
+            <tr><td><code>journalctl --list-boots</code></td><td>Elenco dei boot disponibili</td></tr>
+            <tr><td><code>journalctl -u nginx -f</code></td><td>Segue i log dell&rsquo;unit&agrave;</td></tr>
+            <tr><td><code>journalctl -p err -b</code></td><td>Solo priorit&agrave; errore o superiore</td></tr>
+            <tr><td><code>journalctl --since '1 hour ago'</code></td><td>Filtro temporale</td></tr>
+            <tr><td><code>journalctl --until '2026-11-14 10:00'</code></td><td>Limite superiore</td></tr>
+            <tr><td><code>journalctl -g 'timeout'</code></td><td>Ricerca nel messaggio</td></tr>
+            <tr><td><code>journalctl -k</code></td><td>Solo messaggi del kernel</td></tr>
+            <tr><td><code>journalctl -o json-pretty</code></td><td>Formato strutturato</td></tr>
+            <tr><td><code>journalctl _PID=1234</code></td><td>Filtro per PID</td></tr>
+            <tr><td><code>journalctl _SYSTEMD_UNIT=sshd.service</code></td><td>Filtro per unit&agrave;</td></tr>
+            <tr><td><code>journalctl --vacuum-size=500M</code></td><td>Riduce lo spazio usato</td></tr>
+            <tr><td><code>journalctl --verify</code></td><td>Controlla l&rsquo;integrit&agrave; dei file</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Combinare filtri
+journalctl -u nginx.service --since today -p warning
+journalctl -b -p err --no-pager
+journalctl -u 'ssh*' -g 'Failed password'
+journalctl -k --since '30 min ago' | grep -i -E 'error|fail'
+
+# Scrivere nel journal da uno script
+echo "job completato" | systemd-cat -t miojob -p info
+logger -t miojob "messaggio"
+
+# Capacita e rotazione
+journalctl --disk-usage
+sudo journalctl --vacuum-time=30d
+sudo journalctl --vacuum-size=1G
+
+# Configurazione
+sudo systemctl edit systemd-journald.service
+# [Journal]
+# SystemMaxUse=1G
+# SystemMaxFileSize=100M
+# MaxRetentionSec=30day</code></pre>
+      <p>
+        La rotazione non si gestisce con <code>logrotate</code>: journald ha
+        i suoi limiti (<code>SystemMaxUse=</code>,
+        <code>SystemMaxFileSize=</code>, <code>MaxRetentionSec=</code>) e
+        cancella i file pi&ugrave; vecchi quando serve spazio. Se il journal
+        cresce troppo, il problema non &egrave; la rotazione ma il volume
+        di log: un servizio in crash loop pu&ograve; scrivere migliaia di
+        righe al secondo.
+      </p>
+      <p>
+        Il rate limiting &egrave; attivo per default
+        (<code>RateLimitIntervalSec=30s</code>,
+        <code>RateLimitBurst=10000</code> per sorgente). Quando un servizio
+        scrive troppo, journald sopprime i messaggi e aggiunge una riga
+        &ldquo;Suppressed N messages&rdquo;. Se serve tutto, si alza il
+        limite nell&rsquo;unit&agrave; con
+        <code>LogRateLimitIntervalSec=</code> e
+        <code>LogRateLimitBurst=</code>, non disattivando il limite globale.
+      </p>
+      <p>
+        Su Debian e Ubuntu <code>rsyslog</code> &egrave; spesso ancora
+        installato e riceve una copia dei messaggi se
+        <code>ForwardToSyslog=yes</code>; su RHEL e Fedora
+        <code>rsyslog</code> &egrave; presente per compatibilit&agrave; con
+        <code>/var/log/messages</code>. Il journal resta la fonte
+        strutturata; i file di testo restano utili per strumenti che non
+        parlano il formato binario.
+      </p>
+
+      <h2 id="boot">Boot, rescue ed emergenza</h2>
+      <p>
+        La sequenza &egrave; sempre la stessa: firmware, boot loader, kernel,
+        initramfs, systemd. systemd monta i file system residui, applica i
+        parametri del kernel, avvia i target e arriva a
+        <code>default.target</code>. Se qualcosa si blocca, la domanda non
+        &egrave; &ldquo;quale servizio &egrave; lento&rdquo; ma &ldquo;quale
+        dipendenza sta aspettando&rdquo;.
+      </p>
+      <pre><code># Tempo complessivo e ripartizione
+systemd-analyze
+systemd-analyze blame
+systemd-analyze critical-chain
+systemd-analyze critical-chain multi-user.target
+systemd-analyze plot &gt; boot.svg
+
+# Unita fallite e stato
+systemctl --failed
+systemctl is-system-running
+journalctl -b -p err
+
+# Verifica statica di tutte le unita
+systemd-analyze verify /etc/systemd/system/*.service
+
+# Cosa e successo nel boot precedente
+journalctl -b -1 -p err
+journalctl --list-boots</code></pre>
+      <p>
+        <code>systemd-analyze blame</code> elenca i tempi di attivazione
+        delle unit&agrave;, ma un tempo alto pu&ograve; essere attesa, non
+        lavoro: un servizio che aspetta la rete compare in cima anche se non
+        consuma CPU. <code>critical-chain</code> mostra il percorso che ha
+        determinato il tempo totale, ed &egrave; pi&ugrave; utile per capire
+        dove intervenire.
+      </p>
+      <p>
+        <code>rescue.target</code> avvia i servizi essenziali e una shell di
+        root; <code>emergency.target</code> monta solo il root filesystem,
+        in sola lettura se possibile, e non avvia praticamente nulla.
+        Entrambi si possono raggiungere da sistema avviato con
+        <code>systemctl isolate</code>, oppure dal boot loader aggiungendo
+        un parametro al kernel.
+      </p>
+      <pre><code># Entrare in rescue da sistema attivo
+sudo systemctl isolate rescue.target
+
+# Tornare al default
+sudo systemctl isolate default.target
+
+# Parametri del kernel utili in GRUB
+# systemd.unit=rescue.target
+# systemd.unit=emergency.target
+# systemd.mask=sshd.service
+# systemd.setenv=DEBUG=1
+# rd.break            (initramfs di RHEL/Fedora)
+# rd.shell            (shell in initramfs)
+
+# Se il root e montato in sola lettura
+mount -o remount,rw /
+systemctl default
+
+# Reset password con rd.break
+# mount -o remount,rw /sysroot
+# chroot /sysroot
+# passwd root
+# touch /.autorelabel    (solo con SELinux)
+# exit; reboot</code></pre>
+      <div class="callout">
+        <p>
+          <strong>Attenzione a SELinux.</strong> Su RHEL e Fedora, cambiare
+          la password da <code>rd.break</code> senza
+          <code>touch /.autorelabel</code> lascia il file
+          <code>/etc/shadow</code> con un contesto sbagliato e il login
+          fallisce dopo il riavvio. Su Debian e Ubuntu il problema non
+          esiste, ma un <code>remount,rw</code> dimenticato rende il
+          sistema inutilizzabile fino al boot successivo.
+        </p>
+      </div>
+      <p>
+        <code>systemctl reboot --firmware-setup</code> riavvia direttamente
+        nel setup UEFI sulle macchine che lo supportano;
+        <code>systemctl poweroff</code>, <code>reboot</code>,
+        <code>halt</code>, <code>suspend</code> e
+        <code>hibernate</code> passano da systemd e chiudono i servizi in
+        ordine. <code>systemctl kexec</code> avvia un nuovo kernel senza
+        passare dal firmware, utile per ridurre i tempi di manutenzione.
+      </p>
+      <p>
+        Per chi usa <code>systemd-boot</code>, <code>bootctl status</code>
+        mostra le voci, <code>bootctl list</code> le elenca e
+        <code>bootctl install</code> installa il loader sulla ESP. Le voci
+        stanno in <code>/boot/loader/entries/*.conf</code> e
+        <code>bootctl set-default</code> cambia quella predefinita. Non
+        &egrave; obbligatorio: GRUB resta il default su Debian, Ubuntu,
+        RHEL e Fedora, e systemd-boot &egrave; comune su Arch e su sistemi
+        minimali.
+      </p>
+
+      <h2 id="risorse">Risorse, cgroup e slice</h2>
+      <p>
+        systemd &egrave; il gestore dei cgroup: ogni unit&agrave; vive in un
+        cgroup, e i limiti dichiarati nell&rsquo;unit&agrave; diventano
+        valori nei file di <code>/sys/fs/cgroup</code>. La gerarchia
+        principale &egrave; <code>-.slice</code> con tre figli:
+        <code>system.slice</code> per i servizi di sistema,
+        <code>user.slice</code> per le sessioni e
+        <code>machine.slice</code> per container e macchine virtuali.
+      </p>
+      <pre><code># Gerarchia e consumo
+systemd-cgls
+systemd-cgtop
+systemctl status user-1000.slice
+
+# Limiti persistenti su un servizio
+sudo systemctl set-property miaapp.service MemoryMax=1G
+sudo systemctl set-property miaapp.service MemoryHigh=800M
+sudo systemctl set-property miaapp.service CPUQuota=150%
+sudo systemctl set-property miaapp.service TasksMax=512
+sudo systemctl set-property miaapp.service IOWeight=100
+
+# Verifica
+systemctl show miaapp.service -p MemoryMax -p CPUQuotaPerSecUSec -p TasksMax
+cat /sys/fs/cgroup/system.slice/miaapp.service/memory.max
+cat /sys/fs/cgroup/system.slice/miaapp.service/cpu.stat</code></pre>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Direttiva</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>MemoryMax=</code></td><td>Limite rigido; oltre, OOM nel cgroup</td></tr>
+            <tr><td><code>MemoryHigh=</code></td><td>Soglia di rallentamento, non kill</td></tr>
+            <tr><td><code>MemoryMin=</code>, <code>MemoryLow=</code></td><td>Protezione dalla reclaim</td></tr>
+            <tr><td><code>CPUQuota=</code></td><td>Percentuale di un core; 150% = 1,5 core</td></tr>
+            <tr><td><code>CPUWeight=</code></td><td>Peso relativo tra cgroup</td></tr>
+            <tr><td><code>AllowedCPUs=</code></td><td>Affinit&agrave; ai core</td></tr>
+            <tr><td><code>IOWeight=</code></td><td>Peso relativo I/O</td></tr>
+            <tr><td><code>IOReadBandwidthMax=</code></td><td>Limite di banda per dispositivo</td></tr>
+            <tr><td><code>TasksMax=</code></td><td>Numero massimo di task</td></tr>
+            <tr><td><code>LimitNOFILE=</code></td><td>File descriptor massimi</td></tr>
+            <tr><td><code>OOMPolicy=</code></td><td><code>continue</code>, <code>stop</code>, <code>kill</code></td></tr>
+            <tr><td><code>Delegate=yes</code></td><td>Delega il cgroup a un gestore esterno</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>systemctl set-property</code> scrive un drop-in persistente
+        (in <code>/etc/systemd/system.control/</code> per le unit&agrave; di
+        sistema) e applica il limite subito, senza riavviare il servizio.
+        &Egrave; comodo per una prova, ma per una configurazione stabile
+        conviene scrivere il drop-in a mano e tenerlo sotto controllo
+        versione.
+      </p>
+      <pre><code># Drop-in leggibile e versionabile
+sudo systemctl edit miaapp.service
+# [Service]
+# MemoryMax=1G
+# MemoryHigh=800M
+# CPUQuota=150%
+# TasksMax=512
+
+sudo systemctl daemon-reload
+sudo systemctl restart miaapp.service
+systemctl status miaapp.service | grep -E 'Memory|CPU|Tasks'</code></pre>
+      <p>
+        I limiti vanno scelti dopo aver misurato, non prima. Un
+        <code>MemoryMax</code> troppo basso trasforma un picco fisiologico
+        in un OOM kill; un <code>CPUQuota</code> troppo stretto produce
+        throttling e latenze che sembrano un problema applicativo. La
+        pagina <a href="processi.html">Processi e risorse</a> spiega come
+        leggere <code>memory.events</code>, <code>cpu.stat</code> e PSI per
+        calibrare i valori.
+      </p>
+      <p>
+        Le slice permettono di ragionare per gruppi: <code>user.slice</code>
+        contiene tutte le sessioni, <code>system.slice</code> tutti i
+        servizi. Impostare un limite su una slice &egrave; utile per
+        contenere un utente o un gruppo di servizi, ma non sostituisce il
+        limite per singolo servizio: un cgroup padre che distribuisce
+        risorse ai figli non pu&ograve; avere processi propri, e i limiti
+        si sommano lungo la gerarchia.
+      </p>
+
+      <h2 id="hardening">Hardening delle unit&agrave;</h2>
+      <p>
+        systemd offre decine di direttive che restringono ci&ograve; che un
+        servizio pu&ograve; fare: file system, dispositivi, rete, namespace,
+        system call, capability. Non sono un sostituto di SELinux o
+        AppArmor, ma un secondo strato che riduce il danno quando un
+        servizio viene compromesso. <code>systemd-analyze security</code>
+        misura l&rsquo;esposizione e suggerisce cosa manca.
+      </p>
+      <pre><code># Punteggio di esposizione
+systemd-analyze security
+systemd-analyze security nginx.service
+systemd-analyze security --offline=1 /etc/systemd/system/miaapp.service
+
+# Output dettagliato
+systemd-analyze security --no-pager miaapp.service</code></pre>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Direttiva</th><th>Protegge da</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>NoNewPrivileges=yes</code></td><td>Escalation via setuid e capability</td></tr>
+            <tr><td><code>PrivateTmp=yes</code></td><td>Accesso a <code>/tmp</code> e <code>/var/tmp</code> condivisi</td></tr>
+            <tr><td><code>PrivateDevices=yes</code></td><td>Accesso a dispositivi non necessari</td></tr>
+            <tr><td><code>ProtectSystem=strict</code></td><td>Scrittura su <code>/usr</code>, <code>/boot</code>, <code>/etc</code></td></tr>
+            <tr><td><code>ProtectHome=yes</code></td><td>Lettura e scrittura delle home</td></tr>
+            <tr><td><code>ReadWritePaths=</code></td><td>Eccezioni in sola scrittura</td></tr>
+            <tr><td><code>ProtectKernelTunables=yes</code></td><td>Modifica di <code>/proc/sys</code></td></tr>
+            <tr><td><code>ProtectKernelModules=yes</code></td><td>Caricamento di moduli</td></tr>
+            <tr><td><code>ProtectControlGroups=yes</code></td><td>Modifica della gerarchia cgroup</td></tr>
+            <tr><td><code>RestrictAddressFamilies=</code></td><td>Socket di famiglie non usate</td></tr>
+            <tr><td><code>RestrictNamespaces=yes</code></td><td>Creazione di namespace</td></tr>
+            <tr><td><code>LockPersonality=yes</code></td><td>Cambio di personalit&agrave; del processo</td></tr>
+            <tr><td><code>MemoryDenyWriteExecute=yes</code></td><td>Pagine scrivibili ed eseguibili insieme</td></tr>
+            <tr><td><code>SystemCallFilter=@system-service</code></td><td>System call fuori dall&rsquo;insieme consentito</td></tr>
+            <tr><td><code>CapabilityBoundingSet=</code></td><td>Capability disponibili</td></tr>
+            <tr><td><code>PrivateNetwork=yes</code></td><td>Accesso alla rete</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Esempio di servizio indurito
+[Service]
+DynamicUser=yes
+StateDirectory=miaapp
+RuntimeDirectory=miaapp
+LogsDirectory=miaapp
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/srv/miaapp</code></pre>
+      <p>
+        <code>DynamicUser=yes</code> &egrave; comodo ma richiede che il
+        servizio usi <code>StateDirectory=</code>,
+        <code>RuntimeDirectory=</code>, <code>CacheDirectory=</code> o
+        <code>LogsDirectory=</code> per i suoi dati: systemd crea le
+        directory con l&rsquo;UID giusto e le rimuove alla fine.
+        <code>ProtectSystem=strict</code> rende tutto il file system in
+        sola lettura tranne le directory dichiarate, e un servizio che
+        scrive in un percorso non elencato fallisce con
+        <code>Read-only file system</code>.
+      </p>
+      <div class="callout ok">
+        <p>
+          <strong>Metodo.</strong> Non applicare tutte le direttive in una
+          volta. Si parte da <code>NoNewPrivileges</code>,
+          <code>PrivateTmp</code> e <code>ProtectSystem=full</code>, si
+          riavvia, si guarda il journal, poi si aggiunge un gruppo di
+          direttive alla volta. <code>systemd-analyze security</code> d&agrave;
+          un punteggio, ma il criterio vero &egrave; che il servizio
+          continui a fare il suo lavoro.
+        </p>
+      </div>
+      <p>
+        Su RHEL e Fedora l&rsquo;hardening convive con SELinux: un
+        servizio pu&ograve; essere perfettamente confinato da systemd e
+        comunque essere bloccato da un contesto SELinux sbagliato. Su
+        Debian e Ubuntu il profilo AppArmor &egrave; spesso caricato dal
+        pacchetto e va aggiornato se si cambia la configurazione. I due
+        livelli si sommano, non si sostituiscono.
+      </p>
+
+      <h2 id="rete">Rete, DNS e orologio</h2>
+      <p>
+        systemd include una pila di rete completa, ma non &egrave;
+        obbligatorio usarla. Debian e Ubuntu installano spesso
+        NetworkManager sui desktop e <code>ifupdown</code> o
+        <code>systemd-networkd</code> sui server; RHEL e Fedora usano
+        NetworkManager per default. <code>systemd-resolved</code> e
+        <code>systemd-timesyncd</code> sono componenti a s&eacute; stanti e la
+        loro presenza dipende dalla distribuzione e dal ruolo della macchina.
+      </p>
+      <pre><code># Stato della rete con networkd
+networkctl status
+networkctl list
+networkctl status eth0
+
+# Configurazione dichiarativa
+# /etc/systemd/network/20-wired.network
+# [Match]
+# Name=eth0
+# [Network]
+# DHCP=yes
+# DNS=1.1.1.1 9.9.9.9
+
+sudo systemctl enable --now systemd-networkd
+sudo systemctl enable --now systemd-networkd-wait-online
+
+# DNS con resolved
+resolvectl status
+resolvectl query example.com
+resolvectl statistics
+
+# Orologio e timezone
+timedatectl
+timedatectl set-timezone Europe/Rome
+timedatectl set-ntp true
+systemctl status systemd-timesyncd
+chronyc tracking    # se si usa chrony</code></pre>
+      <p>
+        <code>network-online.target</code> non fa nulla da solo: diventa
+        significativo quando &egrave; attivo un
+        <em>wait-online</em>. Con NetworkManager serve
+        <code>NetworkManager-wait-online.service</code>; con networkd serve
+        <code>systemd-networkd-wait-online.service</code>. Su molte
+        installazioni desktop il wait-online &egrave; disabilitato per
+        accelerare il boot, e un servizio che dipende dalla rete deve
+        gestire il ritardo da s&eacute;.
+      </p>
+      <p>
+        <code>timedatectl</code> mostra anche <code>RTC in local TZ</code>:
+        sui sistemi dual-boot con Windows &egrave; spesso
+        <code>yes</code>, e questo va tenuto presente quando si cambia
+        timezone. <code>systemd-timesyncd</code> &egrave; un client SNTP
+        leggero, adatto a desktop e server semplici; <code>chrony</code>
+        &egrave; la scelta quando serve precisione, server NTP o
+        sincronizzazione in ambienti virtualizzati.
+      </p>
+      <pre><code># Hostname e identita
+hostnamectl
+sudo hostnamectl set-hostname lab01
+hostnamectl status
+
+# Chi gestisce la rete
+systemctl status NetworkManager
+systemctl status systemd-networkd
+nmcli device status
+ip -brief address
+
+# Risoluzione
+cat /etc/resolv.conf
+ls -l /etc/resolv.conf
+resolvectl dns
+getent hosts example.com</code></pre>
+      <p>
+        <code>/etc/resolv.conf</code> &egrave; spesso un link a
+        <code>/run/systemd/resolve/stub-resolv.conf</code> o un file
+        gestito da NetworkManager. Modificarlo a mano &egrave; una
+        soluzione temporanea che sparisce al prossimo riavvio del servizio
+        di rete. La configurazione va messa dove la distribuzione la
+        legge: <code>nmcli</code>, un file <code>.network</code>, o
+        <code>/etc/network/interfaces</code>.
+      </p>
+
+      <h2 id="casi">Domande frequenti e casi pratici</h2>
+      <p>
+        I problemi di systemd sono pochi e ricorrenti. Quasi sempre
+        dipendono da una modifica non ricaricata, da una dipendenza
+        mancante o da un&rsquo;unit&agrave; che non fa quello che sembra.
+        Qui ci sono i casi che capitano davvero, con sintomo, causa e
+        sequenza di soluzione.
+      </p>
+
+      <h3>Modifico il file <code>.service</code> ma non cambia nulla</h3>
+      <p>
+        <strong>Sintomo.</strong> Si edita
+        <code>/etc/systemd/system/miaapp.service</code>, si riavvia il
+        servizio e il comportamento &egrave; identico.
+      </p>
+      <p>
+        <strong>Causa.</strong> systemd ha gi&agrave; letto il file e non
+        se ne accorge da solo. Oppure si sta modificando un file vendor in
+        <code>/usr/lib</code> che viene sovrascritto, o si &egrave;
+        scritto un drop-in con lo stesso nome ma in una directory diversa.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Dopo ogni modifica:
+        <code>daemon-reload</code>, poi <code>restart</code>. Verificare
+        con <code>systemctl cat</code> quali file sono effettivamente in
+        uso e con <code>systemctl show -p DropInPaths</code>.
+      </p>
+      <pre><code>sudo systemctl edit miaapp.service
+sudo systemctl daemon-reload
+sudo systemctl restart miaapp.service
+
+systemctl cat miaapp.service
+systemctl show miaapp.service -p FragmentPath -p DropInPaths
+systemd-analyze verify /etc/systemd/system/miaapp.service</code></pre>
+
+      <h3>Il servizio parte a mano ma non al boot</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>systemctl start</code> funziona,
+        dopo il riavvio il servizio &egrave; <code>inactive</code>.
+      </p>
+      <p>
+        <strong>Causa.</strong> Manca <code>enable</code>, oppure la
+        sezione <code>[Install]</code> non ha <code>WantedBy=</code>, o il
+        target giusto non &egrave; quello predefinito. A volte il servizio
+        parte troppo presto e fallisce per una dipendenza non ancora
+        pronta.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Abilitare, controllare i link creati e
+        aggiungere le dipendenze di ordine corrette. Se serve la rete,
+        usare <code>network-online.target</code> con il relativo
+        wait-online.
+      </p>
+      <pre><code>sudo systemctl enable --now miaapp.service
+systemctl is-enabled miaapp.service
+ls -l /etc/systemd/system/multi-user.target.wants/miaapp.service
+
+systemctl get-default
+systemctl list-dependencies multi-user.target | grep miaapp
+
+# Drop-in per l'ordine
+sudo systemctl edit miaapp.service
+# [Unit]
+# After=network-online.target
+# Wants=network-online.target</code></pre>
+
+      <h3>&ldquo;start request repeated too quickly&rdquo;</h3>
+      <p>
+        <strong>Sintomo.</strong> Il servizio &egrave; in
+        <code>failed</code>, <code>systemctl start</code> non fa nulla e il
+        journal parla di troppi avvii ravvicinati.
+      </p>
+      <p>
+        <strong>Causa.</strong> Il servizio fallisce subito e
+        <code>Restart=</code> lo riavvia in loop finch&eacute; systemd
+        supera <code>StartLimitBurst=</code> e lo blocca.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Prima si corregge la causa nel journal,
+        poi si azzera il contatore con <code>reset-failed</code>. Aumentare
+        i limiti senza capire l&rsquo;errore sposta solo il problema.
+      </p>
+      <pre><code>systemctl status miaapp.service
+journalctl -u miaapp.service -b -n 100 --no-pager
+systemctl reset-failed miaapp.service
+sudo systemctl start miaapp.service
+
+# Limiti espliciti, se il servizio e lento a partire
+sudo systemctl edit miaapp.service
+# [Unit]
+# StartLimitIntervalSec=120
+# StartLimitBurst=10
+# [Service]
+# RestartSec=10s</code></pre>
+
+      <h3>Il servizio &egrave; &ldquo;active&rdquo; ma il processo &egrave; gi&agrave; morto</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>systemctl status</code> dice
+        <code>active (running)</code> ma la porta non risponde e
+        <code>MainPID</code> non esiste.
+      </p>
+      <p>
+        <strong>Causa.</strong> <code>Type=forking</code> con un
+        <code>PIDFile=</code> sbagliato, oppure un demone che fa fork e
+        lascia che il padre esca: systemd traccia il processo sbagliato.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Passare a <code>Type=simple</code> o
+        <code>Type=notify</code>, togliere il fork dal programma, oppure
+        correggere <code>PIDFile=</code>. Verificare con
+        <code>systemctl show -p MainPID</code> e
+        <code>ps -p PID</code>.
+      </p>
+      <pre><code>systemctl show miaapp.service -p MainPID -p ActiveState -p SubState
+ps -o pid,ppid,stat,cmd -p "$(systemctl show -p MainPID --value miaapp.service)"
+systemctl status miaapp.service --no-pager
+
+# Nel drop-in
+# [Service]
+# Type=simple
+# PIDFile=</code></pre>
+
+      <h3>&ldquo;Unit is masked&rdquo; o il servizio non parte per nessun motivo</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>systemctl start</code> risponde
+        <code>Unit miaapp.service is masked</code>.
+      </p>
+      <p>
+        <strong>Causa.</strong> Esiste un link a <code>/dev/null</code> in
+        <code>/etc/systemd/system</code>: qualcuno ha mascherato
+        l&rsquo;unit&agrave; per impedirne l&rsquo;avvio.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> <code>unmask</code>, poi
+        <code>daemon-reload</code>. Se il mask &egrave; stato messo da un
+        pacchetto o da un&rsquo;automazione, va rimosso alla fonte.
+      </p>
+      <pre><code>systemctl is-enabled miaapp.service
+ls -l /etc/systemd/system/miaapp.service
+sudo systemctl unmask miaapp.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now miaapp.service</code></pre>
+
+      <h3>Il timer non scatta</h3>
+      <p>
+        <strong>Sintomo.</strong> Il timer &egrave; abilitato ma il servizio
+        non parte mai, o parte a un orario diverso da quello atteso.
+      </p>
+      <p>
+        <strong>Causa.</strong> <code>OnCalendar=</code> non valido,
+        timezone diversa, <code>Persistent=true</code> senza directory di
+        stato, oppure il timer non &egrave; nel target
+        <code>timers.target</code>.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Validare l&rsquo;espressione con
+        <code>systemd-analyze calendar</code>, controllare
+        <code>systemctl list-timers --all</code> e i log del timer.
+      </p>
+      <pre><code>systemd-analyze calendar '*-*-* 03:30:00'
+systemctl list-timers --all
+systemctl status backup.timer
+journalctl -u backup.timer -b
+journalctl -u backup.service -b
+timedatectl
+
+# Test manuale
+sudo systemctl start backup.service
+systemctl show backup.timer -p NextElapseUSecRealtime -p LastTriggerUSec</code></pre>
+
+      <h3>Dopo il riavvio il journal non ha i log precedenti</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>journalctl -b -1</code> risponde
+        &ldquo;No such boot&rdquo; o il journal parte sempre da zero.
+      </p>
+      <p>
+        <strong>Causa.</strong> Il journal &egrave; volatile: senza
+        <code>/var/log/journal</code> vive in <code>/run</code> e sparisce
+        al reboot. <code>Storage=volatile</code> forza questo
+        comportamento.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Creare la directory, impostare
+        <code>Storage=persistent</code> o <code>auto</code>, riavviare
+        journald. Verificare che <code>/var</code> non sia montato in
+        tmpfs.
+      </p>
+      <pre><code>sudo mkdir -p /var/log/journal
+sudo systemd-tmpfiles --create --prefix /var/log/journal
+sudo systemctl restart systemd-journald
+journalctl --disk-usage
+journalctl --list-boots
+
+grep -E '^Storage' /etc/systemd/journald.conf
+findmnt /var</code></pre>
+
+      <h3>Il disco &egrave; pieno per colpa del journal</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>/var/log/journal</code> occupa
+        diversi GB, <code>df</code> &egrave; al 100%, i servizi non
+        scrivono pi&ugrave;.
+      </p>
+      <p>
+        <strong>Causa.</strong> Limiti troppo alti o assenti, oppure un
+        servizio in crash loop che genera migliaia di righe al secondo.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Ridurre subito con
+        <code>--vacuum-size</code>, poi impostare
+        <code>SystemMaxUse=</code> e correggere la causa del volume di log.
+      </p>
+      <pre><code>journalctl --disk-usage
+sudo journalctl --vacuum-size=500M
+sudo journalctl --vacuum-time=14d
+
+sudo systemctl edit systemd-journald.service
+# [Journal]
+# SystemMaxUse=1G
+# SystemMaxFileSize=100M
+# MaxRetentionSec=30day
+
+sudo systemctl restart systemd-journald
+
+# Chi scrive troppo
+journalctl --since '1 hour ago' -o json | jq -r '._SYSTEMD_UNIT' | sort | uniq -c | sort -rn | head</code></pre>
+
+      <h3>Il boot &egrave; diventato lentissimo</h3>
+      <p>
+        <strong>Sintomo.</strong> Il sistema impiega minuti ad arrivare al
+        login, senza errori evidenti.
+      </p>
+      <p>
+        <strong>Causa.</strong> Un&rsquo;unit&agrave; che aspetta un timeout
+        di rete, un mount NFS irraggiungibile, un
+        <code>network-online.target</code> che non arriva, un servizio che
+        fa retry.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> <code>systemd-analyze blame</code> per
+        l&rsquo;elenco, <code>critical-chain</code> per il percorso critico,
+        poi <code>journalctl -b -p warning</code> per il motivo
+        dell&rsquo;attesa.
+      </p>
+      <pre><code>systemd-analyze
+systemd-analyze blame
+systemd-analyze critical-chain
+journalctl -b -p warning --no-pager
+systemctl --failed
+
+# Timeout espliciti per non aspettare 90 secondi
+sudo systemctl edit nome.service
+# [Service]
+# TimeoutStartSec=20
+# TimeoutStopSec=20</code></pre>
+
+      <h3>Devo entrare in rescue ma la password di root non funziona</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>systemctl isolate rescue.target</code>
+        chiede la password di root, che per&ograve; &egrave; bloccata o
+        sconosciuta.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Dal boot loader si aggiunge
+        <code>systemd.unit=rescue.target</code> o
+        <code>rd.break</code>; con <code>rd.break</code> si monta
+        <code>/sysroot</code> in scrittura, si fa chroot e si cambia la
+        password. Su SELinux serve <code>touch /.autorelabel</code>.
+      </p>
+      <pre><code># In GRUB, editando la voce di boot
+# linux ... systemd.unit=rescue.target
+# linux ... rd.break
+
+# Con rd.break
+mount -o remount,rw /sysroot
+chroot /sysroot
+passwd root
+touch /.autorelabel
+exit
+reboot
+
+# Da sistema attivo, se si ha accesso sudo
+sudo systemctl isolate rescue.target
+sudo systemctl default</code></pre>
+
+      <h3>&ldquo;Failed to connect to bus&rdquo; in un container o chroot</h3>
+      <p>
+        <strong>Sintomo.</strong> Dentro un container o un chroot ogni
+        comando <code>systemctl</code> fallisce con
+        <code>Failed to connect to bus: No such file or directory</code>.
+      </p>
+      <p>
+        <strong>Causa.</strong> systemd non &egrave; PID 1 in quel contesto,
+        quindi non esiste un bus di sistema a cui parlare. Un container
+        avviato con una shell come PID 1 non ha un system manager.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Per ispezionare un&rsquo;immagine senza
+        avviarla usare <code>systemctl --root</code>; per un container con
+        systemd usare un&rsquo;immagine progettata per questo, con
+        <code>/sbin/init</code> come entrypoint e i privilegi necessari.
+      </p>
+      <pre><code># Ispezione offline di una root
+systemctl --root=/mnt/immagine list-unit-files
+systemctl --root=/mnt/immagine enable sshd.service
+
+# Container con systemd
+podman run --systemd=always -d --name c1 immagine
+podman exec c1 systemctl status
+machinectl list
+
+# Chroot: non si usa systemctl, si usano gli strumenti offline
+chroot /mnt/immagine /bin/bash</code></pre>
+
+      <h3>Ho alzato il limite dei file ma il servizio ne ha ancora pochi</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>ulimit -n</code> nella shell mostra
+        65535, il servizio continua a fallire con &ldquo;too many open
+        files&rdquo;.
+      </p>
+      <p>
+        <strong>Causa.</strong> I servizi systemd non passano da PAM e non
+        leggono <code>/etc/security/limits.conf</code>. Il limite va messo
+        nell&rsquo;unit&agrave;.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> <code>LimitNOFILE=</code> nel drop-in,
+        <code>daemon-reload</code>, <code>restart</code>, verifica in
+        <code>/proc/PID/limits</code>.
+      </p>
+      <pre><code>systemctl show miaapp.service -p LimitNOFILE
+sudo systemctl edit miaapp.service
+# [Service]
+# LimitNOFILE=65535
+
+sudo systemctl daemon-reload
+sudo systemctl restart miaapp.service
+cat /proc/"$(systemctl show -p MainPID --value miaapp.service)"/limits | grep 'open files'
+cat /proc/sys/fs/nr_open</code></pre>
+
+      <h3>DynamicUser e permessi sui file: &ldquo;Permission denied&rdquo;</h3>
+      <p>
+        <strong>Sintomo.</strong> Il servizio con
+        <code>DynamicUser=yes</code> non riesce a scrivere nella sua
+        directory.
+      </p>
+      <p>
+        <strong>Causa.</strong> L&rsquo;UID dinamico cambia e non
+        corrisponde al proprietario dei file creati in precedenza; oppure
+        <code>ProtectSystem=strict</code> rende il percorso in sola
+        lettura.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Usare <code>StateDirectory=</code> e
+        <code>ReadWritePaths=</code>, che systemd gestisce con
+        l&rsquo;UID corretto. Evitare di creare i file a mano con un utente
+        fisso.
+      </p>
+      <pre><code>sudo systemctl edit miaapp.service
+# [Service]
+# DynamicUser=yes
+# StateDirectory=miaapp
+# RuntimeDirectory=miaapp
+# ReadWritePaths=/srv/miaapp
+
+sudo systemctl daemon-reload
+sudo systemctl restart miaapp.service
+ls -ld /var/lib/miaapp /run/miaapp
+journalctl -u miaapp.service -b | tail -n 30</code></pre>
+
+      <h3>Come faccio a sapere se un servizio &egrave; davvero indurito?</h3>
+      <p>
+        <strong>Soluzione.</strong> <code>systemd-analyze security</code>
+        d&agrave; un punteggio e l&rsquo;elenco delle direttive mancanti.
+        Non &egrave; un verdetto: un punteggio alto pu&ograve; essere
+        accettabile per un servizio che deve accedere a tutto. L&rsquo;obiettivo
+        &egrave; ridurre la superficie senza rompere il servizio.
+      </p>
+      <pre><code>systemd-analyze security miaapp.service
+systemd-analyze security --offline=1 /etc/systemd/system/miaapp.service
+systemctl show miaapp.service -p NoNewPrivileges -p ProtectSystem -p PrivateTmp
+
+# Dopo ogni modifica
+sudo systemctl daemon-reload
+sudo systemctl restart miaapp.service
+systemctl status miaapp.service
+journalctl -u miaapp.service -b -p warning</code></pre>
+
+      <h3><code>systemctl --user</code> non funziona via SSH o con sudo</h3>
+      <p>
+        <strong>Sintomo.</strong> <code>systemctl --user status</code>
+        risponde &ldquo;Failed to connect to user scope bus&rdquo;.
+      </p>
+      <p>
+        <strong>Causa.</strong> Manca <code>XDG_RUNTIME_DIR</code>, oppure
+        si sta eseguendo il comando come un altro utente senza il suo
+        ambiente. Dopo il logout l&rsquo;user manager viene fermato se il
+        linger &egrave; disattivato.
+      </p>
+      <p>
+        <strong>Soluzione.</strong> Impostare
+        <code>XDG_RUNTIME_DIR=/run/user/UID</code>, abilitare il linger per
+        i servizi che devono restare attivi, usare
+        <code>machinectl shell</code> per una sessione pulita.
+      </p>
+      <pre><code>id -u
+echo "$XDG_RUNTIME_DIR"
+loginctl show-user "$USER" -p Linger
+
+sudo loginctl enable-linger "$USER"
+sudo -u alice XDG_RUNTIME_DIR=/run/user/"$(id -u alice)" systemctl --user status
+machinectl shell alice@</code></pre>
+
+      <h3>Risposte rapide</h3>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Domanda</th><th>Risposta</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Dove sta il file di un&rsquo;unit&agrave;?</td><td><code>systemctl cat nome</code>, <code>systemctl show -p FragmentPath nome</code></td></tr>
+            <tr><td>Come ricarico dopo una modifica?</td><td><code>systemctl daemon-reload</code>, poi <code>restart</code></td></tr>
+            <tr><td>Differenza tra enable e start?</td><td><code>enable</code> al boot, <code>start</code> adesso</td></tr>
+            <tr><td>Come fermo un servizio per sempre?</td><td><code>systemctl disable --now</code> e, se serve, <code>mask</code></td></tr>
+            <tr><td>Come vedo le dipendenze?</td><td><code>systemctl list-dependencies nome</code></td></tr>
+            <tr><td>Come vedo i timer?</td><td><code>systemctl list-timers --all</code></td></tr>
+            <tr><td>Come vedo i socket?</td><td><code>systemctl list-sockets</code></td></tr>
+            <tr><td>Come leggo i log di ieri?</td><td><code>journalctl --since yesterday --until today</code></td></tr>
+            <tr><td>Come limito la memoria di un servizio?</td><td><code>systemctl set-property nome MemoryMax=1G</code></td></tr>
+            <tr><td>Come misuro il boot?</td><td><code>systemd-analyze</code>, <code>blame</code>, <code>critical-chain</code></td></tr>
+            <tr><td>Come entro in single-user?</td><td><code>systemctl isolate rescue.target</code></td></tr>
+            <tr><td>Come abilito un servizio utente?</td><td><code>systemctl --user enable --now nome</code> con linger attivo</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong><code>man 1 systemctl</code>, <code>man 1 journalctl</code>,
+        <code>man 1 systemd-analyze</code></strong> &mdash; comandi e
+        opzioni dell&rsquo;amministrazione quotidiana.</li>
+        <li><strong><code>man 5 systemd.unit</code>,
+        <code>man 5 systemd.service</code>,
+        <code>man 5 systemd.timer</code>,
+        <code>man 5 systemd.socket</code>,
+        <code>man 5 systemd.target</code></strong> &mdash; sintassi e
+        semantica delle unit&agrave;.</li>
+        <li><strong><code>man 5 systemd.exec</code>,
+        <code>man 5 systemd.resource-control</code>,
+        <code>man 5 systemd.kill</code></strong> &mdash; esecuzione,
+        sandboxing, cgroup e segnali.</li>
+        <li><strong><code>man 5 journald.conf</code>,
+        <code>man 5 journalctl</code>, <code>man 7 systemd.journal-fields</code></strong>
+        &mdash; formato, rotazione, filtri e campi del journal.</li>
+        <li><strong><code>man 1 systemd-run</code>,
+        <code>man 1 systemd-nspawn</code>, <code>man 1 bootctl</code></strong>
+        &mdash; unit&agrave; transienti, container e boot loader.</li>
+        <li><strong><code>man 5 systemd.network</code>,
+        <code>man 1 resolvectl</code>, <code>man 1 timedatectl</code></strong>
+        &mdash; networkd, resolved, timesyncd e orologio.</li>
+        <li><strong>systemd upstream</strong> &mdash; <em>NEWS</em>,
+        <em>CHANGES WITH</em> e documentazione del progetto,
+        <a href="https://systemd.io/">systemd.io</a>; versione upstream
+        v262 nel 2026.</li>
+        <li><strong>Debian, Ubuntu, Red Hat, Fedora e Arch Wiki</strong>
+        &mdash; versioni pacchetto, default di distribuzione, procedure di
+        recupero e differenze tra famiglie.</li>
+        <li><strong>Lennart Poettering, &ldquo;systemd for
+        Administrators&rdquo;</strong> &mdash; serie di articoli
+        introduttivi sul modello a unit&agrave;.</li>
+        <li><strong><code>systemd-analyze security</code> e
+        <code>systemd-analyze calendar</code></strong> &mdash; verifica
+        pratica di hardening e espressioni calendario.</li>
+      </ul>
+      <p>
+        Comandi e comportamenti verificati il 14 novembre 2026 su kernel 7.x
+        e systemd delle principali distribuzioni. La versione cambia:
+        <code>systemctl --version</code> &egrave; l&rsquo;unica risposta
+        affidabile per la macchina che si sta amministrando. Debian 13
+        &ldquo;trixie&rdquo; e RHEL 10 usano la serie 257, Ubuntu 26.04
+        &ldquo;Resolute Raccoon&rdquo; la serie 259, mentre l&rsquo;upstream
+        &egrave; gi&agrave; alla 262. Le direttive descritte qui esistono in
+        tutte queste versioni, salvo dove indicato.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Linux</span>
+        <span class="footer-right">
+          <span>systemd &middot; aggiornata il 14 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

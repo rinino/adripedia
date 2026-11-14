@@ -74,6 +74,8 @@
                 { text: "Installazione", href: "informatica/linux/installazione.html" },
                 { text: "Kernel e gestione", href: "informatica/linux/kernel.html" },
                 { text: "File system e permessi", href: "informatica/linux/filesystem.html" },
+                { text: "Processi e risorse", href: "informatica/linux/processi.html" },
+                { text: "systemd", href: "informatica/linux/systemd.html" },
                 { text: "vi e Vim", href: "informatica/linux/vi-vim.html" }
               ]
             },
