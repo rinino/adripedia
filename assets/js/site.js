@@ -68,12 +68,19 @@
               ]
             },
             {
+              text: "Linux",
+              children: [
+                { text: "Panoramica", href: "informatica/linux/index.html" }
+              ]
+            },
+            {
               text: "Git",
               children: [
                 { text: "Panoramica", href: "informatica/git/index.html#panoramica" },
                 { text: "Installazione Windows", href: "informatica/git/index.html#windows" },
                 { text: "Installazione Linux", href: "informatica/git/index.html#linux" },
-                { text: "Comandi", href: "informatica/git/index.html#comandi" }
+                { text: "Comandi", href: "informatica/git/index.html#comandi" },
+                { text: "Esempi", href: "informatica/git/index.html#esempi" }
               ]
             },
             {

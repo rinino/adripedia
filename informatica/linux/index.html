@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Linux — Adripedia</title>
+  <meta name="description" content="Linux dalle origini a oggi: la storia del kernel e del progetto GNU, le famiglie di distribuzioni (Debian, Red Hat, SUSE, Arch e le indipendenti), i modelli di rilascio e i criteri per scegliere.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/index.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">Linux</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Sezione &middot; Informatica</p>
+      <h1>Linux</h1>
+      <p class="lead">
+        Linux non &egrave; un sistema operativo unico e nemmeno un&rsquo;azienda:
+        &egrave; un kernel nato nel 1991 e diventato, pezzo dopo pezzo, la base
+        di quasi tutto ci&ograve; che oggi chiamiamo server, cloud, container,
+        Android e, sempre pi&ugrave; spesso, desktop. Questa pagina racconta
+        come &egrave; successo e come si orienta chi deve scegliere una
+        distribuzione. Le pagine tecniche della sezione arriveranno una alla
+        volta.
+      </p>
+
+      <div class="callout">
+        <strong>Come leggere questa sezione:</strong> la panoramica &egrave;
+        discorsiva e si legge dall&rsquo;inizio alla fine: storia, pezzi del
+        sistema, famiglie di distribuzioni e criteri di scelta. Le pagine
+        tecniche &mdash; file system, processi, systemd, shell, rete, pacchetti,
+        comandi per Debian e per Red Hat, vi e Vim, storage, boot, sicurezza,
+        diagnostica e laboratorio &mdash; sono in preparazione e verranno
+        pubblicate una alla volta. La
+        <a href="#mappa">mappa della sezione</a> dice cosa conterr&agrave;
+        ognuna.
+      </div>
+
+      <nav class="section-index" aria-labelledby="linux-index-title">
+        <p class="section-index-title" id="linux-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#storia">Storia di Linux</a></li>
+          <li><a href="#cos-e">Kernel, sistema operativo, distribuzione</a></li>
+          <li><a href="#distribuzioni">Le famiglie di distribuzioni</a></li>
+          <li><a href="#scegliere">Come scegliere</a></li>
+          <li><a href="#mappa">La mappa della sezione</a></li>
+          <li><a href="#continuare">Da dove continuare</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="storia">Storia di Linux</h2>
+      <p>
+        La storia di Linux comincia molto prima di Linux. Si capisce meglio se
+        si tiene presente che il kernel &egrave; solo un pezzo: prima sono
+        arrivati Unix e il progetto GNU, poi &egrave; arrivato il kernel, infine
+        le distribuzioni hanno messo insieme i pezzi in qualcosa che si potesse
+        installare e usare.
+      </p>
+
+      <h3>1969 &mdash; Unix, il nonno</h3>
+      <p>
+        Nei Bell Labs, nel 1969, Ken Thompson e Dennis Ritchie mettono in piedi
+        Unix su un PDP-7: un sistema operativo piccolo, scritto per giocare con
+        una macchina che era stata messa da parte. Nel 1973 lo riscrivono in C,
+        e la scelta cambia tutto: un sistema operativo scritto in un linguaggio
+        ad alto livello si pu&ograve; portare su macchine diverse senza
+        riscriverlo da zero. Negli anni Settanta Unix si diffonde nelle
+        universit&agrave; e nelle aziende; negli Ottanta arrivano le varianti
+        commerciali (AIX, HP-UX, Solaris) e quelle BSD. Il codice, per&ograve;,
+        non &egrave; libero: AT&amp;T lo licenzia e chi vuole studiarlo o
+        modificarlo deve firmare accordi. &Egrave; il vuoto che il progetto GNU
+        prover&agrave; a riempire.
+      </p>
+
+      <h3>1983 &mdash; GNU, il sistema libero senza kernel</h3>
+      <p>
+        Il 27 settembre 1983 Richard Stallman annuncia il progetto GNU: un
+        sistema operativo completo, compatibile con Unix ma libero, dove
+        &ldquo;libero&rdquo; significa che chiunque pu&ograve; usarlo,
+        studiarlo, modificarlo e ridistribuirlo. Arrivano Emacs, GCC, bash, la
+        glibc e decine di utilit&agrave;; nel 1989 arriva la GPL, la licenza
+        che usa il copyright per garantire queste libert&agrave; (copyleft).
+        All&rsquo;inizio degli anni Novanta manca solo il pezzo centrale: il
+        kernel. Il progetto Hurd, ambizioso e difficile, non &egrave; pronto.
+      </p>
+
+      <h3>1991 &mdash; il kernel di uno studente</h3>
+      <p>
+        Linus Torvalds, studente all&rsquo;Universit&agrave; di Helsinki,
+        scrive un kernel per hobby, partendo da Minix e dal proprio computer.
+        Il 25 agosto 1991 lo annuncia su <code>comp.os.minix</code>; il 17
+        settembre 1991 pubblica la versione 0.01, circa diecimila righe di
+        codice. Un mese dopo arriva la 0.02. Nel 1992 il kernel passa alla
+        GPLv2, la stessa licenza che protegge il resto del sistema: da quel
+        momento chiunque pu&ograve; usarlo e migliorarlo, a patto di lasciare
+        aperte le modifiche. Nel marzo 1994 arriva Linux 1.0.
+      </p>
+
+      <h3>1993-1996 &mdash; le distribuzioni</h3>
+      <p>
+        Un kernel non &egrave; un sistema installabile: servono una libreria C,
+        una shell, le utilit&agrave; di base, un installer e un modo per
+        aggiornare i pacchetti. Le prime distribuzioni risolvono questo
+        problema. Slackware esce il 17 luglio 1993; Debian nasce nell&rsquo;agosto
+        1993 da Ian Murdock, con l&rsquo;idea di un progetto aperto e gestito
+        dalla comunit&agrave;; Red Hat Linux e SUSE Linux arrivano nel 1994. Nel
+        1996 Linux 2.0 porta il multiprocessore simmetrico e il pinguino Tux
+        diventa il simbolo del progetto. Da qui in avanti il kernel e le
+        distribuzioni crescono insieme.
+      </p>
+
+      <h3>1996-2004 &mdash; dal server al desktop</h3>
+      <p>
+        Il desktop arriva per gradi: KDE 1.0 nel luglio 1998, GNOME 1.0 nel
+        marzo 1999, poi StarOffice, Mozilla e i primi tentativi di rendere
+        Linux presentabile anche fuori dal terminale. Nel 2003 Linux 2.6 porta
+        miglioramenti profondi nello scheduler, nella gestione della memoria e
+        nei driver, e per anni resta la base di quasi tutte le distribuzioni.
+        Il 20 ottobre 2004 arriva Ubuntu 4.10, che punta su un ciclo di
+        rilascio prevedibile, un installer semplice e una comunit&agrave;
+        larga.
+      </p>
+
+      <h3>2004-2011 &mdash; Ubuntu, Android e il cloud</h3>
+      <p>
+        Ubuntu rende Linux una scelta normale anche per chi non compila nulla:
+        ogni sei mesi una versione, ogni due anni una LTS supportata a lungo.
+        Nel 2007 nasce l&rsquo;Open Handset Alliance e nel settembre 2008
+        Android 1.0: usa il kernel Linux, ma un userland diverso, senza GNU.
+        &Egrave; il momento in cui Linux smette di essere solo un sistema per
+        server e computer e diventa il sistema operativo di miliardi di
+        telefoni. Intanto il cloud cresce: Amazon EC2 parte nel 2006 e le
+        immagini Linux diventano il modo standard di affittare una macchina.
+      </p>
+
+      <h3>2011-2019 &mdash; systemd e i container</h3>
+      <p>
+        systemd entra in Fedora 15 nel maggio 2011 e cambia il modo in cui si
+        avvia e si amministra un sistema: unit&agrave; dichiarative, dipendenze
+        esplicite, journal centralizzato, cgroup sotto controllo. Arriva in
+        RHEL 7 nel 2014, in Debian 8 nel 2015 e in Ubuntu 15.04, e nel giro di
+        pochi anni diventa lo standard di fatto. Negli stessi anni cgroup e
+        namespace, nati per limitare e isolare i processi, diventano la base
+        dei container: Docker esce nel marzo 2013, Kubernetes nel 2014.
+      </p>
+
+      <h3>2019-2026 &mdash; cloni, RHEL 10 e il kernel 7</h3>
+      <p>
+        Nel 2019 Red Hat annuncia CentOS Stream, una anteprima continua del
+        prossimo RHEL, e chiude la stagione del clone gratuito. CentOS Linux 8
+        va in fine vita il 31 dicembre 2021; nello stesso anno nascono
+        AlmaLinux (marzo) e Rocky Linux (giugno) per occupare quel posto. Nel
+        giugno 2023 Red Hat limita l&rsquo;accesso ai sorgenti di RHEL e la
+        relazione con i cloni cambia ancora. Nel maggio 2025 arriva RHEL 10.
+        Sul fronte del kernel, il supporto a Rust entra nella 6.1 (dicembre
+        2022) e nel 2025 esce dallo stato sperimentale; il 12 aprile 2026 esce
+        Linux 7.0, mentre cgroup v2, eBPF e i namespace sono ormai il modo
+        normale di osservare, limitare e isolare un sistema.
+      </p>
+
+      <h2 id="cos-e">Kernel, sistema operativo, distribuzione</h2>
+      <p>
+        Tre parole che si usano come sinonimi ma non lo sono. Distinguerle
+        serve a capire cosa si sta installando, cosa si sta aggiornando e di
+        chi ci si pu&ograve; fidare quando qualcosa non funziona.
+      </p>
+
+      <h3>Il kernel</h3>
+      <p>
+        Il kernel &egrave; il programma che parla direttamente con
+        l&rsquo;hardware e distribuisce le risorse ai processi. Si occupa dello
+        scheduler (oggi EEVDF, entrato nella 6.6), della memoria virtuale e
+        della page cache, del file system virtuale, dello stack di rete, dei
+        driver e delle chiamate di sistema. &Egrave; monolitico, ma caricabile a
+        moduli: le funzionalit&agrave; che non servono all&rsquo;avvio stanno in
+        file <code>.ko</code> che si caricano quando servono. Nello stesso
+        spazio ci sono i meccanismi di isolamento e sicurezza: namespace,
+        cgroup, seccomp, capability e i moduli LSM come SELinux e AppArmor.
+        &Egrave; la parte che si aggiorna con pi&ugrave; cautela, perch&eacute;
+        un errore l&igrave; ferma tutto.
+      </p>
+
+      <h3>Il userland</h3>
+      <p>
+        Sopra il kernel c&rsquo;&egrave; ci&ograve; che serve a un essere umano
+        per usarlo: la libreria C (glibc o musl), la shell, le utilit&agrave;
+        GNU (<code>ls</code>, <code>cp</code>, <code>grep</code>,
+        <code>sed</code>, <code>awk</code>), <code>util-linux</code>,
+        systemd, il package manager. &Egrave; il pezzo che il progetto GNU ha
+        costruito e per questo molte persone dicono &ldquo;GNU/Linux&rdquo;
+        invece di &ldquo;Linux&rdquo;. La distinzione non &egrave; pedanteria:
+        quando un comando si comporta in modo diverso su due sistemi, spesso
+        il kernel &egrave; lo stesso e cambia il userland.
+      </p>
+
+      <h3>La distribuzione</h3>
+      <p>
+        Una distribuzione &egrave; l&rsquo;insieme confezionato di kernel,
+        userland, package manager, repository, installer, configurazioni
+        predefinite, politica di aggiornamento e supporto. &Egrave; il motivo
+        per cui non esiste &ldquo;Linux&rdquo; da scaricare: esiste Debian,
+        Ubuntu, Fedora, Arch, Alpine. Due distribuzioni possono avere lo stesso
+        kernel e comportarsi in modo molto diverso perch&eacute; cambiano
+        versioni dei pacchetti, file di configurazione, scelte di sicurezza e
+        tempi di aggiornamento. Anche Android &egrave; Linux nel senso del
+        kernel, ma non nel senso del userland: al posto di glibc e GNU ci sono
+        Bionic e ART. WSL, allo stesso modo, esegue un kernel Linux vero dentro
+        una macchina virtuale leggera, ma la distribuzione &egrave; quella che
+        scegli tu.
+      </p>
+
+      <h2 id="distribuzioni">Le famiglie di distribuzioni</h2>
+      <p>
+        Le distribuzioni si raggruppano per discendenza e per package manager,
+        perch&eacute; da l&igrave; dipendono i comandi, i repository e spesso
+        anche le scelte di configurazione. Le famiglie principali sono cinque;
+        dentro ognuna le differenze contano, ma il vocabolario di base resta
+        lo stesso.
+      </p>
+
+      <h3>Debian e la sua discendenza</h3>
+      <p>
+        <strong>Debian</strong> nasce nel 1993 come progetto di
+        comunit&agrave;, senza un&rsquo;azienda dietro. Il Contratto sociale del
+        1997 e le linee guida sul software libero (DFSG) definiscono cosa pu&ograve;
+        entrare nei repository; il sistema di pacchetti <code>deb</code>,
+        gestito con <code>apt</code> e <code>dpkg</code>, &egrave; uno dei
+        pi&ugrave; maturi. Debian non ha un calendario rigido: rilascia
+        &ldquo;quando &egrave; pronto&rdquo;, in genere ogni due anni, e
+        mantiene una versione stabile per circa cinque anni tra supporto
+        regolare e LTS. La stable attuale &egrave; Debian 13
+        &laquo;trixie&raquo;, uscita il 9 agosto 2025. &Egrave; la scelta di chi
+        vuole prevedibilit&agrave; e indipendenza da un singolo fornitore.
+      </p>
+      <p>
+        <strong>Ubuntu</strong> &egrave; la derivata pi&ugrave; diffusa: nasce
+        nel 2004 da Canonical con l&rsquo;obiettivo di rendere Linux usabile
+        sul desktop. Ogni sei mesi esce una versione, ogni due anni in aprile
+        una LTS, supportata cinque anni e fino a dieci con ESM. Introduce snap
+        accanto ai pacchetti <code>deb</code>, un kernel HWE per l&rsquo;hardware
+        recente e repository separati tra <code>main</code> e
+        <code>universe</code>. La 26.04 LTS &laquo;Resolute Raccoon&raquo;
+        &egrave; di aprile 2026. &Egrave; la distribuzione pi&ugrave; usata su
+        desktop e su cloud, e spesso la pi&ugrave; documentata.
+      </p>
+      <p>
+        <strong>Linux Mint</strong>, dal 2006, prende Ubuntu LTS (o Debian, nella
+        variante LMDE) e la rende pi&ugrave; tradizionale: ambiente Cinnamon,
+        menu classico, niente snap preinstallati. &Egrave; pensata per chi
+        vuole un desktop che funzioni senza sorprese e senza dover imparare un
+        nuovo paradigma a ogni aggiornamento.
+      </p>
+      <p>
+        <strong>Kali Linux</strong>, dal 2013, &egrave; l&rsquo;erede di
+        BackTrack ed &egrave; costruita su Debian testing in modo rolling. Porta
+        con s&eacute; centinaia di strumenti per test di penetrazione e analisi
+        di sicurezza. Non &egrave; una distribuzione per l&rsquo;uso
+        quotidiano, ma &egrave; uno standard nel suo campo.
+      </p>
+      <p>
+        <strong>Raspberry Pi OS</strong> nasce come Raspbian nel 2012 ed
+        &egrave; la distribuzione ufficiale per i computer Raspberry Pi:
+        Debian con driver, firmware e strumenti specifici per la scheda, nelle
+        varianti a 32 e 64 bit.
+      </p>
+
+      <h3>Red Hat e i cloni</h3>
+      <p>
+        <strong>Red Hat Enterprise Linux</strong> &egrave; la distribuzione
+        enterprise per eccellenza. Red Hat Linux arriva nel 1994; RHEL, con il
+        modello a abbonamento, nel 2002. Porta SELinux, <code>rpm</code> e
+        <code>dnf</code>, una politica di aggiornamenti conservativa e un ciclo
+        di vita di dieci anni, estendibile. RHEL 10 &egrave; uscito il 20
+        maggio 2025. &Egrave; lo standard di fatto in molte aziende, e non
+        solo per il software: per il supporto e la possibilit&agrave; di
+        certificare hardware e applicazioni.
+      </p>
+      <p>
+        <strong>Fedora</strong>, dal 2003, &egrave; il laboratorio upstream di
+        Red Hat: le novit&agrave; arrivano qui prima di finire in RHEL. Rilascia
+        ogni sei mesi, ogni versione &egrave; supportata circa tredici mesi,
+        usa SELinux di default e non ha paura di cambiare componenti. &Egrave;
+        la scelta di chi vuole un sistema aggiornato ma con una struttura
+        solida e una comunit&agrave; grande.
+      </p>
+      <p>
+        <strong>CentOS Stream</strong>, dal 2019, &egrave; una anteprima
+        continua del prossimo RHEL: sta davanti alla stable, non dietro. Non
+        &egrave; pi&ugrave; il clone gratuito di RHEL che molti ricordano:
+        &egrave; il ramo di sviluppo pubblico su cui Red Hat costruisce le
+        minor release.
+      </p>
+      <p>
+        <strong>AlmaLinux</strong> (marzo 2021, CloudLinux) e <strong>Rocky
+        Linux</strong> (giugno 2021) sono nate per riempire il vuoto lasciato
+        dalla fine di CentOS Linux: ricostruiscono RHEL a partire dai sorgenti
+        pubblici, promettono compatibilit&agrave; a livello di ABI e sono
+        gratuite. Sono la scelta tipica di chi vuole l&rsquo;ecosistema RHEL
+        senza abbonamento.
+      </p>
+      <p>
+        <strong>Amazon Linux</strong>, dal 2011, &egrave; la distribuzione di
+        AWS: deriva da Fedora, &egrave; ottimizzata per l&rsquo;hardware e i
+        servizi di Amazon e riceve aggiornamenti di sicurezza con un ciclo
+        proprio. Fuori da AWS ha poco senso; dentro &egrave; spesso la scelta
+        pi&ugrave; semplice.
+      </p>
+
+      <h3>SUSE</h3>
+      <p>
+        <strong>SUSE Linux Enterprise Server</strong> &egrave; la proposta
+        enterprise di SUSE, azienda tedesca attiva dai primi anni Novanta. Punta
+        su YaST per l&rsquo;amministrazione, su un ciclo di vita lungo e su una
+        forte integrazione con ambienti SAP e mainframe. &Egrave; diffusa in
+        Europa e nelle aziende che vogliono un&rsquo;alternativa a RHEL con
+        supporto locale.
+      </p>
+      <p>
+        <strong>openSUSE Leap</strong> &egrave; la versione comunit&agrave;
+        costruita sulla base di SLES: stessa base, pacchetti in gran parte
+        condivisi, ma senza abbonamento. <strong>openSUSE Tumbleweed</strong>
+        &egrave; invece rolling: ogni aggiornamento &egrave; una fotografia
+        testata con openQA, e grazie a Btrfs e Snapper si pu&ograve; tornare
+        indietro a uno snapshot precedente se qualcosa si rompe. &Egrave; una
+        delle rolling pi&ugrave; prudenti che esistano.
+      </p>
+
+      <h3>Arch e i suoi derivati</h3>
+      <p>
+        <strong>Arch Linux</strong>, dal 2002, segue la filosofia KISS:
+        pacchetti semplici, configurazione a mano, nessun automatismo che
+        nasconda cosa succede. &Egrave; rolling, usa <code>pacman</code>, ha
+        l&rsquo;AUR per i pacchetti della comunit&agrave; e una wiki che
+        &egrave; diventata un riferimento anche per chi non usa Arch. Si
+        installa con <code>archinstall</code> o passo passo, e si impara
+        molto proprio perch&eacute; non nasconde nulla.
+      </p>
+      <p>
+        <strong>Manjaro</strong>, dal 2011, prende Arch e la rende pi&ugrave;
+        accessibile: rolling ma con un ritardo sugli aggiornamenti, strumenti
+        propri per driver e kernel, ambienti desktop preconfigurati. &Egrave;
+        una buona porta d&rsquo;ingresso all&rsquo;ecosistema Arch, a patto di
+        ricordare che i repository non sono quelli di Arch.
+      </p>
+      <p>
+        <strong>EndeavourOS</strong>, dal 2019, &egrave; ancora pi&ugrave;
+        vicina ad Arch: installer grafico, pochi strumenti aggiunti, repository
+        ufficiali di Arch pi&ugrave; un piccolo repository proprio. &Egrave;
+        pensata per chi vuole Arch senza passare mezza giornata
+        sull&rsquo;installazione.
+      </p>
+
+      <h3>Le indipendenti</h3>
+      <p>
+        <strong>Alpine Linux</strong>, dal 2005, &egrave; costruita su musl e
+        BusyBox, usa <code>apk</code> e produce immagini di base da pochi
+        megabyte. &Egrave; la distribuzione tipica dei container minimali e dei
+        sistemi embedded; non &egrave; pensata per un desktop completo, ma per
+        fare una cosa sola e farla piccola.
+      </p>
+      <p>
+        <strong>Gentoo</strong>, dal 2000, compila i pacchetti dai sorgenti con
+        Portage e le USE flag, cos&igrave; il sistema contiene solo
+        ci&ograve; che serve. &Egrave; lenta da installare e da aggiornare, ma
+        &egrave; un modo eccellente per capire come &egrave; fatto un sistema
+        Linux.
+      </p>
+      <p>
+        <strong>NixOS</strong> nasce come progetto di ricerca nei primi anni
+        2000 e porta un&rsquo;idea diversa: l&rsquo;intero sistema &egrave;
+        descritto in un file, i pacchetti sono immutabili e ogni modifica
+        produce una nuova generazione. Si pu&ograve; tornare a quella
+        precedente con un comando, e due macchine con la stessa configurazione
+        sono davvero uguali. &Egrave; la scelta di chi vuole riproducibilit&agrave;
+        e non teme una curva di apprendimento ripida.
+      </p>
+      <p>
+        <strong>Slackware</strong>, dal 1993, &egrave; la distribuzione pi&ugrave;
+        vecchia ancora mantenuta. Semplice e conservativa, non risolve le
+        dipendenze al posto tuo e lascia i file di configurazione quasi come
+        sono. &Egrave; rimasta fedele a un&rsquo;idea di Unix leggibile e
+        prevedibile.
+      </p>
+      <p>
+        <strong>Void Linux</strong>, dal 2008, usa <code>runit</code> invece di
+        systemd, <code>xbps</code> come package manager e una variante con
+        musl. &Egrave; una via di mezzo tra minimalismo e semplicit&agrave;,
+        apprezzata da chi vuole un sistema leggero ma non vuole compilare tutto.
+      </p>
+
+      <h2 id="scegliere">Come scegliere</h2>
+      <p>
+        Non esiste la distribuzione migliore in assoluto. Esiste quella giusta
+        per un caso d&rsquo;uso, un&rsquo;hardware e un livello di esperienza.
+        Quattro domande aiutano pi&ugrave; di qualsiasi classifica: quanto deve
+        durare il sistema senza sorprese, quanto devono essere recenti i
+        pacchetti, chi lo amministrer&agrave; e dove girer&agrave;.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Caso d&rsquo;uso</th><th>Prima scelta</th><th>Perch&eacute;</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Desktop personale, senza sorprese</td>
+              <td>Ubuntu LTS o Linux Mint</td>
+              <td>Hardware riconosciuto, aggiornamenti prevedibili, documentazione e comunit&agrave; vaste.</td>
+            </tr>
+            <tr>
+              <td>Server stabile per anni</td>
+              <td>Debian stable</td>
+              <td>Pacchetti collaudati, aggiornamenti rari, nessun legame con un fornitore.</td>
+            </tr>
+            <tr>
+              <td>Server aziendale con supporto</td>
+              <td>RHEL o SLES</td>
+              <td>Ciclo di vita lungo, certificazioni, supporto contrattuale e strumenti enterprise.</td>
+            </tr>
+            <tr>
+              <td>Ultime versioni, sviluppo</td>
+              <td>Fedora, Arch o Tumbleweed</td>
+              <td>Pacchetti recenti e cicli rapidi, con un buon equilibrio tra novit&agrave; e controllo.</td>
+            </tr>
+            <tr>
+              <td>Container e immagini minime</td>
+              <td>Alpine o Debian slim</td>
+              <td>Poche dipendenze, superficie piccola, avvio rapido.</td>
+            </tr>
+            <tr>
+              <td>Imparare Linux sul serio</td>
+              <td>Arch, Gentoo o Slackware</td>
+              <td>Obbligano a capire cosa succede, invece di nasconderlo dietro un installer.</td>
+            </tr>
+            <tr>
+              <td>Configurazione riproducibile</td>
+              <td>NixOS</td>
+              <td>Sistema dichiarativo, generazioni immutabili e rollback immediato.</td>
+            </tr>
+            <tr>
+              <td>Hardware modesto o datato</td>
+              <td>Debian con XFCE o Alpine</td>
+              <td>Pochi requisiti, nessun servizio superfluo, ambienti desktop leggeri.</td>
+            </tr>
+            <tr>
+              <td>Raspberry Pi</td>
+              <td>Raspberry Pi OS</td>
+              <td>Driver e strumenti specifici per la scheda, manutenzione ufficiale.</td>
+            </tr>
+            <tr>
+              <td>Carichi su AWS</td>
+              <td>Amazon Linux</td>
+              <td>Ottimizzata per l&rsquo;infrastruttura e i servizi di Amazon.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <strong>Regola pratica:</strong> se il sistema deve &ldquo;funzionare e
+        basta&rdquo;, scegli una stable con supporto lungo; se devi imparare o
+        sperimentare, scegli una rolling sapendo che ogni tanto dovrai
+        sistemare qualcosa. Il resto &egrave; gusto, hardware e comunit&agrave;.
+      </div>
+
+      <h2 id="mappa">La mappa della sezione</h2>
+      <p>
+        La sezione cresce una pagina alla volta. Questa &egrave; la struttura
+        prevista: le pagine tecniche useranno esempi per Debian/Ubuntu e per
+        Red Hat/Fedora, con i comandi delle due famiglie separati dove le
+        differenze contano davvero.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Pagina</th><th>Contenuto</th><th>Stato</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="index.html">Panoramica</a></td>
+              <td>Storia, pezzi del sistema, famiglie di distribuzioni e criteri di scelta.</td>
+              <td>Pubblicata</td>
+            </tr>
+            <tr>
+              <td>File system e permessi</td>
+              <td>FHS, inode, link, permessi POSIX e speciali, ACL, mount, ext4/XFS/Btrfs/overlayfs.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Processi e risorse</td>
+              <td>fork/exec, segnali, priorit&agrave;, limiti, <code>/proc</code>, cgroup v2, namespace, OOM killer.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>systemd</td>
+              <td>Unit&agrave;, service, timer, socket, target, journal, drop-in, analisi dei tempi di avvio.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Shell e scripting</td>
+              <td>Quoting, espansioni, redirezioni, pipe, exit code, script robusti, find, sed, awk.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Rete</td>
+              <td><code>iproute2</code>, DNS, firewall, SSH, diagnostica, namespace di rete, bridge e VLAN.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Pacchetti</td>
+              <td>apt/dpkg, dnf/rpm, zypper, pacman, apk, repository, pinning, compilazione dai sorgenti.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Comandi Debian e Ubuntu</td>
+              <td>Cheat sheet con ricerca per la famiglia Debian: sistema, pacchetti, servizi, rete, file.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Comandi Red Hat e Fedora</td>
+              <td>Cheat sheet con ricerca per la famiglia Red Hat: sistema, pacchetti, servizi, SELinux, rete.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>vi e Vim</td>
+              <td>Modalit&agrave;, movimento, modifica, registri, macro, ricerca e sostituzione, configurazione, plugin.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Storage e LVM</td>
+              <td>Partizioni, LVM, RAID, Btrfs, LUKS2, swap, fstab, NFS, backup.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Boot e kernel</td>
+              <td>UEFI, GRUB, initramfs, parametri del kernel, moduli, Secure Boot, recovery.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Sicurezza</td>
+              <td>Utenti, sudo, PAM, capability, SELinux/AppArmor, seccomp, audit, hardening.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Diagnostica</td>
+              <td>Metodo, CPU, memoria, I/O, journal, strace, perf, eBPF, problemi di boot.</td>
+              <td>In preparazione</td>
+            </tr>
+            <tr>
+              <td>Laboratorio</td>
+              <td>Esercizi pratici con passi, risultato atteso, variante e trappola.</td>
+              <td>In preparazione</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="continuare">Da dove continuare</h2>
+      <p>
+        Linux &egrave; la base di molte altre sezioni di Adripedia. Se il tuo
+        obiettivo &egrave; usarlo dentro Windows, parti da
+        <a href="../wsl/index.html">WSL</a>; se vuoi capire i container, il
+        percorso naturale &egrave; <a href="../docker/index.html">Docker</a> o
+        <a href="../podman/index.html">Podman</a>, e poi
+        <a href="../kubernetes/index.html">Kubernetes</a>. Per la gestione dei
+        sorgenti e delle configurazioni, <a href="../git/index.html">Git</a> ha
+        una parte dedicata all&rsquo;installazione su Linux.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; area Informatica</span>
+        <span class="footer-right">
+          <span>Sezioni: <a href="../ai/index.html">AI</a> &middot; <a href="../../opencode/index.html">OpenCode</a> &middot; <a href="index.html">Linux</a> &middot; <a href="../git/index.html">Git</a> &middot; <a href="../docker/index.html">Docker</a> &middot; <a href="../podman/index.html">Podman</a> &middot; <a href="../buildah/index.html">Buildah</a> &middot; <a href="../kubernetes/index.html">Kubernetes</a> &middot; <a href="../java-kubernetes/index.html">Java su Kubernetes</a> &middot; <a href="../k3s/index.html">k3s</a> &middot; <a href="../k9s/index.html">k9s</a> &middot; <a href="../wsl/index.html">WSL</a></span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

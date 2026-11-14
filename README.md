@@ -5,11 +5,11 @@ Enciclopedia personale: documentazione e appunti, in ogni ambito.
 La gerarchia è **area → sezione → pagine**. Le prime due aree sono
 **Informatica** (che contiene le sezioni **AI**, un'introduzione generale senza
 una versione da inseguire, **OpenCode**, V2, versione `2.2.5`,
-**Git**, versione `2.56.0`, **Docker**, versione `29.9.3`, **Podman**, versione
-`6.1.4`, **Buildah**, versione `1.46.0`, **Kubernetes**, versione `1.37`,
-**Java su Kubernetes**, con Java `25` LTS e Spring Boot `4.1.2`, **k3s**,
-versione `1.37.2+k3s1`, **k9s**, versione `0.51.0`, e **WSL**, versione
-`3.0.3`) e **Link** (collegamenti esterni).
+**Linux**, kernel `7.0`, **Git**, versione `2.56.0`, **Docker**, versione
+`29.9.3`, **Podman**, versione `6.1.4`, **Buildah**, versione `1.46.0`,
+**Kubernetes**, versione `1.37`, **Java su Kubernetes**, con Java `25` LTS e
+Spring Boot `4.1.2`, **k3s**, versione `1.37.2+k3s1`, **k9s**, versione
+`0.51.0`, e **WSL**, versione `3.0.3`) e **Link** (collegamenti esterni).
 
 ## Struttura
 
@@ -26,6 +26,8 @@ adripedia/
 │  │  ├─ mcp.html             # server MCP: architettura, costruzione, sicurezza, distribuzione
 │  │  ├─ agenti.html          # agenti e orchestrazione: pattern, gerarchia, costi, affidabilità
 │  │  └─ laboratorio.html     # otto esercizi neutrali con passi, risultato atteso e varianti
+│  ├─ linux/                  # sezione Linux
+│  │  └─ index.html           # panoramica: storia, kernel/userland/distribuzione, famiglie, criteri di scelta
 │  ├─ git/                    # sezione Git
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi, esempi e ricette
 │  ├─ docker/                 # sezione Docker
@@ -113,7 +115,9 @@ approfondimenti. Java su Kubernetes segue lo stesso formato, con tab dedicati a
 panoramica, versioni della JVM, memoria e GC, manifest e Spring Boot, comandi e
 diagnostica. La sezione AI fa eccezione: è una pagina introduttiva discorsiva,
 con indice interno e glossario cercabile, più sei approfondimenti senza tab
-(`modelli`, `prompt`, `skill`, `mcp`, `agenti`, `laboratorio`).
+(`modelli`, `prompt`, `skill`, `mcp`, `agenti`, `laboratorio`). Anche Linux è
+una sezione a pagine separate: la panoramica è discorsiva, le pagine tecniche
+arrivano una alla volta e non usano tab.
 
 ```html
 <div class="tabs" data-tabs>
@@ -217,10 +221,12 @@ i meridiani principali. È disegnato in SVG inline in `assets/js/site.js`
   la navigazione laterale non compare.
 - Le pagine a tab mostrano tutti i pannelli quando JavaScript è disattivato.
 - I contenuti sono in italiano e allineati alla documentazione ufficiale
-  OpenCode V2, Git 2.56.0, Docker 29.9.3, Podman 6.1.4, Buildah 1.46.0,
-  Kubernetes 1.37, Java 25 LTS con Spring Boot 4.1.2, k3s 1.37.2+k3s1,
-  k9s 0.51.0 e WSL 3.0.3. La sezione AI è volutamente divulgativa e generale:
-  non è legata a una versione o a un singolo prodotto.
+  OpenCode V2, Linux (kernel 7.0), Git 2.56.0, Docker 29.9.3, Podman 6.1.4,
+  Buildah 1.46.0, Kubernetes 1.37, Java 25 LTS con Spring Boot 4.1.2,
+  k3s 1.37.2+k3s1, k9s 0.51.0 e WSL 3.0.3. Le sezioni AI e Linux sono
+  volutamente divulgative e generali: non sono legate a un singolo prodotto.
+  La sezione AI non insegue una versione; Linux documenta il kernel 7.0 ma
+  resta valida per le distribuzioni che usano kernel 6.x.
 
 ## Immagini della sezione Docker
 
@@ -391,3 +397,27 @@ trascrizioni di sessioni reali né misure. Stelle, versioni e dichiarazioni dei
 progetti citati (Superpowers, Caveman, BMAD, ECC, Hermes) sono quelle pubblicate
 dai progetti l'11 novembre 2026 e vanno ricontrollate prima di aggiornare le
 pagine.
+
+## Mappa della sezione Linux
+
+La sezione è a pagine separate, come AI. La panoramica è pubblicata; le pagine
+tecniche arrivano una alla volta e gli esempi sono separati per famiglia:
+Debian/Ubuntu e Red Hat/Fedora.
+
+- `informatica/linux/index.html`: storia del kernel e di GNU, distinzione tra
+  kernel, userland e distribuzione, cinque famiglie (Debian, Red Hat, SUSE,
+  Arch, indipendenti), criteri di scelta e mappa della sezione.
+- `filesystem.html`, `processi.html`, `systemd.html`, `shell.html`,
+  `rete.html`, `pacchetti.html`: le pagine tecniche di base.
+- `comandi-debian.html` e `comandi-rhel.html`: due cheat sheet con ricerca,
+  una per famiglia.
+- `vi-vim.html`: guida a modalità, movimento, modifica, registri, macro,
+  ricerca e sostituzione, configurazione e plugin.
+- `storage.html`, `boot-kernel.html`, `sicurezza.html`, `diagnostica.html`,
+  `laboratorio.html`: la seconda ondata.
+
+Fatti e date della panoramica sono verificati sulle fonti ufficiali al 14
+novembre 2026: kernel 7.0 (12 aprile 2026), Debian 13 trixie (9 agosto 2025),
+Ubuntu 26.04 LTS (aprile 2026), RHEL 10 (20 maggio 2025), Fedora 44 (aprile
+2026). Le versioni delle distribuzioni citate vanno ricontrollate prima di
+ogni aggiornamento.
