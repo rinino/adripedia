@@ -72,7 +72,9 @@
               children: [
                 { text: "Panoramica", href: "informatica/linux/index.html" },
                 { text: "Installazione", href: "informatica/linux/installazione.html" },
-                { text: "Kernel e gestione", href: "informatica/linux/kernel.html" }
+                { text: "Kernel e gestione", href: "informatica/linux/kernel.html" },
+                { text: "File system e permessi", href: "informatica/linux/filesystem.html" },
+                { text: "vi e Vim", href: "informatica/linux/vi-vim.html" }
               ]
             },
             {
@@ -482,12 +484,17 @@
      mostra i risultati mentre si digita e salta al comando scelto.
      --------------------------------------------------------------------- */
   (function () {
-    var panel = document.getElementById("comandi");
+    var panel = document.getElementById("comandi") ||
+      document.querySelector("[data-cmd-search-scope]");
     var input = document.getElementById("cmd-search-input");
     var results = document.getElementById("cmd-search-results");
     var hint = document.getElementById("cmd-search-hint");
 
     if (!panel || !input || !results) return;
+
+    /* Nelle pagine senza tab la ricerca lavora sull'intera pagina e
+       indicizza solo le tabelle marcate con data-cmd-table. */
+    var pageScope = panel.id !== "comandi";
 
     /* Il tab Esempi, quando c'è, entra nella stessa ricerca. */
     var panels = [panel, document.getElementById("esempi")].filter(Boolean);
@@ -541,16 +548,30 @@
       };
     }
 
+    /* La prima cella può contenere più comandi: h j k l, per esempio. */
+    function commandOf(row) {
+      var first = row.querySelector("td");
+      if (!first) return "";
+
+      var codes = first.querySelectorAll("code");
+      if (codes.length === 1) return codes[0].textContent.trim();
+
+      return first.textContent.trim();
+    }
+
     /* Righe delle tabelle: comando nella prima cella, descrizione nella seconda. */
+    var tableSelector = pageScope
+      ? ".table-wrap[data-cmd-table] tbody tr"
+      : ".table-wrap tbody tr";
+
     panels.forEach(function (owner) {
-      owner.querySelectorAll(".table-wrap tbody tr").forEach(function (row) {
-        var code = row.querySelector("td code");
-        if (!code) return;
+      owner.querySelectorAll(tableSelector).forEach(function (row) {
+        if (!row.querySelector("td code")) return;
 
         var cells = row.querySelectorAll("td");
         var desc = cells[1] ? cells[1].textContent.trim() : "";
 
-        entries.push(makeEntry(code.textContent.trim(), desc, row));
+        entries.push(makeEntry(commandOf(row), desc, row));
       });
     });
 
@@ -561,6 +582,7 @@
     panels.forEach(function (owner) {
       owner.querySelectorAll("pre code").forEach(function (code) {
         var lines = code.textContent.split("\n");
+        var pendingDesc = "";
         code.textContent = "";
 
         lines.forEach(function (line, index) {
@@ -576,9 +598,35 @@
           }
 
           var command = line.trim();
-          if (!command || command.charAt(0) === "#") return;
+          if (!command) return;
 
-          entries.push(makeEntry(command, "", span));
+          /* Nei blocchi Vim i commenti sono descrizioni pronte: una riga
+             intera vale per il comando che segue, un commento inline vale
+             per il comando sulla stessa riga. */
+          if (command.charAt(0) === "#" || command.charAt(0) === '"') {
+            if (pageScope) {
+              pendingDesc = command.replace(/^[#"]\s*/, "").trim();
+            }
+            return;
+          }
+
+          var desc = "";
+          if (pageScope) {
+            var commentAt = command.search(/\s"/);
+            if (commentAt !== -1) {
+              desc = command.slice(commentAt).replace(/^\s*"\s*/, "").trim();
+              command = command.slice(0, commentAt).trim();
+            } else if (pendingDesc) {
+              desc = pendingDesc;
+            }
+            pendingDesc = "";
+          }
+
+          if (!command) return;
+
+          if (desc) desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+          entries.push(makeEntry(command, desc, span));
         });
       });
     });
@@ -593,25 +641,71 @@
       return true;
     });
 
+    /* La ricerca per descrizione accetta anche parole intere con desinenza
+       diversa: "copiare" trova "copia", "sostituire" trova "sostituisce". */
+    function tokenMatches(text, token) {
+      if (text.indexOf(token) !== -1) return true;
+      if (token.length < 5) return false;
+
+      for (var len = token.length - 1; len >= 5; len -= 1) {
+        if (text.indexOf(token.slice(0, len)) !== -1) return true;
+      }
+
+      return false;
+    }
+
+    var aliases = {
+      uscire: "esci",
+      uscita: "esci",
+      aprire: "apr",
+      creare: "crea",
+      cercare: "cerca",
+      ricercare: "cerca",
+      ricerca: "cerca",
+      trovare: "cerca",
+      vedere: "mostra",
+      visualizzare: "mostra"
+    };
+
     function search(query) {
-      var tokens = normalize(query).split(/\s+/).filter(Boolean);
+      var tokens = normalize(query).split(/\s+/).filter(Boolean).map(function (token) {
+        return aliases[token] || token;
+      });
       if (!tokens.length) return [];
 
+      var phrase = tokens.join(" ");
       var found = [];
 
       entries.forEach(function (entry) {
         var matches = tokens.every(function (token) {
-          return entry.haystack.indexOf(token) !== -1;
+          return tokenMatches(entry.haystack, token);
         });
 
         if (!matches) return;
 
         var command = normalize(entry.command);
+        var desc = normalize(entry.desc);
+        var context = normalize(entry.context);
         var score = 0;
 
         if (command === query.trim().toLowerCase()) score += 100;
         if (command.indexOf(tokens[0]) === 0) score += 40;
         if (command.indexOf(tokens[0]) !== -1) score += 15;
+
+        /* Le corrispondenze nella descrizione valgono più di quelle nel
+           titolo della sezione: chi cerca "copiare" vuole yy, non tutto
+           il capitolo sui registri. */
+        if (desc.indexOf(phrase) !== -1) score += 45;
+        if (desc.indexOf(tokens[0]) !== -1) score += 22;
+        else if (tokenMatches(desc, tokens[0])) score += 12;
+
+        var allInDesc = tokens.every(function (token) {
+          return tokenMatches(desc, token);
+        });
+        if (allInDesc && desc) score += 30;
+
+        if (context.indexOf(tokens[0]) !== -1) score += 4;
+
         score -= command.length / 100;
 
         found.push({ entry: entry, score: score });

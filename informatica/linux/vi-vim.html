@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vi e Vim — Adripedia</title>
+  <meta name="description" content="Guida tecnica a vi e Vim: modalità, movimenti, operatori e text object, registri, ricerca e sostituzione con regex Vim, buffer, finestre, macro, configurazione, plugin, comandi ex, recupero e Neovim.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/vi-vim.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">vi e Vim</span>
+    </header>
+
+    <main id="main" class="page" data-cmd-search-scope>
+      <p class="eyebrow">Approfondimento &middot; Linux</p>
+      <h1>vi e Vim</h1>
+      <p class="lead">
+        <code>vi</code> &egrave; l&rsquo;editor di testo che si trova su
+        qualunque sistema Unix, spesso addirittura in un&rsquo;installazione
+        minima senza desktop. Vim ne &egrave; l&rsquo;evoluzione compatibile:
+        stesse dita, molte pi&ugrave; funzioni. La difficolt&agrave; non
+        &egrave; la sintassi dei comandi, ma il modello mentale: si passa la
+        maggior parte del tempo in <em>normal mode</em>, dove i tasti sono
+        comandi, e si entra in <em>insert mode</em> solo per scrivere. Questa
+        pagina parte da quel modello e arriva a macro, registri, regex,
+        finestre, configurazione e recupero dopo un crash, con i comandi
+        separati per famiglia dove serve.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Impara prima la grammatica
+          <code>operatore + movimento</code>, poi i text object, poi la
+          sostituzione con le regex. Il resto &mdash; plugin, colori,
+          configurazioni altrui &mdash; viene dopo e vale molto meno. Se sai
+          gi&agrave; usare <code>vi</code>, Vim &egrave; lo stesso editor con
+          <code>:help</code> migliore.
+        </p>
+      </div>
+
+      <p>
+        Per il resto dell&rsquo;ambiente Linux, la
+        <a href="index.html">panoramica della sezione</a> fa da mappa; per
+        l&rsquo;installazione di un sistema da zero c&rsquo;&egrave;
+        <a href="installazione.html">Installazione da riga di comando</a>, e per
+        ci&ograve; che sta sotto l&rsquo;editor c&rsquo;&egrave;
+        <a href="kernel.html">Il kernel e la sua gestione</a>. Qui si presume
+        una shell gi&agrave; funzionante.
+      </p>
+
+      <div class="cmd-search" id="cerca">
+        <label class="cmd-search-label" for="cmd-search-input">Cerca un comando per descrizione</label>
+        <div class="cmd-search-field">
+          <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="cmd-search-input" id="cmd-search-input" type="search"
+                 placeholder="Per esempio: copiare, incollare, sostituire, salvare&hellip;"
+                 autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="cmd-search-results"
+                 aria-autocomplete="list" aria-describedby="cmd-search-hint">
+        </div>
+        <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
+          Scrivi cosa vuoi fare: la ricerca guarda descrizioni, comandi e titoli delle sezioni.
+        </p>
+        <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
+            aria-label="Comandi trovati" hidden></ul>
+      </div>
+
+      <nav class="section-index" aria-labelledby="vi-index-title">
+        <p class="section-index-title" id="vi-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#cerca">Cerca un comando</a></li>
+          <li><a href="#storia">Da vi a Vim a Neovim</a></li>
+          <li><a href="#modalita">Le modalit&agrave;</a></li>
+          <li><a href="#movimento">Muoversi nel testo</a></li>
+          <li><a href="#modifica">Operatori, text object e ripetizione</a></li>
+          <li><a href="#visual">Visual mode e blocchi</a></li>
+          <li><a href="#registri">Registri e clipboard</a></li>
+          <li><a href="#ricerca">Ricerca, regex e sostituzione</a></li>
+          <li><a href="#buffer">Buffer, finestre e tab</a></li>
+          <li><a href="#macro">Macro e comandi ripetuti</a></li>
+          <li><a href="#marcatori">Marcatori, pieghe e quickfix</a></li>
+          <li><a href="#configurazione">Configurazione: vimrc e opzioni</a></li>
+          <li><a href="#plugin">Plugin, Vim 9 e Neovim</a></li>
+          <li><a href="#ex">Comandi ex: cheat sheet</a></li>
+          <li><a href="#errori">Errori, swap e recupero</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="storia">Da vi a Vim a Neovim</h2>
+      <p>
+        <code>vi</code> nasce nel 1976 a Berkeley, scritto da Bill Joy insieme
+        all&rsquo;editor di righe <code>ex</code>. L&rsquo;idea era semplice e
+        rivoluzionaria: invece di impartire comandi riga per riga, si vede il
+        file intero e si naviga con pochi tasti. <code>vi</code> &egrave;
+        entrato nello standard POSIX e per decenni &egrave; stato l&rsquo;unico
+        editor garantito su una macchina Unix appena installata.
+      </p>
+      <p>
+        Vim &mdash; <em>Vi IMproved</em> &mdash; comincia nel 1988 come
+        &ldquo;Vi IMitation&rdquo; su Amiga, ad opera di Bram Moolenaar; la
+        prima versione pubblica arriva nel 1991. Aggiunge undo su pi&ugrave;
+        livelli, finestre, syntax highlighting, completamento, scripting e una
+        quantit&agrave; enorme di comandi. &Egrave; software libero distribuito
+        con licenza compatibile GPL e <em>charityware</em>: l&rsquo;autore
+        chiedeva di donare a una causa umanitaria. Bram &egrave; morto il 3
+        agosto 2023; il progetto &egrave; portato avanti da un gruppo di
+        maintainer e la versione stabile attuale &egrave; <strong>Vim
+        9.2</strong>, secondo <code>vim.org</code> a novembre 2026. La 9.0,
+        nel 2022, ha introdotto Vim9 script; la 9.1, all&rsquo;inizio del 2024,
+        ha consolidato il linguaggio e corretto una lunga serie di problemi.
+      </p>
+      <p>
+        Neovim nasce nel 2014 come fork di Vim, con un obiettivo diverso: non
+        riscrivere l&rsquo;editor, ma rifarne l&rsquo;architettura. Il core
+        &egrave; pi&ugrave; piccolo, il terminale e i job sono asincroni,
+        l&rsquo;API &egrave; pensata per essere pilotata da altri processi e la
+        configurazione pu&ograve; essere scritta in Lua. La stabile attuale
+        &egrave; <strong>0.12.6</strong>, uscita il 9 ottobre 2026. LSP e
+        Treesitter sono integrati, non plugin esterni.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Aspetto</th><th>vi (POSIX)</th><th>Vim 9.2</th><th>Neovim 0.12.6</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Origine</td>
+              <td>Bill Joy, 1976</td>
+              <td>Bram Moolenaar, 1991</td>
+              <td>Fork di Vim, 2014</td>
+            </tr>
+            <tr>
+              <td>Scripting</td>
+              <td>Comandi ex</td>
+              <td>Vim script e Vim9 script</td>
+              <td>Lua e Vim script</td>
+            </tr>
+            <tr>
+              <td>Undo persistente</td>
+              <td>No</td>
+              <td>S&igrave;, con <code>undofile</code></td>
+              <td>S&igrave;, con <code>undofile</code></td>
+            </tr>
+            <tr>
+              <td>LSP</td>
+              <td>No</td>
+              <td>Via plugin</td>
+              <td>Integrato in <code>vim.lsp</code></td>
+            </tr>
+            <tr>
+              <td>Treesitter</td>
+              <td>No</td>
+              <td>Via plugin</td>
+              <td>Integrato</td>
+            </tr>
+            <tr>
+              <td>Terminale integrato</td>
+              <td>No</td>
+              <td><code>:terminal</code></td>
+              <td><code>:terminal</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Su molte distribuzioni <code>vi</code> non &egrave; il vi storico: il
+        comando &egrave; un alternative che punta a <code>vim.basic</code> o a
+        <code>vim.tiny</code>, e Vim avviato con il nome <code>vi</code> parte
+        in modalit&agrave; compatibile se non trova una configurazione. Il
+        risultato pratico &egrave; che alcuni comandi Vim non ci sono o si
+        comportano diversamente. Per capire cosa si sta usando:
+      </p>
+      <pre><code>vi --version
+readlink -f "$(command -v vi)"
+vim --version | head -n 5
+command -v vimtutor &amp;&amp; vimtutor</code></pre>
+      <p>
+        <code>vimtutor</code> &egrave; il modo pi&ugrave; rapido per imparare le
+        basi: trenta minuti di esercizi guidati, in italiano se il locale
+        &egrave; configurato. <code>:help</code> apre il manuale completo;
+        <code>:help index</code> elenca tutti i comandi, <code>:helpgrep</code>
+        cerca dentro la documentazione.
+      </p>
+
+      <h2 id="modalita">Le modalit&agrave;</h2>
+      <p>
+        Vim &egrave; un editor <em>modale</em>: lo stesso tasto produce effetti
+        diversi a seconda della modalit&agrave;. Non &egrave; un dettaglio
+        estetico, &egrave; il motivo per cui si possono concatenare comandi
+        senza premere Ctrl o Alt. Le modalit&agrave; che contano davvero sono
+        cinque, pi&ugrave; due di servizio.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Modalit&agrave;</th><th>Come entrarci</th><th>Come uscirne</th><th>A cosa serve</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Normal</td>
+              <td><code>Esc</code> da quasi tutto</td>
+              <td>&mdash;</td>
+              <td>Muoversi, cancellare, copiare, eseguire comandi</td>
+            </tr>
+            <tr>
+              <td>Insert</td>
+              <td><code>i</code> <code>a</code> <code>I</code> <code>A</code> <code>o</code> <code>O</code></td>
+              <td><code>Esc</code></td>
+              <td>Scrivere testo</td>
+            </tr>
+            <tr>
+              <td>Visual</td>
+              <td><code>v</code> <code>V</code> <code>Ctrl-V</code></td>
+              <td><code>Esc</code></td>
+              <td>Selezionare per caratteri, righe o blocchi</td>
+            </tr>
+            <tr>
+              <td>Select</td>
+              <td><code>gh</code> <code>gH</code> <code>gCtrl-H</code></td>
+              <td><code>Esc</code></td>
+              <td>Selezione che viene sostituita digitando</td>
+            </tr>
+            <tr>
+              <td>Replace</td>
+              <td><code>R</code> <code>gR</code></td>
+              <td><code>Esc</code></td>
+              <td>Sovrascrivere senza spostare il resto</td>
+            </tr>
+            <tr>
+              <td>Command-line</td>
+              <td><code>:</code> <code>/</code> <code>?</code> <code>!</code></td>
+              <td><code>Enter</code> o <code>Esc</code></td>
+              <td>Comandi ex, ricerca, filtri</td>
+            </tr>
+            <tr>
+              <td>Operator-pending</td>
+              <td>Dopo un operatore come <code>d</code></td>
+              <td>Movimento o <code>Esc</code></td>
+              <td>Attendere l&rsquo;oggetto su cui agire</td>
+            </tr>
+            <tr>
+              <td>Terminal</td>
+              <td><code>:terminal</code></td>
+              <td><code>Ctrl-\ Ctrl-N</code></td>
+              <td>Shell dentro una finestra Vim</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>Esc</code> &egrave; la via di fuga universale. <code>Ctrl-[</code>
+        fa la stessa cosa ed &egrave; comodo sulle tastiere senza Esc vicino.
+        <code>Ctrl-C</code> interrompe, ma non equivale a <code>Esc</code>: non
+        chiude correttamente l&rsquo;inserimento e pu&ograve; saltare
+        l&rsquo;autocompletamento o le abbreviazioni. In insert mode,
+        <code>Ctrl-O</code> esegue <em>un</em> comando normal e torna a
+        scrivere; <code>Ctrl-R</code> seguito da un registro ne inserisce il
+        contenuto.
+      </p>
+      <p>
+        Due opzioni aiutano a capire cosa sta succedendo:
+        <code>:set showmode</code> mostra la modalit&agrave; corrente,
+        <code>:set showcmd</code> mostra i comandi parziali in basso a destra.
+        La sequenza <code>Esc</code> e poi un comando &egrave; quasi sempre
+        meglio di premere tasti a caso: se il cursore si sposta da solo, si
+        &egrave; ancora in normal mode; se scrive, si &egrave; in insert.
+      </p>
+
+      <h2 id="movimento">Muoversi nel testo</h2>
+      <p>
+        I movimenti sono la met&agrave; del linguaggio di Vim. Quasi tutti
+        accettano un prefisso numerico: <code>5j</code> scende di cinque righe,
+        <code>3w</code> avanza di tre parole. Il movimento non &egrave; solo
+        navigazione: &egrave; ci&ograve; che d&agrave; un bersaglio agli
+        operatori.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Tasti</th><th>Movimento</th><th>Nota</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>h</code> <code>j</code> <code>k</code> <code>l</code></td>
+              <td>Sinistra, gi&ugrave;, su, destra</td>
+              <td>Il movimento di base; <code>j</code>/<code>k</code> restano nella colonna</td>
+            </tr>
+            <tr>
+              <td><code>w</code> <code>b</code> <code>e</code></td>
+              <td>Parola avanti, indietro, fine parola</td>
+              <td><code>W</code> <code>B</code> <code>E</code> trattano la punteggiatura come parte della parola</td>
+            </tr>
+            <tr>
+              <td><code>0</code> <code>^</code> <code>$</code></td>
+              <td>Inizio riga, primo carattere non blank, fine riga</td>
+              <td><code>g_</code> va all&rsquo;ultimo carattere non blank</td>
+            </tr>
+            <tr>
+              <td><code>gg</code> <code>G</code></td>
+              <td>Prima riga, ultima riga</td>
+              <td><code>42G</code> va alla riga 42; <code>:42</code> fa lo stesso</td>
+            </tr>
+            <tr>
+              <td><code>{</code> <code>}</code></td>
+              <td>Paragrafo indietro, avanti</td>
+              <td>Riconosce blocchi separati da righe vuote</td>
+            </tr>
+            <tr>
+              <td><code>(</code> <code>)</code></td>
+              <td>Frase indietro, avanti</td>
+              <td>Utile per prosa, meno per codice</td>
+            </tr>
+            <tr>
+              <td><code>%</code></td>
+              <td>Parentesi o tag corrispondente</td>
+              <td>Funziona con <code>()</code> <code>[]</code> <code>{}</code> e, se configurato, con tag HTML</td>
+            </tr>
+            <tr>
+              <td><code>f</code> <code>t</code> <code>F</code> <code>T</code></td>
+              <td>Al carattere, prima del carattere, all&rsquo;indietro</td>
+              <td><code>;</code> ripete, <code>,</code> ripete in senso inverso</td>
+            </tr>
+            <tr>
+              <td><code>H</code> <code>M</code> <code>L</code></td>
+              <td>Inizio, centro, fine dello schermo</td>
+              <td>Solo righe visibili</td>
+            </tr>
+            <tr>
+              <td><code>Ctrl-D</code> <code>Ctrl-U</code></td>
+              <td>Mezza pagina gi&ugrave;, su</td>
+              <td><code>Ctrl-F</code>/<code>Ctrl-B</code> scorrono di una pagina intera</td>
+            </tr>
+            <tr>
+              <td><code>zz</code> <code>zt</code> <code>zb</code></td>
+              <td>Riga corrente al centro, in alto, in basso</td>
+              <td>Non spostano il cursore, solo la vista</td>
+            </tr>
+            <tr>
+              <td><code>gj</code> <code>gk</code></td>
+              <td>Riga visiva gi&ugrave;, su</td>
+              <td>Necessari quando <code>wrap</code> &egrave; attivo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Per saltare da una parte all&rsquo;altra del file si usano i
+        <em>jump</em>: <code>Ctrl-O</code> torna indietro nella cronologia dei
+        salti, <code>Ctrl-I</code> va avanti, <code>:jumps</code> mostra la
+        lista. <code>g;</code> e <code>g,</code> percorrono invece le posizioni
+        in cui il file &egrave; stato modificato. Sono movimenti da imparare
+        presto: dopo una ricerca o un <code>G</code> si torna al punto di
+        partenza senza rileggere il file.
+      </p>
+      <p>
+        Con <code>:set relativenumber</code> le righe mostrano la distanza dal
+        cursore invece del numero assoluto: <code>12j</code> si legge a colpo
+        d&rsquo;occhio. <code>:set number relativenumber</code> combina numero
+        assoluto sulla riga corrente e relativo sulle altre.
+      </p>
+
+      <h2 id="modifica">Operatori, text object e ripetizione</h2>
+      <p>
+        La grammatica &egrave; <code>[conteggio] operatore [conteggio]
+        movimento</code>. <code>d</code> cancella, <code>c</code> cambia,
+        <code>y</code> copia, <code>&gt;</code> e <code>&lt;</code> indentano,
+        <code>=</code> riallinea, <code>g~</code> inverte il caso,
+        <code>gu</code> e <code>gU</code> rendono minuscolo e maiuscolo,
+        <code>gq</code> formatta, <code>!</code> filtra attraverso un comando
+        esterno. Il movimento dice <em>quanto</em>.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Comando</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>dw</code></td><td>Cancella fino all&rsquo;inizio della parola successiva</td></tr>
+            <tr><td><code>d$</code> oppure <code>D</code></td><td>Cancella fino a fine riga</td></tr>
+            <tr><td><code>dd</code></td><td>Cancella la riga intera</td></tr>
+            <tr><td><code>cc</code></td><td>Sostituisce la riga intera, lasciando il cursore in insert</td></tr>
+            <tr><td><code>yy</code></td><td>Copia la riga intera</td></tr>
+            <tr><td><code>p</code> <code>P</code></td><td>Incolla dopo, prima; <code>gp</code> lascia il cursore dopo il testo incollato</td></tr>
+            <tr><td><code>x</code> <code>X</code></td><td>Cancella il carattere sotto, prima del cursore</td></tr>
+            <tr><td><code>s</code> <code>S</code></td><td>Cancella carattere o riga ed entra in insert</td></tr>
+            <tr><td><code>r</code> <code>R</code></td><td>Sostituisce un carattere, o entra in replace mode</td></tr>
+            <tr><td><code>J</code> <code>gJ</code></td><td>Unisce la riga sotto, con o senza spazio</td></tr>
+            <tr><td><code>~</code></td><td>Inverte il caso del carattere e avanza</td></tr>
+            <tr><td><code>u</code></td><td>Annulla l&rsquo;ultima modifica</td></tr>
+            <tr><td><code>Ctrl-R</code></td><td>Ripristina la modifica annullata</td></tr>
+            <tr><td><code>.</code></td><td>Ripete l&rsquo;ultima modifica</td></tr>
+            <tr><td><code>&gt;</code> <code>&lt;</code></td><td>Indenta o riduce l&rsquo;indentazione</td></tr>
+            <tr><td><code>=</code></td><td>Riallinea l&rsquo;indentazione del codice</td></tr>
+            <tr><td><code>gq</code></td><td>Formatta il testo alla larghezza impostata</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        I <em>text object</em> sono la parte che rende Vim diverso da un
+        editor qualsiasi. Non indicano una distanza, indicano una struttura:
+        <code>iw</code> &egrave; la parola corrente, <code>i&quot;</code>
+        &egrave; il contenuto tra virgolette, <code>ip</code> &egrave; il
+        paragrafo. La <code>i</code> sta per <em>inner</em>, la
+        <code>a</code> per <em>around</em> e include delimitatori o spazi.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Oggetto</th><th>Significato</th><th>Esempio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>iw</code> <code>aw</code></td><td>Parola, parola con spazio</td><td><code>ciw</code> cambia la parola sotto il cursore</td></tr>
+            <tr><td><code>iW</code> <code>aW</code></td><td>Parola larga, con punteggiatura</td><td><code>daW</code> cancella anche la punteggiatura</td></tr>
+            <tr><td><code>is</code> <code>as</code></td><td>Frase</td><td><code>yis</code> copia la frase</td></tr>
+            <tr><td><code>ip</code> <code>ap</code></td><td>Paragrafo</td><td><code>&gt;ip</code> indenta il paragrafo</td></tr>
+            <tr><td><code>i(</code> <code>a(</code></td><td>Dentro o intorno a parentesi tonde</td><td><code>ci(</code> cambia l&rsquo;argomento di una funzione</td></tr>
+            <tr><td><code>i[</code> <code>a[</code></td><td>Parentesi quadre</td><td><code>da[</code> elimina l&rsquo;indice</td></tr>
+            <tr><td><code>i{</code> <code>a{</code></td><td>Parentesi graffe</td><td><code>yi{</code> copia il corpo di un blocco</td></tr>
+            <tr><td><code>i&lt;</code> <code>a&lt;</code></td><td>Parentesi angolari</td><td><code>ci&lt;</code> cambia un tag</td></tr>
+            <tr><td><code>i&quot;</code> <code>a&quot;</code></td><td>Virgolette doppie</td><td><code>ci&quot;</code> cambia una stringa</td></tr>
+            <tr><td><code>i'</code> <code>a'</code></td><td>Virgolette singole</td><td><code>di'</code> elimina il contenuto</td></tr>
+            <tr><td><code>it</code> <code>at</code></td><td>Tag HTML/XML</td><td><code>cit</code> cambia il testo dentro un tag</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Il punto <code>.</code> ripete l&rsquo;ultima modifica, non l&rsquo;ultimo
+        comando: &egrave; il moltiplicatore pi&ugrave; potente di Vim.
+        <code>ciw</code> + testo + <code>Esc</code>, poi <code>.</code> sulla
+        parola successiva, &egrave; un&rsquo;operazione che in altri editor
+        richiede mouse e menu. <code>u</code> annulla, <code>Ctrl-R</code>
+        ripristina; <code>U</code> annulla tutte le modifiche dell&rsquo;ultima
+        riga toccata, non dell&rsquo;intero file. Per una cronologia a tempo,
+        <code>:earlier 10m</code> e <code>:later 10m</code>.
+      </p>
+      <pre><code># Cancella le righe vuote finali di un file
+:g/^\s*$/d
+
+# Indenta un blocco selezionato di quattro colonne
+:&gt;
+
+# Formatta una selezione a 80 colonne
+:'&lt;,'&gt;gq
+
+# Unisci le righe da 10 a 20
+:10,20j</code></pre>
+
+      <h2 id="visual">Visual mode e blocchi</h2>
+      <p>
+        <code>v</code> seleziona per caratteri, <code>V</code> per righe,
+        <code>Ctrl-V</code> per blocchi rettangolari. La selezione &egrave;
+        inclusiva e il cursore pu&ograve; essere spostato con gli stessi
+        movimenti della normal mode. <code>o</code> e <code>O</code> spostano
+        il cursore all&rsquo;altro capo della selezione; <code>gv</code>
+        riapre l&rsquo;ultima selezione.
+      </p>
+      <p>
+        In visual block <code>I</code> inserisce all&rsquo;inizio di ogni riga
+        del blocco, <code>A</code> alla fine, <code>c</code> cambia il blocco,
+        <code>r</code> sostituisce ogni carattere con uno solo, <code>$</code>
+        estende fino a fine riga. La modifica viene applicata a tutte le righe
+        solo quando si preme <code>Esc</code>: fino a quel momento si vede
+        l&rsquo;anteprima. Su Windows, <code>Ctrl-V</code> pu&ograve; essere
+        intercettato dal terminale come incolla; in quel caso si usa
+        <code>Ctrl-Q</code>.
+      </p>
+      <pre><code># Aggiungere un prefisso a un blocco di righe
+Ctrl-V, seleziona le righe, I, scrivi il prefisso, Esc
+
+# Rinumerare una colonna di numeri
+Ctrl-V, seleziona la colonna, g Ctrl-A
+
+# Sostituire ogni carattere di un blocco con #
+Ctrl-V, seleziona, r#
+
+# Eseguire un comando normal su ogni riga selezionata
+:'&lt;,'&gt;normal @q</code></pre>
+      <p>
+        <code>g Ctrl-A</code> incrementa i numeri selezionati di uno per riga,
+        <code>g Ctrl-X</code> li decrementa; &egrave; il modo pi&ugrave; rapido
+        per creare una sequenza. Con <code>:set virtualedit=block</code> il
+        cursore pu&ograve; oltrepassare la fine della riga, utile per
+        selezionare colonne irregolari.
+      </p>
+      <p>
+        La <em>select mode</em> (<code>gh</code>, <code>gH</code>,
+        <code>gCtrl-H</code>) &egrave; una variante della visual in cui il
+        primo carattere digitato sostituisce la selezione, come in un editor
+        grafico. &Egrave; comoda per chi arriva da altri programmi, ma rompe
+        l&rsquo;abitudine operatore-movimento: molti la disattivano con
+        <code>:set selectmode=</code>.
+      </p>
+
+      <h2 id="registri">Registri e clipboard</h2>
+      <p>
+        Ogni cancellazione e ogni copia finisce in un registro. I registri
+        sono contenitori nominati e si richiamano con <code>&quot;</code>
+        davanti al nome: <code>&quot;ayy</code> copia la riga nel registro
+        <code>a</code>, <code>&quot;ap</code> la incolla. Le lettere maiuscole
+        accodano invece di sovrascrivere.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Registro</th><th>Contenuto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>&quot;</code></td><td>Unnamed: l&rsquo;ultima copia o cancellazione</td></tr>
+            <tr><td><code>0</code></td><td>Ultima copia (<code>y</code>), non toccata dalle cancellazioni</td></tr>
+            <tr><td><code>1</code>&ndash;<code>9</code></td><td>Cronologia delle cancellazioni, dalla pi&ugrave; recente</td></tr>
+            <tr><td><code>-</code></td><td>Ultima cancellazione piccola, entro una riga</td></tr>
+            <tr><td><code>a</code>&ndash;<code>z</code></td><td>Registri nominati, uno per lettera</td></tr>
+            <tr><td><code>A</code>&ndash;<code>Z</code></td><td>Append al registro minuscolo corrispondente</td></tr>
+            <tr><td><code>_</code></td><td>Black hole: cancella senza salvare nulla</td></tr>
+            <tr><td><code>+</code> <code>*</code></td><td>Clipboard di sistema e selezione primaria X11</td></tr>
+            <tr><td><code>%</code> <code>#</code></td><td>Nome del file corrente e file alternativo</td></tr>
+            <tr><td><code>.</code> <code>:</code> <code>/</code></td><td>Ultimo testo inserito, ultimo comando ex, ultima ricerca</td></tr>
+            <tr><td><code>=</code></td><td>Registro espressione, si usa con <code>Ctrl-R =</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>:registers</code> (abbreviazione <code>:reg</code>) mostra il
+        contenuto di tutti i registri. <code>&quot;_dd</code> cancella una riga
+        senza sporcare il registro unnamed, utile quando si vuole incollare
+        qualcosa copiato prima. <code>&quot;0p</code> incolla l&rsquo;ultima
+        copia anche dopo diverse cancellazioni.
+      </p>
+      <p>
+        La clipboard di sistema &egrave; un capitolo a parte. Vim deve essere
+        compilato con <code>+clipboard</code>; si verifica con
+        <code>:echo has('clipboard')</code>, che restituisce <code>1</code> se
+        disponibile. Su Debian/Ubuntu il pacchetto <code>vim</code> base spesso
+        non ce l&rsquo;ha: serve <code>vim-gtk3</code> o <code>vim-nox</code>.
+        Su Neovim la clipboard passa da un provider esterno: <code>xclip</code>
+        o <code>xsel</code> su X11, <code>wl-clipboard</code> su Wayland. Per
+        usare la clipboard come registro predefinito:
+      </p>
+      <pre><code>" Copia/incolla espliciti
+"+yy
+"+p
+"*p
+
+" Impostare la clipboard predefinita
+:set clipboard=unnamedplus
+
+" Verificare il supporto
+:echo has('clipboard')
+:checkhealth
+</code></pre>
+      <p>
+        Su Windows e macOS <code>+</code> e <code>*</code> coincidono. Su
+        Linux la selezione primaria (<code>*</code>) &egrave; quella che si
+        ottiene evidenziando testo col mouse, mentre <code>+</code> &egrave;
+        la clipboard vera e propria con <code>Ctrl-C</code>/<code>Ctrl-V</code>.
+        <code>unnamedplus</code> fa usare <code>+</code> come registro
+        predefinito; <code>unnamed</code> usa <code>*</code>.
+      </p>
+
+      <h2 id="ricerca">Ricerca, regex e sostituzione</h2>
+      <p>
+        <code>/pattern</code> cerca in avanti, <code>?pattern</code> indietro,
+        <code>n</code> ripete nella stessa direzione, <code>N</code> in quella
+        opposta. <code>*</code> cerca la parola sotto il cursore con confini di
+        parola, <code>#</code> lo fa all&rsquo;indietro, <code>g*</code> e
+        <code>g#</code> senza confini. Le opzioni che cambiano
+        l&rsquo;esperienza sono tre:
+      </p>
+      <pre><code>:set incsearch      " mostra il match mentre si digita
+:set hlsearch       " evidenzia tutti i match
+:set ignorecase     " ricerca senza distinzione di maiuscole
+:set smartcase      " ...ma se il pattern ha una maiuscola, la rispetta
+:nohlsearch         " spegne l'evidenziazione corrente
+:set wrapscan       " la ricerca riparte dall'inizio del file</code></pre>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Comando</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>/pattern</code> <code>?pattern</code></td><td>Cerca in avanti o all&rsquo;indietro</td></tr>
+            <tr><td><code>n</code> <code>N</code></td><td>Ripete la ricerca nella stessa direzione o in quella opposta</td></tr>
+            <tr><td><code>*</code> <code>#</code></td><td>Cerca la parola sotto il cursore, avanti o indietro</td></tr>
+            <tr><td><code>:nohlsearch</code></td><td>Spegne l&rsquo;evidenziazione dei risultati</td></tr>
+            <tr><td><code>:%s/vecchio/nuovo/g</code></td><td>Sostituisce tutte le occorrenze nel file</td></tr>
+            <tr><td><code>:%s/vecchio/nuovo/gc</code></td><td>Sostituisce chiedendo conferma per ogni occorrenza</td></tr>
+            <tr><td><code>:g/pattern/cmd</code></td><td>Esegue un comando sulle righe che corrispondono</td></tr>
+            <tr><td><code>:v/pattern/d</code></td><td>Cancella le righe che non corrispondono</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Le regex di Vim non sono PCRE. La sintassi predefinita &egrave;
+        &ldquo;magic&rdquo;: <code>.</code>, <code>*</code>, <code>[]</code>,
+        <code>^</code> e <code>$</code> sono speciali, mentre
+        <code>\(</code> <code>\)</code> <code>\|</code> <code>\+</code>
+        <code>\?</code> hanno bisogno della barra rovesciata. I livelli
+        <code>\v</code>, <code>\m</code>, <code>\M</code>, <code>\V</code>
+        cambiano quante barre servono.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Livello</th><th>Significato</th><th>Esempio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>\v</code></td><td>Very magic: quasi tutto &egrave; speciale, sintassi simile a PCRE</td><td><code>/\v(foo|bar)+</code></td></tr>
+            <tr><td><code>\m</code></td><td>Magic, il default</td><td><code>/\(foo\|bar\)\+</code></td></tr>
+            <tr><td><code>\M</code></td><td>Nomagic: solo <code>^</code> e <code>$</code> sono speciali</td><td><code>/\Mfoo.bar</code></td></tr>
+            <tr><td><code>\V</code></td><td>Very nomagic: solo la barra rovesciata &egrave; speciale</td><td><code>/\Vfoo.bar</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        I costrutti che tornano utili tutti i giorni:
+        <code>\zs</code> e <code>\ze</code> delimitano l&rsquo;inizio e la fine
+        della parte che conta, <code>\c</code> e <code>\C</code> forzano
+        l&rsquo;ignoranza o il rispetto del caso, <code>\&lt;</code> e
+        <code>\&gt;</code> sono i confini di parola, <code>\d</code>
+        <code>\s</code> <code>\w</code> sono le classi consuete e
+        <code>\@=</code>, <code>\@!</code>, <code>\@&lt;=</code>,
+        <code>\@&lt;!</code> sono lookahead e lookbehind. Per cercare
+        letteralmente una stringa con punti e parentesi, <code>\V</code> evita
+        di scappare tutto.
+      </p>
+      <p>
+        La sostituzione si costruisce con
+        <code>:[intervallo]s/pattern/sostituzione/[flag]</code>. Senza
+        intervallo agisce sulla riga corrente; <code>%</code> significa tutto
+        il file, <code>'&lt;,'&gt;</code> la selezione visual,
+        <code>10,20</code> un intervallo di righe, <code>/inizio/,/fine/</code>
+        un intervallo delimitato da pattern. I flag principali sono
+        <code>g</code> (tutte le occorrenze sulla riga), <code>c</code>
+        (conferma interattiva), <code>e</code> (nessun errore se non trova),
+        <code>i</code> e <code>I</code> (caso).
+      </p>
+      <pre><code>" Sostituzione globale con conferma
+:%s/vecchio/nuovo/gc
+
+" Rimuovere spazi e tab a fine riga
+:%s/[ \t]\+$//e
+
+" Cambiare solo la prima occorrenza per riga
+:%s/foo/bar/
+
+" Usare un delimitatore diverso da /
+:%s#/usr/local#/opt#g
+
+" Gruppi e riferimenti all'indietro
+:%s/\(\w\+\)\s\+\(\w\+\)/\2 \1/g
+
+" Maiuscolo sulla prima lettera di ogni parola
+:%s/\w\+/\u&amp;/g
+
+" Sostituzione con espressione
+:%s/\d\+/\=submatch(0) + 1/g
+
+" Cancellare le righe che contengono DEBUG
+:g/DEBUG/d
+
+" Tenere solo le righe che contengono TODO
+:v/TODO/d
+
+" Eseguire una macro su tutte le righe che corrispondono
+:g/^Item/normal @q</code></pre>
+      <p>
+        <code>&amp;</code> nella sostituzione rappresenta l&rsquo;intero match,
+        <code>\1</code>&ndash;<code>\9</code> i gruppi, <code>~</code> la
+        sostituzione precedente. <code>\u</code> e <code>\l</code> cambiano il
+        caso del carattere successivo, <code>\U</code> e <code>\L</code> fino a
+        <code>\E</code>. <code>\r</code> spezza la riga. <code>\=</code>
+        introduce un&rsquo;espressione: <code>submatch(0)</code> &egrave; il
+        testo trovato, <code>submatch(1)</code> il primo gruppo.
+      </p>
+      <p>
+        Un flusso che vale la pena imparare &egrave; quello con <code>gn</code>:
+        dopo una ricerca, <code>cgn</code> cambia l&rsquo;occorrenza successiva
+        e <code>.</code> ripete la modifica sulla successiva ancora. &Egrave;
+        pi&ugrave; preciso di <code>:%s</code> quando si vuole controllare
+        caso per caso senza il prompt di conferma. Attenzione a
+        <code>:set gdefault</code>: inverte il significato di <code>g</code>,
+        e chi lo attiva senza saperlo si ritrova sostituzioni &ldquo;strane&rdquo;.
+      </p>
+
+      <h2 id="buffer">Buffer, finestre e tab</h2>
+      <p>
+        In Vim un <em>buffer</em> &egrave; un file caricato in memoria; una
+        <em>finestra</em> &egrave; una vista su un buffer; una <em>tab</em>
+        &egrave; un insieme di finestre. Non sono la stessa cosa dei tab di un
+        browser: si possono avere pi&ugrave; finestre sullo stesso buffer e
+        pi&ugrave; buffer nella stessa finestra. Capire questa distinzione
+        evita met&agrave; della confusione iniziale.
+      </p>
+      <pre><code>:ls                 " elenco dei buffer
+:b 3                " passa al buffer 3
+:bn                 " buffer successivo
+:bp                 " buffer precedente
+:bd                 " chiude il buffer corrente
+:bufdo %s/foo/bar/g " esegue su tutti i buffer
+:ball               " apre tutti i buffer in finestre
+
+:sp file            " split orizzontale
+:vsp file           " split verticale
+Ctrl-W h/j/k/l      " spostati tra le finestre
+Ctrl-W =            " equalizza le dimensioni
+Ctrl-W o            " lascia solo la finestra corrente
+Ctrl-W T            " sposta la finestra in una nuova tab
+
+:tabnew             " nuova tab
+:tabedit file       " nuova tab con un file
+gt / gT             " tab successiva / precedente
+:tabdo %s/a/b/g     " esegue su tutte le tab
+:mksession Session.vim
+:source Session.vim " ripristina buffer, finestre e posizioni</code></pre>
+      <p>
+        <code>Ctrl-^</code> (oppure <code>:e #</code>) alterna il file corrente
+        e quello precedente, un gesto che sostituisce decine di
+        <code>:b</code>. Con <code>:set hidden</code> i buffer modificati
+        possono restare in memoria senza essere salvati quando si passa ad
+        altro; &egrave; l&rsquo;impostazione che rende i buffer utilizzabili
+        come veri documenti aperti. <code>:args</code> gestisce la lista degli
+        argomenti della sessione e <code>:argdo</code> applica un comando a
+        tutti.
+      </p>
+      <p>
+        Le sessioni salvano la disposizione, non i contenuti non salvati.
+        <code>:mksession!</code> sovrascrive una sessione esistente;
+        <code>:set sessionoptions</code> decide cosa includere. Per riaprire
+        l&rsquo;ultima sessione all&rsquo;avvio si pu&ograve; usare
+        <code>vim -S Session.vim</code>, oppure un autocomando nel
+        <code>vimrc</code>.
+      </p>
+
+      <h2 id="macro">Macro e comandi ripetuti</h2>
+      <p>
+        Una macro &egrave; la registrazione di tasti in un registro. Si comincia
+        con <code>q</code> seguito da una lettera, si esegue la sequenza e si
+        ferma con <code>q</code>. Poi <code>@a</code> la esegue,
+        <code>@@</code> ripete l&rsquo;ultima e <code>10@a</code> la esegue
+        dieci volte. Le macro registrano comandi normal, non testo: una
+        sequenza di movimenti e operatori &egrave; molto pi&ugrave; robusta di
+        una serie di tasti freccia.
+      </p>
+      <pre><code>" Registrare una macro nel registro a
+qa
+0f,dt,
+j
+q
+
+" Eseguirla sulle righe successive
+10@a
+
+" Modificare una macro: apre la command-line window
+q:
+" ...modifica la riga, poi Invio
+
+" Eseguire la macro su tutto il file
+:%normal @a
+
+" Eseguire la macro su una selezione
+:'&lt;,'&gt;normal @a
+
+" Registrare una macro che incrementa un contatore
+qa
+0
+Ctrl-A
+j
+q
+100@a</code></pre>
+      <p>
+        Due accorgimenti evitano i disastri. Il primo: far iniziare la macro da
+        una posizione nota, di solito con <code>0</code> o <code>gg</code>,
+        perch&eacute; una macro registrata a met&agrave; riga dipende dal punto
+        di partenza. Il secondo: se una macro va in loop, <code>Ctrl-C</code>
+        la interrompe; se ha gi&agrave; modificato il file, <code>u</code>
+        annulla. Le macro ricorsive (una macro che chiama s&eacute; stessa)
+        funzionano solo con una condizione di uscita, altrimenti girano fino
+        all&rsquo;interruzione.
+      </p>
+      <p>
+        <code>:normal</code> esegue comandi come se fossero digitati, ma
+        rispetta le mappature; <code>:normal!</code> ignora le mappature ed
+        &egrave; quello che si vuole nei casi riproducibili. La
+        <em>command-line window</em> (<code>q:</code>, <code>q/</code>,
+        <code>q?</code>) permette di modificare comandi e ricerche con gli
+        strumenti di Vim: &egrave; il modo pulito per correggere una macro
+        sbagliata senza rifarla da capo.
+      </p>
+
+      <h2 id="marcatori">Marcatori, pieghe e quickfix</h2>
+      <p>
+        I marcatori salvano una posizione. <code>ma</code> imposta il marcatore
+        <code>a</code>, <code>'a</code> salta alla riga, <code>`a</code> alla
+        posizione esatta. Le lettere minuscole sono locali al buffer, le
+        maiuscole sono globali e funzionano tra file. <code>:marks</code> li
+        elenca, <code>:delmarks a b</code> li cancella. Alcuni marcatori sono
+        automatici: <code>'&quot;</code> &egrave; l&rsquo;ultima posizione in
+        cui si &egrave; usciti dal file, <code>'^</code> l&rsquo;ultimo punto
+        di inserimento, <code>'.</code> l&rsquo;ultima modifica,
+        <code>'[</code> e <code>']</code> gli estremi dell&rsquo;ultima
+        modifica o copia.
+      </p>
+      <p>
+        Le pieghe nascondono parti di testo senza cancellarle.
+        <code>zf{movimento}</code> crea una piega, <code>zo</code> la apre,
+        <code>zc</code> la chiude, <code>za</code> alterna, <code>zR</code>
+        apre tutto, <code>zM</code> chiude tutto. Il metodo predefinito
+        &egrave; <code>manual</code>; per codice sono comodi
+        <code>indent</code> e <code>expr</code>, per il testo
+        <code>marker</code> con <code>{{{</code> e <code>}}}</code>. Con
+        <code>:set foldlevel=99</code> si aprono tutte le pieghe.
+      </p>
+      <pre><code>:set foldmethod=indent
+:set foldlevel=1
+zf                  " crea una piega sulla selezione
+zR                  " apre tutte le pieghe
+zM                  " chiude tutte le pieghe
+
+:vimgrep /TODO/g **/*.c
+:copen              " apre la quickfix list
+:cnext / :cprev     " naviga i risultati
+:cdo s/TODO/DONE/g | update
+:cfdo %s/foo/bar/g | update</code></pre>
+      <p>
+        La <em>quickfix list</em> &egrave; la lista dei risultati di
+        <code>:grep</code>, <code>:vimgrep</code>, <code>:make</code> o di un
+        linter. <code>:copen</code> la apre, <code>:cnext</code> e
+        <code>:cprev</code> navigano, <code>:cdo</code> esegue un comando su
+        ogni voce, <code>:cfdo</code> una volta per file. &Egrave; il ponte tra
+        Vim e il resto della toolchain: un compilatore che scrive errori in
+        formato standard diventa navigabile senza plugin.
+      </p>
+
+      <h2 id="configurazione">Configurazione: vimrc e opzioni</h2>
+      <p>
+        Vim legge la configurazione utente da <code>~/.vimrc</code> oppure
+        <code>~/.vim/vimrc</code> su Unix, da <code>$HOME/_vimrc</code> o
+        <code>$HOME/vimfiles/vimrc</code> su Windows. Neovim usa
+        <code>~/.config/nvim/init.vim</code> o <code>init.lua</code>, e
+        rispetta <code>$XDG_CONFIG_HOME</code>. <code>:version</code> mostra
+        quali file sono stati letti; <code>:echo $MYVIMRC</code> d&agrave; il
+        percorso del file utente; <code>:source $MYVIMRC</code> lo ricarica
+        senza riavviare.
+      </p>
+      <p>
+        <code>:set</code> mostra le opzioni diverse dal default,
+        <code>:set all</code> tutte, <code>:set nome?</code> interroga una
+        singola opzione e <code>:verbose set nome?</code> dice anche dove
+        &egrave; stata impostata per ultima. <code>:setlocal</code> agisce solo
+        sulla finestra o sul buffer corrente, <code>:setglobal</code> sul
+        valore globale. La distinzione conta per opzioni come
+        <code>shiftwidth</code>, <code>expandtab</code> e
+        <code>textwidth</code>, che spesso devono essere diverse per file.
+      </p>
+      <pre><code>" ~/.vimrc -- configurazione minima e leggibile
+set nocompatible
+set encoding=utf-8
+set fileencoding=utf-8
+set number relativenumber
+set showcmd showmode
+set wildmenu
+set wildmode=longest:full,list:full
+set incsearch hlsearch
+set ignorecase smartcase
+set backspace=indent,eol,start
+set mouse=a
+set clipboard=unnamedplus
+set undofile
+set undodir=~/.vim/undo//
+set swapfile
+set directory=~/.vim/swap//
+set backup
+set backupdir=~/.vim/backup//
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+set expandtab
+set autoindent
+set breakindent
+set list listchars=tab:»·,trail:·,extends:›
+filetype plugin indent on
+syntax on
+
+augroup filetypes
+  autocmd!
+  autocmd FileType yaml,yml setlocal tabstop=2 shiftwidth=2 softtabstop=2 expandtab
+  autocmd FileType make setlocal noexpandtab
+  autocmd FileType markdown setlocal spell spelllang=it,en
+augroup END</code></pre>
+      <p>
+        Le directory con <code>//</code> finale fanno usare a Vim il percorso
+        completo del file, evitando collisioni tra file con lo stesso nome.
+        <code>undofile</code> rende l&rsquo;undo persistente tra sessioni:
+        dopo aver chiuso e riaperto un file, <code>u</code> continua a
+        funzionare. <code>backup</code> e <code>swapfile</code> sono reti di
+        sicurezza, non alternative: il primo conserva la versione precedente,
+        il secondo il lavoro non salvato.
+      </p>
+      <p>
+        Le <em>modeline</em> sono righe speciali nel file, come
+        <code># vim: set ts=4 sw=4 et:</code>, che impostano opzioni solo per
+        quel file. Sono comode e pericolose: un file ostile pu&ograve;
+        impostare opzioni indesiderate. <code>:set modeline</code> le abilita
+        (di norma lo sono), <code>:set nomodeline</code> le disabilita, e per
+        aprire file non fidati conviene usare <code>vim -u NONE -N</code>.
+      </p>
+      <p>
+        Vim 9 ha due linguaggi di scripting. Il vecchio Vim script usa
+        <code>let</code>, <code>function</code>, <code>if</code> e le stringhe
+        con <code>.</code> per la concatenazione; Vim9 script, introdotto nella
+        9.0, usa <code>vim9script</code>, <code>var</code>, <code>const</code>,
+        <code>def ... enddef</code>, tipi e compilazione. I due possono
+        convivere nello stesso file con <code>:legacy</code> e
+        <code>:vim9script</code>, ma &egrave; meglio non mescolarli senza
+        motivo.
+      </p>
+
+      <h2 id="plugin">Plugin, Vim 9 e Neovim</h2>
+      <p>
+        Vim 8 ha introdotto i pacchetti nativi: un plugin si mette in
+        <code>~/.vim/pack/nome/start/plugin/</code> e viene caricato
+        all&rsquo;avvio; in <code>opt/</code> resta disponibile e si attiva con
+        <code>:packadd plugin</code>. <code>:helptags</code> genera i tag della
+        documentazione. Per pochi plugin &egrave; una soluzione onesta, senza
+        gestori di terze parti.
+      </p>
+      <p>
+        Per pi&ugrave; plugin si usano <code>vim-plug</code>,
+        <code>lazy.nvim</code> (Neovim) o <code>packer.nvim</code>, ormai
+        archiviato. I plugin che cambiano davvero il lavoro sono pochi:
+        <code>telescope.nvim</code> o <code>fzf.vim</code> per la ricerca
+        fuzzy, <code>vim-fugitive</code> per Git, <code>vim-surround</code> per
+        gestire delimitatori, <code>vim-commentary</code> per commentare,
+        <code>nvim-tree.lua</code> o <code>neo-tree</code> per l&rsquo;albero
+        dei file. Su Neovim, LSP e Treesitter sono integrati e si configurano
+        in Lua; <code>:checkhealth</code> dice cosa manca.
+      </p>
+      <p>
+        Vim 9.2 porta miglioramenti a Vim9 script, alla modalit&agrave; diff e
+        al completamento; Neovim 0.12.6 &egrave; la stabile di riferimento per
+        chi vuole Lua, API asincrona e un ecosistema pi&ugrave; moderno. La
+        scelta tra i due non &egrave; tecnica in senso stretto: Vim &egrave;
+        ovunque, anche su server vecchi e sistemi minimali; Neovim richiede
+        un&rsquo;installazione pi&ugrave; recente e una configurazione iniziale
+        maggiore, ma offre un&rsquo;integrazione migliore con LSP e
+        Treesitter.
+      </p>
+      <div class="callout warn">
+        <p>
+          <strong>Sicurezza dei plugin.</strong> Un plugin esegue codice con i
+          tuoi privilegi, esattamente come uno script shell. Installa solo da
+          repository noti, leggi il codice dei plugin piccoli, blocca le
+          versioni invece di seguire sempre il branch principale e non
+          scaricare configurazioni &ldquo;chiavi in mano&rdquo; senza capire
+          cosa contengono. Le configurazioni altrui sono un ottimo punto di
+          partenza, non un contratto di fiducia.
+        </p>
+      </div>
+
+      <h2 id="ex">Comandi ex: cheat sheet</h2>
+      <p>
+        I comandi che cominciano con <code>:</code> vengono dall&rsquo;editor
+        <code>ex</code> e funzionano anche in modalit&agrave; batch, dentro
+        script e in <code>vim -c</code>. Sono la parte di Vim che si pu&ograve;
+        automatizzare senza plugin.
+      </p>
+      <div class="table-wrap" data-cmd-table>
+        <table>
+          <thead>
+            <tr><th>Comando</th><th>Effetto</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>:w</code> <code>:q</code> <code>:wq</code></td><td>Salva, esci, salva ed esci</td></tr>
+            <tr><td><code>:x</code></td><td>Salva solo se ci sono modifiche, poi esce</td></tr>
+            <tr><td><code>:q!</code> <code>:qa!</code></td><td>Esci senza salvare, anche da tutte le finestre</td></tr>
+            <tr><td><code>:e file</code></td><td>Apri un file nel buffer corrente</td></tr>
+            <tr><td><code>:r file</code> <code>:r !cmd</code></td><td>Inserisci un file o l&rsquo;output di un comando</td></tr>
+            <tr><td><code>:!cmd</code></td><td>Esegui un comando shell</td></tr>
+            <tr><td><code>:%!jq .</code></td><td>Filtra tutto il buffer attraverso un comando</td></tr>
+            <tr><td><code>:sort u</code></td><td>Ordina e rimuove le righe duplicate</td></tr>
+            <tr><td><code>:g/^$/d</code></td><td>Cancella le righe vuote</td></tr>
+            <tr><td><code>:m 10</code> <code>:t 5</code></td><td>Sposta o copia la riga corrente</td></tr>
+            <tr><td><code>:normal! @a</code></td><td>Esegue la macro <code>a</code> senza mappature</td></tr>
+            <tr><td><code>:%s/foo/bar/g</code></td><td>Sostituzione globale</td></tr>
+            <tr><td><code>:earlier 10m</code> <code>:later 10m</code></td><td>Torna indietro o avanti nel tempo</td></tr>
+            <tr><td><code>:mksession</code> <code>:source</code></td><td>Salva e ripristina la sessione</td></tr>
+            <tr><td><code>:terminal</code></td><td>Apre una shell in una finestra</td></tr>
+            <tr><td><code>:w !sudo tee %</code></td><td>Salva un file protetto usando sudo</td></tr>
+            <tr><td><code>:set ff=unix</code></td><td>Converte i fine riga in formato Unix</td></tr>
+            <tr><td><code>:set ff=dos</code></td><td>Converte i fine riga in formato Windows</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>:x</code> e <code>:wq</code> sembrano uguali ma non lo sono:
+        <code>:wq</code> scrive sempre, <code>:x</code> solo se il buffer
+        &egrave; modificato. Su file grandi o su dischi di rete la differenza
+        si sente. <code>:w !sudo tee %</code> funziona perch&eacute;
+        <code>%</code> viene espanso nel nome del file corrente e
+        <code>tee</code> scrive con i privilegi di sudo; dopo il comando Vim
+        segnala che il file &egrave; cambiato e chiede conferma.
+      </p>
+      <p>
+        Un uso meno noto ma potentissimo &egrave; il filtro:
+        <code>:%!sort</code>, <code>:%!jq .</code>, <code>:%!column -t</code>
+        passano l&rsquo;intero buffer a un programma e ne prendono
+        l&rsquo;output. Con una selezione visual il filtro agisce solo su
+        quella. &Egrave; il motivo per cui Vim resta comodo anche quando il
+        lavoro vero lo fanno <code>sed</code>, <code>awk</code> e
+        <code>jq</code>.
+      </p>
+
+      <h2 id="errori">Errori, swap e recupero</h2>
+      <p>
+        Il messaggio che spaventa di pi&ugrave; &egrave;
+        <strong>E325: ATTENTION</strong>, seguito da un file
+        <code>.nome.swp</code>. Significa che esiste un file di swap, di solito
+        perch&eacute; Vim &egrave; aperto altrove o perch&eacute; un crash ha
+        lasciato il file. Non va cancellato d&rsquo;istinto: potrebbe contenere
+        modifiche non salvate. Le strade sono tre: tornare alla sessione
+        esistente, aprire in sola lettura (<code>vim -R file</code>) oppure
+        recuperare.
+      </p>
+      <pre><code>:swapname           " mostra il percorso del file di swap
+:recover file       " recupera le modifiche dal swap
+:w nuovo.txt        " salva il recupero su un file nuovo
+:set noswapfile     " disabilita lo swap per il buffer corrente
+:set swapfile
+:set directory?     " mostra dove finiscono i file di swap</code></pre>
+      <p>
+        Dopo un recupero conviene salvare subito su un nome diverso, confrontare
+        con l&rsquo;originale e solo dopo sovrascrivere. Il file di swap va
+        rimosso a mano quando si &egrave; certi che non serve pi&ugrave;. Se il
+        problema &egrave; che Vim non ha i permessi di scrittura, il comando
+        <code>:w !sudo tee %</code> risolve; se il file &egrave; in sola
+        lettura per scelta, <code>:set noreadonly</code> toglie il blocco.
+      </p>
+      <p>
+        Altri inciampi ricorrenti:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Sintomo</th><th>Causa e rimedio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Il testo incollato &ldquo;scala&rdquo; a destra</td><td>Autoindent durante l&rsquo;incolla: <code>:set paste</code>, incolla, <code>:set nopaste</code>; oppure usa il terminale con bracketed paste</td></tr>
+            <tr><td><code>E45: 'readonly' option is set</code></td><td><code>:set noreadonly</code> se sei sicuro di voler scrivere</td></tr>
+            <tr><td><code>E212: Can't open file for writing</code></td><td>Permessi o directory inesistente: <code>:w !sudo tee %</code> o correggi il percorso</td></tr>
+            <tr><td>La clipboard non funziona</td><td><code>:echo has('clipboard')</code>; su Neovim installa <code>xclip</code>/<code>wl-clipboard</code> e controlla <code>:checkhealth</code></td></tr>
+            <tr><td>Accenti o caratteri strani</td><td><code>:set fileencoding?</code>, riapri con <code>:e ++enc=utf-8</code>, controlla <code>:set encoding</code></td></tr>
+            <tr><td>Fine riga sbagliata</td><td><code>:set ff=unix</code> o <code>:set ff=dos</code>, poi salva</td></tr>
+            <tr><td>Bloccato in terminal mode</td><td><code>Ctrl-\ Ctrl-N</code> per tornare in normal mode</td></tr>
+            <tr><td>Una macro non finisce pi&ugrave;</td><td><code>Ctrl-C</code>, poi <code>u</code> per annullare</td></tr>
+            <tr><td>Non ricordo un comando</td><td><code>:help</code>, <code>:help index</code>, <code>:helpgrep parola</code>, <code>vimtutor</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        L&rsquo;undo persistente &egrave; la rete di sicurezza migliore:
+        <code>set undofile</code> e una <code>undodir</code> dedicata
+        permettono di tornare indietro anche dopo aver chiuso il file. Con
+        <code>:earlier</code> e <code>:later</code> si naviga la cronologia a
+        intervalli di tempo, con <code>:undo</code> e <code>:redo</code> a
+        passi. Se il file &egrave; stato sovrascritto da un comando esterno,
+        l&rsquo;undo di Vim non lo recupera: servono i backup o un file system
+        con snapshot.
+      </p>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>vim.org, <em>Documentation</em></strong> &mdash;
+        <code>:help</code>, <code>usr_</code>, <code>index.txt</code>,
+        <code>options.txt</code>, <code>pattern.txt</code>,
+        <code>change.txt</code> e <code>eval.txt</code>.</li>
+        <li><strong>vim.org, <em>Download</em></strong> &mdash; Vim 9.2 come
+        ultima versione stabile, consultata il 14 novembre 2026.</li>
+        <li><strong>Debian Package Tracker, <em>vim</em></strong> &mdash;
+        patch <code>9.1.2132</code> nei repository Debian.</li>
+        <li><strong>Neovim, <em>Documentation</em> e <em>Releases</em></strong>
+        &mdash; <code>:help</code>, <code>vim.lsp</code>,
+        <code>vim.treesitter</code>, <code>:checkhealth</code>; stabile
+        <strong>0.12.6</strong> del 9 ottobre 2026.</li>
+        <li><strong>POSIX, <em>vi</em></strong> &mdash; specifica
+        dell&rsquo;editor e dei comandi ex.</li>
+        <li><strong>Vim, <em>Vim9 script</em></strong> &mdash;
+        <code>:help vim9</code>, <code>def</code>, <code>var</code>,
+        <code>import</code> e compilazione.</li>
+        <li><strong>Neovim, <em>LSP</em> e <em>Treesitter</em></strong> &mdash;
+        configurazione integrata e provider esterni per la clipboard.</li>
+      </ul>
+      <p>
+        Versioni verificate il 14 novembre 2026: Vim 9.2 &egrave; la stabile
+        indicata da <code>vim.org</code>, mentre Debian trixie distribuisce una
+        9.1 con patch fino a <code>9.1.2132</code>; Neovim &egrave; alla
+        0.12.6 dal 9 ottobre 2026. Il comando <code>vi</code> pu&ograve;
+        corrispondere a implementazioni diverse: controlla
+        <code>vi --version</code> prima di assumere che un comando Vim
+        funzioni.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Linux</span>
+        <span class="footer-right">
+          <span>vi e Vim &middot; aggiornata il 14 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>

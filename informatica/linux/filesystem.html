@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File system e permessi — Adripedia</title>
+  <meta name="description" content="File system e permessi su Linux: gerarchia FHS, inode, hard link e symlink, permessi POSIX, SUID/SGID/sticky, ACL, attributi, mount e fstab, ext4/XFS/Btrfs/overlayfs, spazio, diagnostica e recupero.">
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#191919">
+</head>
+<body data-root="../.." data-page="informatica/linux/filesystem.html">
+  <a class="skip-link" href="#main">Salta al contenuto</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu laterale"></aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="hamburger" id="menu-toggle" type="button"
+              aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi il menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title">File system</span>
+    </header>
+
+    <main id="main" class="page">
+      <p class="eyebrow">Approfondimento &middot; Linux</p>
+      <h1>File system e permessi</h1>
+      <p class="lead">
+        Su Linux un file non &egrave; &ldquo;un nome su un disco&rdquo;: &egrave;
+        un inode con metadati, raggiunto da uno o pi&ugrave; nomi, dentro una
+        gerarchia montata in un punto preciso. Permessi, ACL, attributi e
+        contesti di sicurezza decidono chi pu&ograve; fare cosa. Questa pagina
+        parte dalla struttura delle directory e arriva a mount, ext4, XFS,
+        Btrfs e overlayfs, con i comandi per Debian/Ubuntu e Red Hat/Fedora
+        separati dove cambiano davvero.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>In breve.</strong> Due regole evitano la maggior parte dei
+          disastri. La prima: <code>chmod 777</code> non &egrave; una
+          soluzione, &egrave; un modo per rimandare il problema. La seconda:
+          prima di cancellare o riparare qualcosa, si guarda
+          <code>findmnt</code>, <code>df -hT</code>, <code>df -i</code>,
+          <code>namei -l</code> e <code>dmesg</code>. Il file system raramente
+          mente; quasi sempre stiamo guardando il posto sbagliato.
+        </p>
+      </div>
+
+      <p>
+        Per preparare dischi e partizioni da zero la pagina
+        <a href="installazione.html">Installazione da riga di comando</a> copre
+        GPT, ESP, LUKS e prima installazione; qui si presume un sistema
+        gi&agrave; avviato. Per il kernel e i moduli che implementano i file
+        system c&rsquo;&egrave; <a href="kernel.html">Il kernel e la sua
+        gestione</a>.
+      </p>
+
+      <nav class="section-index" aria-labelledby="fs-index-title">
+        <p class="section-index-title" id="fs-index-title">In questa pagina</p>
+        <ol>
+          <li><a href="#fhs">La gerarchia FHS</a></li>
+          <li><a href="#inode">Inode, nomi e metadati</a></li>
+          <li><a href="#tipi">Tipi di file, hard link e symlink</a></li>
+          <li><a href="#permessi">Permessi POSIX</a></li>
+          <li><a href="#speciali">SUID, SGID e sticky bit</a></li>
+          <li><a href="#acl">ACL, attributi e contesti</a></li>
+          <li><a href="#mount">Mount, fstab e UUID</a></li>
+          <li><a href="#filesystem">ext4, XFS, Btrfs e overlayfs</a></li>
+          <li><a href="#spazio">Spazio, inode e manutenzione</a></li>
+          <li><a href="#diagnostica">Diagnostica e recupero</a></li>
+          <li><a href="#fonti">Fonti</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="fhs">La gerarchia FHS</h2>
+      <p>
+        Il <em>Filesystem Hierarchy Standard</em> (FHS 3.0, 2015) non
+        &egrave; un&rsquo;imposizione del kernel: &egrave; una convenzione che
+        le distribuzioni seguono per far funzionare script, manuali e
+        aspettative degli amministratori. Il kernel conosce solo il punto di
+        mount; &egrave; la distribuzione a decidere che cosa mettere in
+        <code>/usr</code> e che cosa in <code>/var</code>.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Percorso</th><th>Contenuto</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>/</code></td><td>Radice</td><td>Tutto parte da qui; il file system radice deve bastare per avviare e riparare</td></tr>
+            <tr><td><code>/bin</code> <code>/sbin</code></td><td>Binari essenziali</td><td>Con lo <em>usrmerge</em> sono symlink a <code>/usr/bin</code> e <code>/usr/sbin</code></td></tr>
+            <tr><td><code>/lib</code> <code>/lib64</code></td><td>Librerie condivise</td><td>Anche queste spesso symlink a <code>/usr/lib</code></td></tr>
+            <tr><td><code>/usr</code></td><td>Programmi, librerie, documentazione</td><td>Dati condivisibili e in gran parte di sola lettura</td></tr>
+            <tr><td><code>/usr/local</code></td><td>Software installato dall&rsquo;amministratore</td><td>Non gestito dal package manager</td></tr>
+            <tr><td><code>/etc</code></td><td>Configurazione del sistema</td><td>Testo, specifico della macchina; niente binari</td></tr>
+            <tr><td><code>/var</code></td><td>Dati variabili</td><td>Log, cache, spool, database, code</td></tr>
+            <tr><td><code>/tmp</code></td><td>File temporanei</td><td>Spesso tmpfs; pu&ograve; essere svuotata al boot</td></tr>
+            <tr><td><code>/var/tmp</code></td><td>Temporanei persistenti</td><td>Sopravvive al riavvio, con scadenze pi&ugrave; lunghe</td></tr>
+            <tr><td><code>/home</code></td><td>Home degli utenti</td><td>Spesso su partizione o volume separato</td></tr>
+            <tr><td><code>/root</code></td><td>Home di root</td><td>Non &egrave; <code>/</code> e non dovrebbe stare su NFS</td></tr>
+            <tr><td><code>/opt</code></td><td>Pacchetti software aggiuntivi</td><td>Convenzione per prodotti di terze parti</td></tr>
+            <tr><td><code>/srv</code></td><td>Dati serviti dal sistema</td><td>Web, FTP, repository locali</td></tr>
+            <tr><td><code>/mnt</code> <code>/media</code></td><td>Mount temporanei e rimovibili</td><td><code>/media</code> per USB e CD, <code>/mnt</code> per l&rsquo;amministratore</td></tr>
+            <tr><td><code>/run</code></td><td>Stato runtime</td><td>tmpfs, ricreato a ogni boot; PID, socket, lock</td></tr>
+            <tr><td><code>/proc</code> <code>/sys</code></td><td>Pseudo file system</td><td>Interfacce al kernel: processi, dispositivi, parametri</td></tr>
+            <tr><td><code>/dev</code></td><td>Dispositivi</td><td>Gestito da <code>devtmpfs</code> e udev</td></tr>
+            <tr><td><code>/boot</code> <code>/efi</code></td><td>Kernel, initramfs, bootloader</td><td><code>/efi</code> &egrave; la ESP su molti sistemi UEFI</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Lo <em>usrmerge</em> &egrave; la ragione per cui su un sistema moderno
+        <code>/bin</code> non &egrave; una directory vera. Si verifica con
+        <code>ls -ld /bin /sbin /lib</code>: se sono symlink, il contenuto
+        fisico &egrave; sotto <code>/usr</code>. Non &egrave; un dettaglio
+        estetico: semplifica i pacchetti, i container e gli aggiornamenti
+        atomici, ma rompe script che assumono percorsi separati.
+      </p>
+      <pre><code># Dove sono montate le cose
+findmnt /
+findmnt -T /var/lib
+df -hT
+lsblk -f
+
+# La gerarchia spiegata dal sistema
+man 7 hier
+man 7 file-hierarchy</code></pre>
+
+      <h2 id="inode">Inode, nomi e metadati</h2>
+      <p>
+        Un <em>inode</em> &egrave; la struttura che descrive un file: tipo,
+        permessi, proprietario, gruppo, dimensione, timestamp, numero di link
+        e puntatori ai blocchi o agli extent. Il nome non sta nell&rsquo;inode:
+        sta nella directory, che &egrave; una tabella <em>nome &rarr; numero di
+        inode</em>. Per questo un file pu&ograve; avere pi&ugrave; nomi e per
+        questo <code>rm</code> non cancella i dati se qualcuno ha ancora il
+        file aperto.
+      </p>
+      <pre><code>stat file.txt
+ls -li file.txt
+stat -c '%n inode=%i size=%s mode=%a owner=%U:%G links=%h' file.txt
+find /var -xdev -inum 1234567 2&gt;/dev/null</code></pre>
+      <p>
+        I timestamp hanno significati diversi e non sono intercambiabili:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Timestamp</th><th>Quando cambia</th><th>Si pu&ograve; impostare?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>atime</code></td><td>All&rsquo;accesso in lettura</td><td>S&igrave;, ma spesso disabilitato o attenuato</td></tr>
+            <tr><td><code>mtime</code></td><td>Quando cambia il contenuto</td><td>S&igrave;, con <code>touch -m</code></td></tr>
+            <tr><td><code>ctime</code></td><td>Quando cambiano inode o metadati</td><td>No, &egrave; gestito dal kernel</td></tr>
+            <tr><td><code>btime</code></td><td>Alla creazione, se il file system lo registra</td><td>No; dipende da file system e kernel</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>relatime</code> &egrave; il compromesso predefinito sulla maggior
+        parte dei sistemi: aggiorna <code>atime</code> solo se &egrave; pi&ugrave;
+        vecchio di <code>mtime</code> o di 24 ore. <code>noatime</code> elimina
+        del tutto gli aggiornamenti e riduce le scritture; <code>strictatime</code>
+        li impone a ogni lettura. Su un portatile o su un database conviene
+        quasi sempre <code>noatime</code>.
+      </p>
+      <p>
+        Esaurire gli inode &egrave; diverso dall&rsquo;esaurire lo spazio:
+        <code>df -h</code> pu&ograve; dire che c&rsquo;&egrave; spazio e
+        <code>df -i</code> mostrare il 100%. Succede con milioni di file
+        piccoli, cache, sessioni, maildir o repository. ext4 crea un numero
+        fisso di inode al <code>mkfs</code> (si pu&ograve; aumentare con
+        <code>-N</code> o <code>-i</code>); XFS li alloca dinamicamente e ne
+        soffre molto meno; Btrfs non ha una tabella di inode tradizionale.
+      </p>
+      <pre><code>df -i
+du --inodes -x /var | sort -n | tail -n 20
+find /var -xdev -type f | wc -l
+
+# Quanti inode ha un ext4 e quanti sono liberi
+sudo tune2fs -l /dev/nvme0n1p2 | grep -i inode</code></pre>
+      <p>
+        Per risolvere un percorso componente per componente, inclusi i
+        permessi di ogni directory attraversata, si usa
+        <code>namei -l</code>. &Egrave; il comando che risponde alla domanda
+        &ldquo;perch&eacute; <code>cat</code> dice <em>Permission denied</em>
+        se il file &egrave; leggibile?&rdquo;: quasi sempre manca
+        <code>x</code> su una directory superiore.
+      </p>
+      <pre><code>namei -l /srv/app/config/settings.yml
+realpath /srv/app/config/settings.yml
+readlink -f /usr/bin/python3</code></pre>
+
+      <h2 id="tipi">Tipi di file, hard link e symlink</h2>
+      <p>
+        In Linux &ldquo;file&rdquo; &egrave; un concetto ampio: directory,
+        dispositivi, pipe e socket sono file. Il primo carattere di
+        <code>ls -l</code> dice il tipo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Carattere</th><th>Tipo</th><th>Esempio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>-</code></td><td>File regolare</td><td>Testo, binario, archivio</td></tr>
+            <tr><td><code>d</code></td><td>Directory</td><td>Contenitore di nomi</td></tr>
+            <tr><td><code>l</code></td><td>Symlink</td><td><code>/usr/bin/python3</code></td></tr>
+            <tr><td><code>b</code></td><td>Dispositivo a blocchi</td><td><code>/dev/nvme0n1</code></td></tr>
+            <tr><td><code>c</code></td><td>Dispositivo a caratteri</td><td><code>/dev/tty</code>, <code>/dev/null</code></td></tr>
+            <tr><td><code>p</code></td><td>FIFO / named pipe</td><td><code>mkfifo</code></td></tr>
+            <tr><td><code>s</code></td><td>Socket</td><td>Comunicazione locale tra processi</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Un <em>hard link</em> &egrave; un altro nome per lo stesso inode.
+        Deve stare nello stesso file system, non pu&ograve; puntare a una
+        directory (tranne <code>.</code> e <code>..</code>) e incrementa il
+        contatore dei link. Un <em>symlink</em> &egrave; un file che contiene
+        un percorso: pu&ograve; attraversare file system, puntare a una
+        directory e anche essere &ldquo;rotto&rdquo; se il bersaglio non
+        esiste.
+      </p>
+      <pre><code># Hard link: stesso inode, due nomi
+ln originale.txt copia-hard.txt
+ls -li originale.txt copia-hard.txt
+
+# Symlink: percorso relativo o assoluto
+ln -s ../config/settings.yml settings.yml
+ln -sfn /srv/app/current /srv/app/live
+readlink settings.yml
+readlink -f settings.yml
+
+# Trovare link e file con piu nomi
+find /srv -xdev -type l -ls
+find /srv -xdev -links +1 -ls</code></pre>
+      <p>
+        <code>rm</code> rimuove un nome e decrementa il contatore; i dati
+        restano finch&eacute; l&rsquo;ultimo link e l&rsquo;ultimo file
+        descriptor aperto non vengono chiusi. <code>mv</code> dentro lo stesso
+        file system &egrave; una rinomina quasi istantanea; tra file system
+        diversi &egrave; una copia seguita da una cancellazione, e non
+        preserva necessariamente ACL, xattr e hard link. Per copiare un albero
+        completo con i metadati:
+      </p>
+      <pre><code>cp -a /srv/app /srv/app.bak
+rsync -aHAX --numeric-ids /srv/app/ /backup/app/
+getfacl -R /srv/app &gt; /backup/app.acl
+getfattr -R -d -m - /srv/app &gt; /backup/app.xattr</code></pre>
+
+      <h2 id="permessi">Permessi POSIX</h2>
+      <p>
+        Ogni file ha un proprietario, un gruppo e tre triple di permessi:
+        <em>owner</em>, <em>group</em>, <em>other</em>. Per un file
+        <code>r</code> significa leggere, <code>w</code> scrivere,
+        <code>x</code> eseguire. Per una directory significano cose diverse:
+        <code>r</code> elencare i nomi, <code>w</code> creare, cancellare o
+        rinominare voci, <code>x</code> attraversare e accedere agli elementi.
+        Senza <code>x</code> una directory non si apre, anche se si conosce il
+        nome esatto del file.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Ottale</th><th>Simbolico</th><th>Significato</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>7</code></td><td><code>rwx</code></td><td>Lettura, scrittura, esecuzione</td></tr>
+            <tr><td><code>6</code></td><td><code>rw-</code></td><td>Lettura e scrittura</td></tr>
+            <tr><td><code>5</code></td><td><code>r-x</code></td><td>Lettura ed esecuzione</td></tr>
+            <tr><td><code>4</code></td><td><code>r--</code></td><td>Sola lettura</td></tr>
+            <tr><td><code>3</code></td><td><code>-wx</code></td><td>Scrittura ed esecuzione</td></tr>
+            <tr><td><code>2</code></td><td><code>-w-</code></td><td>Sola scrittura</td></tr>
+            <tr><td><code>1</code></td><td><code>--x</code></td><td>Sola esecuzione o attraversamento</td></tr>
+            <tr><td><code>0</code></td><td><code>---</code></td><td>Nessun permesso</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># Forma simbolica
+chmod u+x script.sh
+chmod g-w,o=r file.txt
+chmod a+r document.txt
+chmod u=rw,g=r,o= file.txt
+
+# Forma numerica
+chmod 755 /srv/app
+chmod 644 /etc/app.conf
+chmod 600 ~/.ssh/id_ed25519
+chmod 700 ~/bin
+
+# Proprietario e gruppo
+chown alice:dev /srv/app
+chgrp www-data /var/www/html
+chown -h alice:dev link-simbolico
+
+# Umask: i bit tolti ai nuovi file
+umask
+umask -S
+umask 077</code></pre>
+      <p>
+        <code>umask 022</code> crea file <code>644</code> e directory
+        <code>755</code>; <code>umask 077</code> crea file <code>600</code> e
+        directory <code>700</code>. La <code>X</code> maiuscola in
+        <code>chmod</code> &egrave; utile nei <code>find</code>: aggiunge
+        <code>x</code> solo alle directory e ai file che erano gi&agrave;
+        eseguibili.
+      </p>
+      <pre><code># Aggiungere x alle directory senza rendere eseguibili i file
+find /srv/app -type d -exec chmod u+x {} +
+find /srv/app -type f -perm /111 -exec chmod u+x {} +
+
+# Permessi esatti, tutti, oppure almeno uno
+find /srv -xdev -perm 0644
+find /srv -xdev -perm -o+w
+find /srv -xdev -perm /u+s</code></pre>
+      <p>
+        <code>ls -l</code> mostra i permessi, ma non tutta la storia:
+        <code>+</code> finale indica la presenza di ACL,
+        <code>.</code> indica un contesto SELinux. <code>stat</code> e
+        <code>getfacl</code> danno il quadro completo.
+      </p>
+
+      <h2 id="speciali">SUID, SGID e sticky bit</h2>
+      <p>
+        I tre bit speciali non sono permessi aggiuntivi: cambiano
+        l&rsquo;identit&agrave; con cui un processo accede o il modo in cui una
+        directory gestisce le cancellazioni.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Bit</th><th>Su un file</th><th>Su una directory</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>4000</code> SUID</td><td>Il processo parte con l&rsquo;EUID del proprietario</td><td>Ignorato</td></tr>
+            <tr><td><code>2000</code> SGID</td><td>Il processo parte con l&rsquo;EGID del gruppo</td><td>I nuovi file ereditano il gruppo; le sottodirectory ereditano SGID</td></tr>
+            <tr><td><code>1000</code> sticky</td><td>Ignorato</td><td>Solo il proprietario del file, il proprietario della directory o root possono cancellare o rinominare</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code>chmod u+s /usr/local/bin/programma
+chmod g+s /srv/team
+chmod +t /srv/condivisa
+ls -ld /tmp /srv/team
+find / -xdev -perm -4000 -type f 2&gt;/dev/null</code></pre>
+      <p>
+        SUID &egrave; comodo e pericoloso: un binario SUID compromesso gira con
+        i privilegi del proprietario. Gli script con shebang non vengono
+        eseguiti con SUID su Linux; per concedere un privilegio specifico si
+        usano le <em>capability</em>, che sono granulari.
+      </p>
+      <pre><code>getcap -r / 2&gt;/dev/null
+setcap cap_net_bind_service=+ep /usr/local/bin/mio-server
+getcap /usr/local/bin/mio-server
+capsh --print</code></pre>
+      <p>
+        <code>nosuid</code>, <code>nodev</code> e <code>noexec</code> sono
+        opzioni di mount che disinnescano questi meccanismi su partizioni non
+        fidate, come <code>/tmp</code>, <code>/home</code> o una USB. Non
+        sostituiscono i permessi, ma riducono la superficie d&rsquo;attacco.
+      </p>
+      <pre><code>findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS
+findmnt -T /tmp
+mount | grep -E 'nosuid|noexec|nodev'</code></pre>
+
+      <h2 id="acl">ACL, attributi e contesti</h2>
+      <p>
+        I permessi POSIX hanno tre classi; le ACL permettono di aggiungere
+        utenti e gruppi specifici senza cambiare proprietario o gruppo. Una
+        ACL &egrave; composta da voci <code>u:utente:rwx</code>,
+        <code>g:gruppo:r-x</code>, <code>m::rwx</code> (mask) e
+        <code>o::---</code>. La <em>mask</em> limita i permessi effettivi di
+        tutte le voci tranne owner e other.
+      </p>
+      <pre><code># ACL di accesso
+setfacl -m u:alice:rw /srv/app/report.txt
+setfacl -m g:dev:rx /srv/app
+getfacl /srv/app/report.txt
+
+# ACL predefinita: vale per i nuovi file creati nella directory
+setfacl -m d:u:alice:rwx /srv/team
+setfacl -m d:g:dev:rx /srv/team
+getfacl /srv/team
+
+# Copiare, rimuovere, ricorsivo
+getfacl -R /srv/app &gt; acl.txt
+setfacl --restore=acl.txt
+setfacl -b /srv/app/report.txt
+setfacl -k /srv/team
+setfacl -R -m u:alice:rX /srv/app</code></pre>
+      <p>
+        <code>chmod</code> su un file con ACL modifica la mask, non le singole
+        voci: &egrave; una fonte classica di &ldquo;permessi che cambiano da
+        soli&rdquo;. <code>ls -l</code> mostra <code>+</code> per segnalare che
+        c&rsquo;&egrave; una ACL. Le ACL richiedono supporto del file system e
+        l&rsquo;opzione di mount <code>acl</code>, attiva per default su ext4,
+        XFS e Btrfs.
+      </p>
+      <p>
+        Gli <em>attributi estesi</em> (<code>xattr</code>) sono coppie
+        nome/valore associate a un file. Linux usa namespace come
+        <code>user.</code>, <code>security.</code>, <code>trusted.</code> e
+        <code>system.</code>; le capability stanno in
+        <code>security.capability</code>, i contesti SELinux in
+        <code>security.selinux</code>.
+      </p>
+      <pre><code>getfattr -d -m - file.txt
+setfattr -n user.note -v "da rivedere" file.txt
+getfattr -n user.note file.txt
+rsync -aX /srv/app/ /backup/app/
+tar --xattrs --acls -cpf backup.tar /srv/app</code></pre>
+      <p>
+        <code>chattr</code> cambia attributi del file system, non xattr
+        generici. I pi&ugrave; usati sono <code>+i</code> (immutabile: nessuno
+        pu&ograve; scrivere, rinominare o cancellare finch&eacute; il bit resta
+        impostato, nemmeno root) e <code>+a</code> (solo append). Sono utili
+        per file di configurazione critici e log, ma vanno documentati:
+        un <code>+i</code> dimenticato fa impazzire il prossimo
+        amministratore.
+      </p>
+      <pre><code>lsattr /etc/ssh/sshd_config
+chattr +i /etc/ssh/sshd_config
+chattr -i /etc/ssh/sshd_config
+chattr +a /var/log/audit/audit.log</code></pre>
+      <p>
+        Su sistemi con SELinux o AppArmor i permessi POSIX non bastano:
+        <code>ls -Z</code> mostra il contesto, <code>restorecon</code> lo
+        ripristina, <code>semanage fcontext</code> aggiunge una regola
+        persistente. Su Ubuntu e Debian il profilo AppArmor pu&ograve; negare
+        un accesso che <code>chmod</code> sembra aver concesso.
+      </p>
+      <pre><code>ls -Z /var/www/html
+getenforce
+restorecon -Rv /var/www/html
+semanage fcontext -a -t httpd_sys_content_t '/srv/www(/.*)?'
+aa-status</code></pre>
+
+      <h2 id="mount">Mount, fstab e UUID</h2>
+      <p>
+        Un file system non &egrave; visibile finch&eacute; non viene montato su
+        una directory. Il kernel tiene una tabella dei mount; lo spazio utente
+        la legge da <code>/proc/self/mountinfo</code>, e
+        <code>/etc/mtab</code> &egrave; ormai un symlink a
+        <code>/proc/self/mounts</code>. <code>findmnt</code> &egrave; il modo
+        pi&ugrave; leggibile per interrogarla.
+      </p>
+      <pre><code>lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,PARTUUID,MOUNTPOINTS
+blkid
+findmnt
+findmnt -T /var/lib
+findmnt --verify</code></pre>
+      <p>
+        <code>/etc/fstab</code> ha sei campi. Un errore qui pu&ograve;
+        impedire il boot o far partire il sistema in emergency mode.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Campo</th><th>Significato</th><th>Esempio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Device</td><td>UUID, LABEL, PARTUUID o percorso</td><td><code>UUID=1234-abcd</code></td></tr>
+            <tr><td>Mount point</td><td>Directory di destinazione</td><td><code>/srv/data</code></td></tr>
+            <tr><td>Type</td><td>Tipo di file system</td><td><code>ext4</code>, <code>xfs</code>, <code>btrfs</code>, <code>nfs4</code></td></tr>
+            <tr><td>Options</td><td>Opzioni separate da virgola</td><td><code>defaults,noatime,nosuid,nodev</code></td></tr>
+            <tr><td>Dump</td><td>Usato da <code>dump</code>; quasi sempre 0</td><td><code>0</code></td></tr>
+            <tr><td>Pass</td><td>Ordine di <code>fsck</code>; 0 per non controllare</td><td><code>2</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code># /etc/fstab
+UUID=1234-abcd  /srv/data  ext4  defaults,noatime,nosuid,nodev  0  2
+UUID=5678-efgh  /boot/efi  vfat  umask=0077,shortname=winnt      0  2
+server:/export  /mnt/nfs   nfs4  vers=4.2,hard,noatime            0  0
+tmpfs           /srv/tmp   tmpfs size=2G,mode=1777,nosuid,nodev  0  0</code></pre>
+      <p>
+        Preferisci <code>UUID=</code> o <code>PARTUUID=</code> ai nomi
+        <code>/dev/sdX</code>, che cambiano con l&rsquo;ordine di
+        enumerazione. <code>nofail</code> evita che un disco assente blocchi
+        il boot; <code>x-systemd.automount</code> monta solo al primo accesso;
+        <code>x-systemd.device-timeout=10s</code> limita l&rsquo;attesa.
+        Dopo ogni modifica:
+      </p>
+      <pre><code>sudo systemctl daemon-reload
+sudo mount -a
+findmnt --verify
+systemctl list-units --type=mount</code></pre>
+      <p>
+        <code>mount --bind</code> rende visibile una directory in un altro
+        punto senza formattare nulla; <code>--rbind</code> include i
+        sotto-mount; <code>--move</code> sposta un mount. Sono gli stessi
+        meccanismi che usano <code>chroot</code>, i container e i sistemi di
+        recupero.
+      </p>
+      <pre><code>sudo mount --bind /srv/app /mnt/app
+sudo mount --rbind /dev /mnt/chroot/dev
+sudo mount -o remount,rw /
+sudo umount /mnt/app
+sudo umount -l /mnt/app
+fuser -vm /mnt/app
+lsof +D /mnt/app</code></pre>
+      <p>
+        <code>umount -l</code> &egrave; un <em>lazy unmount</em>: stacca il
+        mount dalla gerarchia ma aspetta che i processi chiudano i file.
+        <code>umount -f</code> forza, utile su NFS bloccato. Prima di
+        smontare, <code>fuser -vm</code> e <code>lsof +D</code> dicono chi
+        tiene aperto il file system. Su NFS un mount <code>hard</code>
+        pu&ograve; bloccare un processo per sempre se il server sparisce;
+        <code>soft</code> restituisce un errore, con il rischio di dati
+        incompleti.
+      </p>
+
+      <h2 id="filesystem">ext4, XFS, Btrfs e overlayfs</h2>
+      <p>
+        Non esiste il file system migliore in assoluto. Esiste quello giusto
+        per il carico, la dimensione, la necessit&agrave; di snapshot e il
+        sistema operativo che si sta usando.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>File system</th><th>Punti forti</th><th>Limiti</th><th>Uso tipico</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ext4</td>
+              <td>Maturo, semplice, journaling, extents, crescita e riduzione offline</td>
+              <td>Niente snapshot nativi, niente checksum dei dati, inode fissi</td>
+              <td>Default su Debian e Ubuntu, sistemi generali</td>
+            </tr>
+            <tr>
+              <td>XFS</td>
+              <td>Ottimo su file grandi e I/O parallelo, reflink, crescita online</td>
+              <td>Non si pu&ograve; ridurre, repair meno &ldquo;automatico&rdquo;</td>
+              <td>Default su RHEL, server e storage ad alte prestazioni</td>
+            </tr>
+            <tr>
+              <td>Btrfs</td>
+              <td>CoW, checksum, subvolumi, snapshot, send/receive, compressione</td>
+              <td>RAID 5/6 sconsigliato, manutenzione pi&ugrave; complessa</td>
+              <td>Default su Fedora e openSUSE, desktop e snapshot</td>
+            </tr>
+            <tr>
+              <td>overlayfs</td>
+              <td>Unione di pi&ugrave; directory, strati immutabili</td>
+              <td>Non &egrave; un file system per dati persistenti generici</td>
+              <td>Container, immagini, live system</td>
+            </tr>
+            <tr>
+              <td>tmpfs</td>
+              <td>Velocissimo, in RAM, dimensione configurabile</td>
+              <td>Volatile, consuma memoria</td>
+              <td><code>/run</code>, <code>/dev/shm</code>, cache temporanee</td>
+            </tr>
+            <tr>
+              <td>NFS</td>
+              <td>Condivisione di rete, centralizzata</td>
+              <td>Latenza, blocchi, dipendenza dal server</td>
+              <td>Home, export, storage condiviso</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>ext4</h3>
+      <p>
+        ext4 &egrave; il discendente diretto di ext3: journaling, extent al
+        posto della mappa dei blocchi, allocazione ritardata, checksum dei
+        metadati nelle versioni recenti. La dimensione massima del volume
+        &egrave; nell&rsquo;ordine degli exabyte, quella di un file &egrave;
+        16 TiB; il limite pratico &egrave; quasi sempre il disco, non il file
+        system. Di default riserva il 5% dei blocchi a root: su un volume
+        grande conviene ridurlo.
+      </p>
+      <pre><code># Creare, etichettare, controllare
+sudo mkfs.ext4 -L data /dev/nvme0n1p3
+sudo tune2fs -L data /dev/nvme0n1p3
+sudo tune2fs -m 1 /dev/nvme0n1p3
+sudo dumpe2fs -h /dev/nvme0n1p3
+sudo e2fsck -f /dev/nvme0n1p3
+
+# Crescere online, ridurre solo da smontato
+sudo resize2fs /dev/nvme0n1p3
+sudo umount /srv/data
+sudo e2fsck -f /dev/nvme0n1p3
+sudo resize2fs /dev/nvme0n1p3 500G</code></pre>
+      <p>
+        <code>e2fsck</code> su un file system montato in scrittura &egrave; una
+        cattiva idea: pu&ograve; corrompere i dati. Si esegue da un live,
+        dopo <code>umount</code>, oppure al boot. <code>resize2fs</code> pu&ograve;
+        crescere a caldo; per ridurre serve spazio libero, file system
+        smontato e un controllo preventivo.
+      </p>
+
+      <h3>XFS</h3>
+      <p>
+        XFS &egrave; pensato per scalare: allocation group, journaling,
+        delayed logging, reflink per le copie copy-on-write. Cresce online,
+        non si riduce. &Egrave; il default di Red Hat Enterprise Linux e una
+        scelta solida per database, file grandi e carichi paralleli.
+      </p>
+      <pre><code>sudo mkfs.xfs -L data /dev/nvme0n1p3
+sudo xfs_info /srv/data
+sudo xfs_growfs /srv/data
+sudo xfs_repair -n /dev/nvme0n1p3
+sudo xfs_repair /dev/nvme0n1p3
+sudo xfs_admin -L nuovo-nome /dev/nvme0n1p3
+sudo xfs_quota -x -c 'report -h' /srv/data</code></pre>
+      <p>
+        <code>xfs_repair -n</code> &egrave; la scansione in sola lettura: va
+        eseguita per prima, da smontato. <code>xfs_repair</code> senza
+        <code>-n</code> modifica il file system e pu&ograve; richiedere
+        <code>-L</code> per azzerare il log, operazione da fare solo dopo un
+        backup. <code>xfs_fsr</code> deframmenta, ma su SSD non serve.
+      </p>
+
+      <h3>Btrfs</h3>
+      <p>
+        Btrfs &egrave; copy-on-write: ogni scrittura crea nuovi blocchi e i
+        vecchi restano referenziati finch&eacute; servono. Da qui derivano
+        snapshot istantanei, subvolumi, checksum e compressione trasparente.
+        &Egrave; il default di Fedora e openSUSE, e una buona scelta quando
+        servono snapshot prima di un aggiornamento.
+      </p>
+      <pre><code>sudo mkfs.btrfs -L data /dev/nvme0n1p3
+sudo mount -o compress=zstd,noatime /dev/nvme0n1p3 /srv/data
+sudo btrfs filesystem usage /srv/data
+sudo btrfs subvolume create /srv/data/@app
+sudo btrfs subvolume snapshot -r /srv/data/@app /srv/data/@app-2026-11-14
+sudo btrfs subvolume list /srv/data
+sudo btrfs scrub start -Bd /srv/data
+sudo btrfs balance start -dusage=50 /srv/data
+sudo btrfs check --readonly /dev/nvme0n1p3</code></pre>
+      <p>
+        <code>scrub</code> rilegge i dati e verifica i checksum;
+        <code>balance</code> ridistribuisce i chunk e pu&ograve; recuperare
+        spazio; <code>check --readonly</code> &egrave; la diagnosi.
+        <code>btrfs check --repair</code> &egrave; pericoloso e va usato solo
+        su consiglio di chi conosce il caso specifico, con backup pronto. Il
+        RAID 5/6 di Btrfs non &egrave; consigliato per dati importanti:
+        usa RAID 1 o 10, oppure lascia il RAID all&rsquo;hardware o a
+        <code>mdadm</code>.
+      </p>
+      <p>
+        Gli snapshot non sono backup: stanno sullo stesso file system e
+        condividono i blocchi. Se il disco muore, muoiono entrambi. Per un
+        backup vero si usa <code>btrfs send</code> verso un altro supporto:
+      </p>
+      <pre><code>sudo btrfs send /srv/data/@app-2026-11-14 | \
+  ssh backup 'btrfs receive /backup/data'
+sudo btrfs send -p /srv/data/@app-2026-11-13 \
+  /srv/data/@app-2026-11-14 | ssh backup 'btrfs receive /backup/data'</code></pre>
+
+      <h3>overlayfs e tmpfs</h3>
+      <p>
+        overlayfs unisce pi&ugrave; directory in una sola vista. Gli strati
+        <em>lower</em> sono di sola lettura, l&rsquo;<em>upper</em> raccoglie
+        le modifiche e <code>workdir</code> &egrave; una directory di lavoro
+        che deve stare sullo stesso file system dell&rsquo;upper. &Egrave; il
+        meccanismo con cui Docker, Podman e i live system sovrappongono
+        immagini senza copiarle.
+      </p>
+      <pre><code>sudo mkdir -p /lower /upper /work /merged
+sudo mount -t overlay overlay \
+  -o lowerdir=/lower,upperdir=/upper,workdir=/work /merged
+findmnt -T /merged
+sudo umount /merged</code></pre>
+      <p>
+        Un file modificato nell&rsquo;upper viene copiato per intero
+        (<em>copy-up</em>); una cancellazione crea un <em>whiteout</em>. Per
+        questo overlayfs &egrave; ottimo per immagini immutabili e meno adatto
+        a database o file molto grandi modificati in place.
+      </p>
+      <p>
+        tmpfs vive in RAM e swap: veloce, volatile, con dimensione e numero di
+        inode configurabili. <code>/run</code> e <code>/dev/shm</code> sono
+        tmpfs; una tmpfs troppo grande pu&ograve; esaurire la memoria e
+        attivare l&rsquo;OOM killer.
+      </p>
+      <pre><code>mount -t tmpfs -o size=2G,mode=1777,nr_inodes=100k tmpfs /srv/tmp
+df -h /dev/shm /run
+findmnt -T /srv/tmp</code></pre>
+
+      <h2 id="spazio">Spazio, inode e manutenzione</h2>
+      <p>
+        &ldquo;Disco pieno&rdquo; &egrave; una diagnosi, non un comando.
+        <code>df</code> guarda il file system, <code>du</code> somma i file
+        visibili, <code>lsof</code> trova i file cancellati ma ancora aperti.
+        I tre numeri possono raccontare storie diverse.
+      </p>
+      <pre><code>df -hT
+df -i
+du -sh /var/* | sort -h
+du -x -d 2 /srv | sort -h | tail -n 20
+ncdu -x /srv
+
+# File grandi, senza attraversare altri file system
+find / -xdev -type f -size +1G -printf '%s %p\n' 2&gt;/dev/null | sort -n | tail
+
+# File cancellati ancora aperti
+lsof +L1
+lsof -nP | grep deleted</code></pre>
+      <p>
+        Se <code>df</code> dice pieno e <code>du</code> non trova nulla, il
+        colpevole &egrave; spesso un file cancellato tenuto aperto da un
+        processo: il suo spazio non torna finch&eacute; il file descriptor non
+        viene chiuso. Si risolve riavviando il servizio, oppure troncando il
+        file via <code>/proc/PID/fd/N</code> con cautela.
+      </p>
+      <pre><code># Trovare il processo e il file
+lsof +L1
+ls -l /proc/PID/fd
+
+# Troncare un log enorme ancora aperto (senza cancellarlo)
+: &gt; /var/log/app.log
+truncate -s 0 /var/log/app.log
+
+# Spazio riservato da ext4
+sudo tune2fs -l /dev/nvme0n1p2 | grep -i reserved
+sudo tune2fs -m 1 /dev/nvme0n1p2</code></pre>
+      <p>
+        Su ext4 il 5% riservato a root &egrave; utile per il sistema ma
+        esagerato su un volume dati da terabyte. Su Btrfs gli snapshot e i
+        subvolumi consumano spazio anche se <code>du</code> non li vede:
+        <code>btrfs filesystem usage</code> e <code>btrfs qgroup show</code>
+        sono pi&ugrave; affidabili. Su overlayfs i file nell&rsquo;upper
+        possono essere copie complete.
+      </p>
+      <p>
+        Le quote limitano spazio e inode per utente o gruppo. Su ext4 e XFS
+        si gestiscono con strumenti diversi; su Btrfs si usano i qgroup.
+      </p>
+      <pre><code># ext4: quota utente
+sudo quotaon -v /srv/data
+sudo edquota -u alice
+quota -s
+sudo repquota -a
+
+# XFS: quota integrata
+sudo xfs_quota -x -c 'report -h' /srv/data
+sudo xfs_quota -x -c 'limit -u bsoft=10g bhard=12g alice' /srv/data
+
+# Btrfs: qgroup
+sudo btrfs quota enable /srv/data
+sudo btrfs qgroup show -reF /srv/data</code></pre>
+      <p>
+        La manutenzione ordinaria comprende log, cache e TRIM. Su SSD
+        &egrave; meglio un <code>fstrim</code> periodico che
+        <code>discard</code> continuo: il primo batch riduce il costo, il
+        secondo pu&ograve; penalizzare le scritture.
+      </p>
+      <pre><code>journalctl --disk-usage
+sudo journalctl --vacuum-size=500M
+sudo systemd-tmpfiles --clean
+sudo fstrim -av
+systemctl status fstrim.timer
+systemctl enable --now fstrim.timer
+
+# Non farlo su un disco che non sia un SSD, e mai alla cieca
+sudo blkdiscard /dev/nvme0n1</code></pre>
+      <p>
+        <code>blkdiscard</code> cancella l&rsquo;intero dispositivo: va usato
+        solo su dischi che si vogliono azzerare. <code>fallocate</code> e
+        <code>truncate</code> creano file di dimensione precisa senza
+        scrivere tutti i byte; <code>dd</code> scrive davvero e pu&ograve;
+        essere lentissimo.
+      </p>
+
+      <h2 id="diagnostica">Diagnostica e recupero</h2>
+      <p>
+        Un ordine di intervento che funziona: 1) individua il file system con
+        <code>findmnt -T</code>; 2) controlla spazio e inode con
+        <code>df -hT</code> e <code>df -i</code>; 3) risali i permessi con
+        <code>namei -l</code>, <code>getfacl</code>, <code>ls -Z</code>;
+        4) leggi <code>dmesg -T</code> e <code>journalctl -k</code> per gli
+        errori I/O; 5) solo dopo valuta <code>fsck</code> o
+        <code>xfs_repair</code>.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Sintomo</th><th>Causa probabile</th><th>Verifica</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Permission denied</code></td>
+              <td>Manca <code>x</code> su una directory, ACL, SELinux/AppArmor, <code>noexec</code></td>
+              <td><code>namei -l</code>, <code>getfacl</code>, <code>ls -Z</code>, <code>findmnt -T</code></td>
+            </tr>
+            <tr>
+              <td><code>No space left on device</code></td>
+              <td>Inode esauriti, blocchi riservati, quota, file cancellati aperti, snapshot</td>
+              <td><code>df -i</code>, <code>lsof +L1</code>, <code>quota -s</code>, <code>btrfs filesystem usage</code></td>
+            </tr>
+            <tr>
+              <td><code>Read-only file system</code></td>
+              <td>Errore I/O, <code>errors=remount-ro</code>, mount <code>ro</code></td>
+              <td><code>dmesg -T</code>, <code>findmnt -T</code>, <code>smartctl -a</code></td>
+            </tr>
+            <tr>
+              <td><code>Structure needs cleaning</code></td>
+              <td>Corruzione XFS</td>
+              <td><code>xfs_repair -n</code> da smontato</td>
+            </tr>
+            <tr>
+              <td><code>UNEXPECTED INCONSISTENCY</code></td>
+              <td>Corruzione ext4 o journal incompleto</td>
+              <td><code>e2fsck -f</code> da smontato</td>
+            </tr>
+            <tr>
+              <td><code>wrong fs type</code></td>
+              <td>Tipo sbagliato, modulo assente, dispositivo sbagliato</td>
+              <td><code>lsblk -f</code>, <code>blkid</code>, <code>modprobe</code></td>
+            </tr>
+            <tr>
+              <td><code>Too many levels of symbolic links</code></td>
+              <td>Loop di symlink</td>
+              <td><code>namei -l</code>, <code>readlink -f</code></td>
+            </tr>
+            <tr>
+              <td><code>Stale file handle</code></td>
+              <td>NFS: export o server cambiato</td>
+              <td><code>mount</code>, <code>showmount -e</code>, log del server</td>
+            </tr>
+            <tr>
+              <td><code>Operation not permitted</code> su <code>chown</code></td>
+              <td>Non root, capability mancante, NFS root squash</td>
+              <td><code>id</code>, <code>capsh --print</code>, opzioni export</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Prima di riparare, si fa un backup se possibile. Poi si smonta il file
+        system, si esegue lo strumento giusto e si legge l&rsquo;output senza
+        rispondere &ldquo;s&igrave;&rdquo; a tutto. <code>fsck</code> generico
+        chiama il checker del tipo corretto; <code>e2fsck</code>,
+        <code>xfs_repair</code> e <code>btrfs check</code> sono specifici.
+      </p>
+      <pre><code># Individuare il file system e i supporti
+findmnt -T /srv/data
+lsblk -f
+sudo smartctl -a /dev/nvme0n1
+
+# Controlli in sola lettura
+sudo e2fsck -n /dev/nvme0n1p3
+sudo xfs_repair -n /dev/nvme0n1p3
+sudo btrfs check --readonly /dev/nvme0n1p3
+
+# Riparazione: solo da smontato e con backup
+sudo umount /srv/data
+sudo e2fsck -f /dev/nvme0n1p3
+sudo xfs_repair /dev/nvme0n1p3
+sudo btrfs check --readonly /dev/nvme0n1p3</code></pre>
+      <p>
+        Se il sistema non parte per un errore in <code>fstab</code>, si
+        arriva in emergency mode. Si monta la radice in sola lettura, si
+        corregge il file, si verifica con <code>findmnt --verify</code> e si
+        riavvia. Aggiungere <code>nofail</code> ai dischi non essenziali evita
+        che un&rsquo;unit&agrave; assente blocchi tutto.
+      </p>
+      <pre><code># Da emergency mode: rimontare la radice in scrittura
+mount -o remount,rw /
+vi /etc/fstab
+findmnt --verify
+mount -a
+systemctl reboot</code></pre>
+      <p>
+        Per capire chi sta scrivendo o leggendo un percorso, oltre a
+        <code>lsof</code> e <code>fuser</code> servono <code>strace</code> e
+        <code>fatrace</code>. <code>strace -e trace=file</code> mostra le
+        chiamate di un processo; <code>fatrace</code> mostra le modifiche
+        globali al file system, utile per scoprire quale servizio riempie un
+        disco.
+      </p>
+      <pre><code>strace -f -e trace=file -p PID
+fatrace -f W
+inotifywait -m -r /srv/app</code></pre>
+      <div class="callout ok">
+        <p>
+          <strong>Regola d&rsquo;oro.</strong> Un file system non si ripara
+          &ldquo;per provare&rdquo;. Prima si guarda, poi si fa un backup, poi
+          si smonta, poi si ripara. E se il disco mostra errori I/O o
+          <code>SMART</code> degradato, il problema non &egrave; il file
+          system: &egrave; l&rsquo;hardware, e va sostituito prima che porti
+          via i dati.
+        </p>
+      </div>
+
+      <h2 id="fonti">Fonti</h2>
+      <ul>
+        <li><strong>Filesystem Hierarchy Standard 3.0</strong> &mdash;
+        struttura delle directory e usrmerge.</li>
+        <li><strong><code>man 7 hier</code>, <code>man 7 file-hierarchy</code></strong>
+        &mdash; gerarchia secondo Linux e systemd.</li>
+        <li><strong><code>man 2 stat</code>, <code>man 7 inode</code>,
+        <code>man 7 path_resolution</code></strong> &mdash; metadati, inode e
+        risoluzione dei percorsi.</li>
+        <li><strong><code>man 5 acl</code>, <code>man 1 setfacl</code>,
+        <code>man 1 getfacl</code></strong> &mdash; ACL POSIX e mask.</li>
+        <li><strong><code>man 7 capabilities</code>, <code>man 1 setcap</code>,
+        <code>man 1 getcap</code></strong> &mdash; capability al posto di
+        SUID.</li>
+        <li><strong><code>man 8 mount</code>, <code>man 5 fstab</code>,
+        <code>man 8 findmnt</code></strong> &mdash; mount, opzioni e
+        generazione delle unit&agrave; systemd.</li>
+        <li><strong>Linux kernel documentation</strong> &mdash;
+        <em>filesystems/ext4</em>, <em>xfs</em>, <em>btrfs</em>,
+        <em>overlayfs</em>, <em>nfs</em>.</li>
+        <li><strong>e2fsprogs, xfsprogs, btrfs-progs, util-linux, acl, attr,
+        libcap</strong> &mdash; strumenti e manuali dei rispettivi progetti.</li>
+        <li><strong>Debian, Ubuntu, Red Hat e Arch Wiki</strong> &mdash;
+        pacchetti, default delle distribuzioni e procedure di recupero.</li>
+      </ul>
+      <p>
+        Comportamenti e comandi verificati il 14 novembre 2026 su kernel 7.x.
+        I default cambiano tra distribuzioni e versioni: ext4 &egrave; il
+        default storico di Debian/Ubuntu, XFS di RHEL, Btrfs di Fedora e
+        openSUSE. Prima di formattare o riparare, controlla sempre
+        <code>lsblk -f</code>, <code>findmnt -T</code> e la documentazione
+        della tua distribuzione.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>&copy; 2026 Adripedia &middot; sezione Linux</span>
+        <span class="footer-right">
+          <span>File system e permessi &middot; aggiornata il 14 novembre 2026</span>
+          <a class="coffee-btn" href="https://paypal.me/AdrianoAbbruzzese" target="_blank" rel="noopener">
+            <svg class="coffee-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4.7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9.7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/></svg>
+            Offrimi un caff&egrave;
+          </a>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../../assets/js/site.js" defer></script>
+</body>
+</html>
