@@ -388,6 +388,9 @@
         entry.panel.hidden = !selected;
       });
 
+      /* Su schermi stretti la barra scorre: il tab attivo resta visibile. */
+      item.tab.scrollIntoView({ block: "nearest", inline: "nearest" });
+
       if (updateHash) setHash(item.panel.id);
       refreshNav();
     }
@@ -477,6 +480,9 @@
 
     if (!panel || !input || !results) return;
 
+    /* Il tab Esempi, quando c'è, entra nella stessa ricerca. */
+    var panels = [panel, document.getElementById("esempi")].filter(Boolean);
+
     var defaultHint = hint ? hint.textContent.trim() : "";
     var entries = [];
     var current = [];
@@ -493,7 +499,13 @@
     /* Titolo della sezione (h2/h3) che precede un elemento. */
     function sectionOf(target) {
       var heading = "";
-      var children = panel.children;
+      var owner = panels.filter(function (item) {
+        return item.contains(target);
+      })[0];
+
+      if (!owner) return heading;
+
+      var children = owner.children;
 
       for (var i = 0; i < children.length; i += 1) {
         var child = children[i];
@@ -521,40 +533,44 @@
     }
 
     /* Righe delle tabelle: comando nella prima cella, descrizione nella seconda. */
-    panel.querySelectorAll(".table-wrap tbody tr").forEach(function (row) {
-      var code = row.querySelector("td code");
-      if (!code) return;
+    panels.forEach(function (owner) {
+      owner.querySelectorAll(".table-wrap tbody tr").forEach(function (row) {
+        var code = row.querySelector("td code");
+        if (!code) return;
 
-      var cells = row.querySelectorAll("td");
-      var desc = cells[1] ? cells[1].textContent.trim() : "";
+        var cells = row.querySelectorAll("td");
+        var desc = cells[1] ? cells[1].textContent.trim() : "";
 
-      entries.push(makeEntry(code.textContent.trim(), desc, row));
+        entries.push(makeEntry(code.textContent.trim(), desc, row));
+      });
     });
 
     /* Righe dei blocchi di codice: ogni riga utile diventa un bersaglio.
        Gli span sono inline, quindi pre.innerText resta identico. */
     var lineId = 0;
 
-    panel.querySelectorAll("pre code").forEach(function (code) {
-      var lines = code.textContent.split("\n");
-      code.textContent = "";
+    panels.forEach(function (owner) {
+      owner.querySelectorAll("pre code").forEach(function (code) {
+        var lines = code.textContent.split("\n");
+        code.textContent = "";
 
-      lines.forEach(function (line, index) {
-        var span = document.createElement("span");
-        span.className = "cmd-line";
-        span.id = "cmd-line-" + lineId;
-        lineId += 1;
-        span.textContent = line;
-        code.appendChild(span);
+        lines.forEach(function (line, index) {
+          var span = document.createElement("span");
+          span.className = "cmd-line";
+          span.id = "cmd-line-" + lineId;
+          lineId += 1;
+          span.textContent = line;
+          code.appendChild(span);
 
-        if (index < lines.length - 1) {
-          code.appendChild(document.createTextNode("\n"));
-        }
+          if (index < lines.length - 1) {
+            code.appendChild(document.createTextNode("\n"));
+          }
 
-        var command = line.trim();
-        if (!command || command.charAt(0) === "#") return;
+          var command = line.trim();
+          if (!command || command.charAt(0) === "#") return;
 
-        entries.push(makeEntry(command, "", span));
+          entries.push(makeEntry(command, "", span));
+        });
       });
     });
 
@@ -695,12 +711,19 @@
       close();
       if (!keepFocus) input.blur();
 
-      var previous = panel.querySelectorAll(".cmd-hit");
+      var previous = document.querySelectorAll(".cmd-hit");
       previous.forEach(function (element) {
         element.classList.remove("cmd-hit");
       });
 
       if (hitTimer) window.clearTimeout(hitTimer);
+
+      /* Se il risultato è nel tab Esempi, aprilo prima di scorrere. */
+      var owner = entry.target.closest(".tabpanel");
+      if (owner && owner.hidden) {
+        var tab = document.querySelector('[role="tab"][aria-controls="' + owner.id + '"]');
+        if (tab) tab.click();
+      }
 
       var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 

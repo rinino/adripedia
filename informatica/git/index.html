@@ -47,7 +47,7 @@
       <div class="tabs" data-tabs>
         <noscript>
           <p class="callout">
-            JavaScript &egrave; disattivato: i contenuti dei quattro tab sono
+            JavaScript &egrave; disattivato: i contenuti dei cinque tab sono
             mostrati uno dopo l'altro.
           </p>
         </noscript>
@@ -68,6 +68,10 @@
           <button class="tab" id="tab-comandi" type="button" role="tab"
                   aria-selected="false" aria-controls="comandi" tabindex="-1">
             Comandi
+          </button>
+          <button class="tab" id="tab-esempi" type="button" role="tab"
+                  aria-selected="false" aria-controls="esempi" tabindex="-1">
+            Esempi
           </button>
         </div>
 
@@ -472,7 +476,7 @@ sudo apt remove git</code></pre>
                      aria-autocomplete="list" aria-describedby="cmd-search-hint">
             </div>
             <p class="cmd-search-hint" id="cmd-search-hint" aria-live="polite">
-              Digita per filtrare la cheat sheet e i comandi qui sotto.
+              Digita per filtrare comandi, esempi e ricette.
             </p>
             <ul class="cmd-search-results" id="cmd-search-results" role="listbox"
                 aria-label="Comandi trovati" hidden></ul>
@@ -518,10 +522,12 @@ sudo apt remove git</code></pre>
               </tbody>
             </table>
           </div>
-          <p>
-            <code>&lt;...&gt;</code> indica un valore da sostituire; le parentesi
-            quadre sono opzionali.
-          </p>
+          <div class="callout">
+            <strong>Esempi e ricette.</strong> Le situazioni concrete e i casi
+            complicati &mdash; rebase, conflitti, recupero con
+            <code>reflog</code>, <code>--force-with-lease</code> &mdash; sono
+            nel tab <a href="#esempi">Esempi</a>.
+          </div>
 
           <h2>Configurazione</h2>
           <pre><code># identità (globale)
@@ -850,6 +856,313 @@ git branch -d feature/nuova-funzione</code></pre>
             </table>
           </div>
         </section>
+        <!-- ================================================================
+             Esempi e ricette
+             ================================================================ -->
+        <section class="tabpanel" id="esempi" role="tabpanel" aria-labelledby="tab-esempi" hidden>
+          <h2 id="esempi-rapidi">Esempi: i comandi di tutti i giorni</h2>
+          <p>
+            La tabella prende i comandi della cheat sheet e li mette in una
+            situazione concreta. Percorsi, branch e messaggi sono inventati:
+            sostituisci i tuoi. La colonna <em>Cosa succede</em> descrive
+            l&rsquo;effetto o l&rsquo;output tipico, non una trascrizione.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Comando</th><th>Esempio</th><th>Cosa succede</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>git clone</code></td>
+                  <td><code>git clone https://example.com/repo.git</code></td>
+                  <td>Crea la cartella <code>repo</code> con il progetto, la storia e il remoto <code>origin</code> gi&agrave; configurato.</td>
+                </tr>
+                <tr>
+                  <td><code>git status -sb</code></td>
+                  <td><code>git status -sb</code></td>
+                  <td>Mostra branch, upstream e file modificati in forma compatta: <code>## main...origin/main [ahead 1]</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>git add -p</code></td>
+                  <td><code>git add -p src/app.js</code></td>
+                  <td>Chiede pezzo per pezzo quali modifiche includere: <code>y</code> s&igrave;, <code>n</code> no, <code>s</code> separa, <code>q</code> esce.</td>
+                </tr>
+                <tr>
+                  <td><code>git commit -m</code></td>
+                  <td><code>git commit -m "Valida l'email"</code></td>
+                  <td>Registra ci&ograve; che &egrave; in staging; se non hai aggiunto nulla, Git rifiuta il commit.</td>
+                </tr>
+                <tr>
+                  <td><code>git diff --staged</code></td>
+                  <td><code>git diff --staged</code></td>
+                  <td>Mostra esattamente quello che finir&agrave; nel prossimo commit, non le modifiche rimaste fuori.</td>
+                </tr>
+                <tr>
+                  <td><code>git switch -c</code></td>
+                  <td><code>git switch -c feature/login</code></td>
+                  <td>Crea il branch dal commit corrente e ci passa: <code>git status</code> ora dice <code>On branch feature/login</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>git merge --no-ff</code></td>
+                  <td><code>git merge --no-ff feature/login</code></td>
+                  <td>Crea un commit di merge anche quando il fast-forward sarebbe possibile, cos&igrave; il branch resta visibile nella storia.</td>
+                </tr>
+                <tr>
+                  <td><code>git pull --ff-only</code></td>
+                  <td><code>git pull --ff-only</code></td>
+                  <td>Aggiorna solo se pu&ograve; avanzare senza merge; se i branch sono divergenti si ferma e te lo dice.</td>
+                </tr>
+                <tr>
+                  <td><code>git push -u</code></td>
+                  <td><code>git push -u origin feature/login</code></td>
+                  <td>Pubblica il branch e imposta l&rsquo;upstream: i successivi <code>git push</code> e <code>git pull</code> non richiedono argomenti.</td>
+                </tr>
+                <tr>
+                  <td><code>git log --oneline --graph</code></td>
+                  <td><code>git log --oneline --graph --all</code></td>
+                  <td>Disegna la cronologia con i rami; <code>--all</code> include anche quelli non ancora mergiati.</td>
+                </tr>
+                <tr>
+                  <td><code>git restore</code></td>
+                  <td><code>git restore src/app.js</code></td>
+                  <td>Riporta il file all&rsquo;ultima versione committata: le modifiche non salvate vanno perse.</td>
+                </tr>
+                <tr>
+                  <td><code>git stash push</code></td>
+                  <td><code>git stash push -m "login a met&agrave;"</code></td>
+                  <td>Mette da parte le modifiche e pulisce il working tree; <code>git stash list</code> mostra cosa hai messo via.</td>
+                </tr>
+                <tr>
+                  <td><code>git revert</code></td>
+                  <td><code>git revert 4f2a1c9</code></td>
+                  <td>Crea un nuovo commit che annulla quello indicato: la storia resta intatta, quindi va bene anche se &egrave; gi&agrave; pubblicato.</td>
+                </tr>
+                <tr>
+                  <td><code>git reflog</code></td>
+                  <td><code>git reflog -n 10</code></td>
+                  <td>Elenca gli ultimi movimenti di HEAD, compresi i commit non pi&ugrave; raggiungibili da un branch.</td>
+                </tr>
+                <tr>
+                  <td><code>git show</code></td>
+                  <td><code>git show --stat 4f2a1c9</code></td>
+                  <td>Mostra autore, messaggio e file toccati dal commit, senza il diff completo.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="ricette">Ricette per i casi complicati</h2>
+          <p>
+            Ogni ricetta segue lo stesso schema: la situazione di partenza, i
+            comandi nell&rsquo;ordine in cui vanno eseguiti, il risultato atteso
+            e la trappola da evitare. Gli hash e i nomi dei branch sono esempi.
+          </p>
+
+          <h3>Ripulire tre commit con rebase interattivo</h3>
+          <p>
+            <strong>Situazione.</strong> Hai tre commit locali con messaggi
+            provvisori e vuoi pubblicarne uno solo, con un messaggio decente.
+            Non li hai ancora pushati.
+          </p>
+          <pre><code>git log --oneline -4
+# 9c1e0b2 ok
+# 4f2a1c9 fix
+# 1a7d3e5 wip
+# 8b0c4d1 Aggiunge il form di login
+
+git rebase -i HEAD~3</code></pre>
+          <p>
+            L&rsquo;editor si apre con i tre commit: lascia <code>pick</code> sul
+            primo e cambia gli altri in <code>squash</code>.
+          </p>
+          <pre><code>pick 1a7d3e5 wip
+squash 4f2a1c9 fix
+squash 9c1e0b2 ok</code></pre>
+          <p>
+            Al salvataggio Git unisce i tre commit e apre un secondo editor per
+            il messaggio finale: scrivi una riga sola, per esempio
+            <code>Aggiunge il form di login con validazione</code>.
+          </p>
+          <p>
+            <strong>Cosa succede.</strong> <code>git log --oneline -2</code>
+            mostra un solo commit sopra <code>8b0c4d1</code>; il working tree
+            &egrave; pulito e la storia &egrave; pi&ugrave; leggibile.
+          </p>
+          <p>
+            <strong>Trappola.</strong> Il rebase cambia gli hash: se il branch
+            era gi&agrave; pubblicato, chi lo ha scaricato dovr&agrave;
+            riallinearsi. Non farlo su un branch condiviso e non usarlo per
+            nascondere un commit che qualcuno ha gi&agrave; revisionato.
+          </p>
+
+          <h3>Risolvere un conflitto durante un merge</h3>
+          <p>
+            <strong>Situazione.</strong> <code>git merge feature/login</code> si
+            ferma con <code>CONFLICT (content): Merge conflict in
+            src/app.js</code>. Il merge &egrave; aperto, ma non concluso.
+          </p>
+          <pre><code>git status
+# both modified:   src/app.js
+
+# apri il file e scegli cosa tenere:
+# &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+# la tua versione
+# =======
+# la versione di feature/login
+# &gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/login
+
+git add src/app.js
+git commit</code></pre>
+          <p>
+            <strong>Cosa succede.</strong> Dopo <code>git add</code>,
+            <code>git status</code> dice <em>All conflicts fixed but you are
+            still merging</em>; <code>git commit</code> chiude il merge con un
+            commit che ha due genitori.
+          </p>
+          <p>
+            <strong>Trappola.</strong> <code>git add .</code> senza aver letto i
+            file: i marcatori di conflitto finiscono nel commit. Se ti perdi,
+            <code>git merge --abort</code> riporta tutto a prima del merge.
+          </p>
+
+          <h3>Risolvere un conflitto durante un rebase</h3>
+          <p>
+            <strong>Situazione.</strong> <code>git rebase main</code> si ferma
+            su <code>src/app.js</code>: il rebase &egrave; a met&agrave; e Git
+            aspetta una decisione per ogni commit.
+          </p>
+          <pre><code>git status
+# rebase in progress; next command is 'git rebase --continue'
+
+# risolvi il file, poi:
+git add src/app.js
+git rebase --continue
+
+# se questo commit non serve pi&ugrave;:
+git rebase --skip
+
+# se vuoi tornare a prima del rebase:
+git rebase --abort</code></pre>
+          <p>
+            <strong>Cosa succede.</strong> <code>--continue</code> applica il
+            commit successivo, o chiude il rebase se era l&rsquo;ultimo. Alla
+            fine i tuoi commit stanno sopra <code>main</code>, con hash nuovi.
+          </p>
+          <p>
+            <strong>Trappola.</strong> <code>git commit</code> al posto di
+            <code>--continue</code> crea un commit fuori dal rebase e lascia il
+            processo aperto. <code>--skip</code> butta via il commit: usalo solo
+            se il contenuto &egrave; davvero gi&agrave; presente altrove.
+          </p>
+
+          <h3>Recuperare un commit dopo un reset --hard</h3>
+          <p>
+            <strong>Situazione.</strong> Un
+            <code>git reset --hard HEAD~1</code> ha buttato via un commit non
+            ancora pushato. Il branch non lo raggiunge pi&ugrave;, ma il commit
+            esiste ancora.
+          </p>
+          <pre><code>git reflog
+# 9c1e0b2 HEAD@{0}: reset: moving to HEAD~1
+# 4f2a1c9 HEAD@{1}: commit: Aggiunge il form di login
+
+# la via sicura: un branch sul commit recuperato
+git switch -c recupero 4f2a1c9
+
+# oppure riporta il branch dov'era
+git reset --hard 4f2a1c9</code></pre>
+          <p>
+            <strong>Cosa succede.</strong> Il commit torna raggiungibile: il
+            nuovo branch <code>recupero</code> ci punta e il lavoro &egrave;
+            intatto. Da l&igrave; puoi controllare il contenuto e riportarlo
+            dove serve.
+          </p>
+          <p>
+            <strong>Trappola.</strong> Il reflog &egrave; locale e scade (90
+            giorni per HEAD, 30 per i commit non raggiungibili): su un altro
+            computer non c&rsquo;&egrave;. E non fare un secondo
+            <code>reset --hard</code> prima di aver creato il branch di
+            recupero.
+          </p>
+
+          <h3>Push rifiutato: aggiorna e riprova</h3>
+          <p>
+            <strong>Situazione.</strong> <code>git push</code> risponde
+            <code>! [rejected] ... (fetch first)</code>: sul remoto ci sono
+            commit che non hai.
+          </p>
+          <pre><code>git fetch origin
+git log --oneline HEAD..origin/main
+git pull --rebase
+
+# risolvi eventuali conflitti, poi:
+git push</code></pre>
+          <p>
+            <strong>Cosa succede.</strong> I tuoi commit vengono riapplicati
+            sopra quelli remoti e il push passa senza creare un commit di merge.
+            Se il branch &egrave; tuo e vuoi riscriverlo, dopo il fetch puoi
+            usare <code>git push --force-with-lease</code>: rifiuta se qualcuno
+            ha aggiornato il branch nel frattempo.
+          </p>
+          <p>
+            <strong>Trappola.</strong> <code>git push --force</code> cancella i
+            commit altrui. E <code>git pull</code> senza <code>--rebase</code>
+            crea un merge che magari non vuoi: decidi prima quale delle due
+            storie vuoi.
+          </p>
+
+          <h3>Cherry-pick: portare un fix su un altro branch</h3>
+          <p>
+            <strong>Situazione.</strong> Hai corretto un bug su <code>main</code>
+            con il commit <code>7d3e9a1</code> e ti serve anche sul branch di
+            manutenzione <code>release/2.55</code>.
+          </p>
+          <pre><code>git switch release/2.55
+git cherry-pick 7d3e9a1
+git log --oneline -2
+
+# se il cherry-pick si ferma su un conflitto:
+git status
+git add file-risolto
+git cherry-pick --continue</code></pre>
+          <p>
+            <strong>Cosa succede.</strong> Su <code>release/2.55</code> compare
+            un nuovo commit con lo stesso contenuto e un hash diverso. Il
+            commit originale su <code>main</code> resta dov&rsquo;&egrave;.
+          </p>
+          <p>
+            <strong>Trappola.</strong> Il cherry-pick duplica il cambiamento: se
+            i due branch si fonderanno, Git pu&ograve; segnalare un conflitto su
+            una modifica gi&agrave; identica. Per un fix che deve vivere su
+            pi&ugrave; branch, valuta un merge del branch di manutenzione o un
+            fix separato.
+          </p>
+
+          <h3>Annullare un merge gi&agrave; pubblicato</h3>
+          <p>
+            <strong>Situazione.</strong> Hai mergiato <code>feature/login</code>
+            su <code>main</code> e pushato, ma la feature va ritirata. La storia
+            &egrave; condivisa: non si riscrive.
+          </p>
+          <pre><code>git log --oneline --merges -3
+# 2b8e4f0 Merge branch 'feature/login'
+
+git revert -m 1 2b8e4f0
+git push</code></pre>
+          <p>
+            <strong>Cosa succede.</strong> Un nuovo commit annulla le modifiche
+            introdotte dal merge. <code>-m 1</code> dice a Git di considerare
+            primo genitore <code>main</code> prima del merge: senza, Git non sa
+            quale lato tenere e si ferma.
+          </p>
+          <p>
+            <strong>Trappola.</strong> Se in futuro vorrai riproporre la feature,
+            un semplice merge non riporter&agrave; le modifiche: Git considera
+            gi&agrave; mergiati quei commit. Serve un revert del revert, oppure
+            un nuovo commit sulla feature.
+          </p>
+
+        </section>
+
       </div>
     </main>
 

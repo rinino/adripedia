@@ -27,7 +27,7 @@ adripedia/
 │  │  ├─ agenti.html          # agenti e orchestrazione: pattern, gerarchia, costi, affidabilità
 │  │  └─ laboratorio.html     # otto esercizi neutrali con passi, risultato atteso e varianti
 │  ├─ git/                    # sezione Git
-│  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
+│  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi, esempi e ricette
 │  ├─ docker/                 # sezione Docker
 │  │  └─ index.html           # pagina unica a tab: panoramica, Windows, Linux, comandi
 │  ├─ podman/                 # sezione Podman
@@ -140,6 +140,8 @@ codice del pannello: scrivendo si filtrano i comandi, con frecce e Invio
 oppure con il mouse si
 salta al comando scelto, evidenziato per qualche secondo. Il markup è
 `.cmd-search`; il comportamento è lo stesso modulo in `assets/js/site.js`.
+Nella pagina Git la ricerca indicizza anche il tab **Esempi** e, se il
+risultato è lì, lo apre prima di scorrere.
 
 Il pannello **Approfondimenti** di Kubernetes apre con il glossario
 (`#glossario`) e un filtro locale (`#glossary-search-input`) che nasconde le
